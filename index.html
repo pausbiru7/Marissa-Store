@@ -2,8 +2,9 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
+  <base target="_top">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Marissa Store</title>
+  <title>Toko Ormas</title>
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
   <style>
     :root,[data-theme="light"]{--font-body:'Satoshi',Arial,sans-serif;--font-display:'Satoshi',Arial,sans-serif;--text-xs:clamp(.75rem,.7rem + .25vw,.875rem);--text-sm:clamp(.875rem,.8rem + .35vw,1rem);--text-base:clamp(1rem,.95rem + .25vw,1.125rem);--text-lg:clamp(1.125rem,1rem + .75vw,1.5rem);--text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);--space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;--space-12:3rem;--radius-sm:.375rem;--radius-md:.5rem;--radius-lg:.75rem;--radius-xl:1rem;--transition-interactive:180ms cubic-bezier(.16,1,.3,1);--color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;--color-surface-offset:#f3f0ec;--color-border:#d4d1ca;--color-divider:#dcd9d5;--color-text:#28251d;--color-text-muted:#6e6a63;--color-text-inverse:#f9f8f4;--color-primary:#01696f;--color-primary-hover:#0c4e54;--color-warning:#b55a19;--color-success:#437a22;--color-error:#a12c7b;--shadow-sm:0 1px 2px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.08)}
@@ -18,7 +19,21 @@
     .btn{min-height:44px;padding:0 16px;border-radius:var(--radius-md);border:1px solid var(--color-border);background:var(--color-surface-2);color:var(--color-text);font-weight:700}.btn-primary{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-text-inverse)}.btn-primary:hover{background:var(--color-primary-hover)}.btn-danger{color:var(--color-error)}.btn-row{display:flex;gap:var(--space-3);flex-wrap:wrap}
     .table-wrap{overflow:auto;border:1px solid var(--color-border);border-radius:var(--radius-lg)} table{width:100%;border-collapse:collapse;background:var(--color-surface)} th,td{padding:12px 14px;border-bottom:1px solid var(--color-divider);text-align:left;font-size:var(--text-sm);white-space:nowrap} th{background:var(--color-surface-offset);position:sticky;top:0} .muted{color:var(--color-text-muted)} .status-low{color:var(--color-warning);font-weight:700}
     .result-box{display:grid;gap:var(--space-3);padding:var(--space-4);border:1px dashed var(--color-border);border-radius:var(--radius-lg);background:var(--color-surface-2)} .result-item{display:flex;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap}.hidden{display:none!important}.notice{padding:12px 14px;border-radius:var(--radius-md);background:var(--color-surface-offset);border:1px solid var(--color-border)}
-    @media (max-width: 1080px){.app{grid-template-columns:1fr}.sidebar{border-right:none;border-bottom:1px solid var(--color-border)}.stats,.grid-2,.form-grid{grid-template-columns:1fr}}
+.sidebar-footer{
+  margin-top:auto;
+  padding-top:var(--space-4);
+  border-top:1px solid var(--color-divider);
+  font-size:var(--text-xs);
+  color:var(--color-text-muted);
+  text-align:left;
+  opacity:.85;
+}
+
+@media (max-width: 1080px){
+  .app{grid-template-columns:1fr}
+  .sidebar{border-right:none;border-bottom:1px solid var(--color-border)}
+  .stats,.grid-2,.form-grid{grid-template-columns:1fr}
+}
   </style>
 </head>
 <body>
@@ -28,13 +43,13 @@
         <div class="brand-mark">
           <div class="logo" aria-hidden="true">PB</div>
           <div>
-            <h1>Marissa Store</h1>
+            <h1>Toko Ormas</h1>
             <p>Sistem gudang & pengambilan material</p>
           </div>
         </div>
         <button class="theme-btn" data-theme-toggle aria-label="Toggle theme">◐</button>
       </div>
-      <nav class="nav" aria-label="Menu utama">
+           <nav class="nav" aria-label="Menu utama">
         <button class="active" data-page="dashboard">Dashboard</button>
         <button data-page="workers">Data Pekerja</button>
         <button data-page="materials">Data Material</button>
@@ -43,7 +58,12 @@
         <button data-page="reports">Laporan Bulanan</button>
         <button data-page="tools">Sync / Tools</button>
       </nav>
+
+      <div class="sidebar-footer">
+        Powered by Pausbiru7
+      </div>
     </aside>
+    
 
     <main class="main">
       <header class="topbar">
@@ -210,40 +230,11 @@
         </section>
       </section>
     </main>
-        <section class="card" style="margin-top:1rem;">
-      <h2>Riwayat transaksi terbaru</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Tanggal</th>
-              <th>No Transaksi</th>
-              <th>Pemohon</th>
-              <th>Departemen</th>
-              <th>Kode</th>
-              <th>Material</th>
-              <th>Qty</th>
-              <th>Satuan</th>
-              <th>Keperluan</th>
-            </tr>
-          </thead>
-          <tbody id="historyBody">
-            <tr><td colspan="10" class="muted">Belum ada data.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <footer class="app-footer">
-      Powered by Pausbiru7
-    </footer>
-  </div>
-  </div>
+      
+</div>
 
 <script>
-<script>
-const API_BASE_URL = 'PASTE_URL_WEBAPP_EXEC_DI_SINI';
+const API_BASE_URL = 'https://script.google.com/macros/s/AKfycby0KLRSBE-ntAwvp4vMzvclHjKIevMmcLWl81uRv3nPvjPBzBd7SoiUXIEwbMy10svbYg/exec';
 
 let appState = {
   workers: [],
@@ -256,7 +247,7 @@ let appState = {
   selectedMaterial: null,
   selectedHistory: null
 };
-
+  
 (function(){
   const root = document.documentElement;
   let d = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
@@ -311,9 +302,15 @@ async function apiPost(action, payload = {}) {
 }
 
 function showPage(page) {
-  document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  document.querySelectorAll('.nav button').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === page);
+  });
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
+
+  const targetPage = document.getElementById('page-' + page);
+  if (!targetPage) return;
+  targetPage.classList.add('active');
 
   const titles = {
     dashboard:['Dashboard','Pantau stok, transaksi, dan material dengan cepat.'],
@@ -325,8 +322,10 @@ function showPage(page) {
     tools:['Sync / Tools','Sinkronisasi data dan PDF.']
   };
 
-  document.getElementById('pageTitle').textContent = titles[page][0];
-  document.getElementById('pageDesc').textContent = titles[page][1];
+  if (titles[page]) {
+    document.getElementById('pageTitle').textContent = titles[page][0];
+    document.getElementById('pageDesc').textContent = titles[page][1];
+  }
 }
 
 async function syncAll() {
@@ -404,7 +403,7 @@ function renderWorkers(list) {
       <td>${r.barcode_value}</td>
       <td>
         <div class="btn-row">
-          <button class="btn" onclick='editWorker(${JSON.stringify(JSON.stringify(r))})'>Edit</button>
+          <button class="btn" onclick="editWorker('${r.id_pekerja}')">Edit</button>
           <button class="btn" onclick="printWorkerBarcode('${r.id_pekerja}')">Print PDF</button>
           <button class="btn btn-danger" onclick="deleteWorkerRow('${r.id_pekerja}')">Hapus</button>
         </div>
@@ -413,13 +412,16 @@ function renderWorkers(list) {
   `).join('') || '<tr><td colspan="6" class="muted">Belum ada data pekerja.</td></tr>';
 }
 
-function editWorker(raw) {
-  const r = JSON.parse(raw);
+function editWorker(id) {
+  const r = (appState.workers || []).find(x => x.id_pekerja === id);
+  if (!r) return;
+
   setVal('worker_id_pekerja', r.id_pekerja);
   setVal('worker_nama_pekerja', r.nama_pekerja);
   setVal('worker_no_id', r.no_id);
   setVal('worker_posisi', r.posisi);
   showPage('workers');
+
   document.getElementById('workerActionBox').innerHTML = `
     <div class="result-item"><strong>${r.nama_pekerja}</strong><span>${r.id_pekerja}</span></div>
     <div class="result-item"><span>${r.no_id}</span><span>${r.posisi}</span></div>
@@ -489,7 +491,7 @@ function renderMaterials(list) {
       <td>${r.minimum_stok}</td>
       <td>
         <div class="btn-row">
-          <button class="btn" onclick='editMaterial(${JSON.stringify(JSON.stringify(r))})'>Edit</button>
+          <button class="btn" onclick="editMaterial('${r.id_material}')">Edit</button>
           <button class="btn" onclick="printMaterialBarcode('${r.id_material}')">Print PDF</button>
           <button class="btn btn-danger" onclick="deleteMaterialRow('${r.id_material}')">Hapus</button>
         </div>
@@ -498,8 +500,10 @@ function renderMaterials(list) {
   `).join('') || '<tr><td colspan="8" class="muted">Belum ada data material.</td></tr>';
 }
 
-function editMaterial(raw) {
-  const r = JSON.parse(raw);
+function editMaterial(id) {
+  const r = (appState.materials || []).find(x => x.id_material === id);
+  if (!r) return;
+
   setVal('material_id_material', r.id_material);
   setVal('material_nama_material', r.nama_material);
   setVal('material_satuan', r.satuan);
@@ -508,6 +512,7 @@ function editMaterial(raw) {
   setVal('material_rak', r.rak);
   setVal('material_minimum_stok', r.minimum_stok);
   showPage('materials');
+
   document.getElementById('materialActionBox').innerHTML = `
     <div class="result-item"><strong>${r.nama_material}</strong><span>${r.id_material}</span></div>
     <div class="result-item"><span>${r.satuan}</span><span>${r.kategori}</span></div>
@@ -679,15 +684,14 @@ function renderHistory(list) {
       <td>${r.tujuan_penggunaan}</td>
       <td>
         <div class="btn-row">
-          <button class="btn" onclick="event.stopPropagation();printTransactionPdf('${r.no_transaksi}')">Print PDF</button>
-          <button class="btn" onclick="event.stopPropagation();shareTransactionWhatsapp('${r.no_transaksi}')">Share WA</button>
-          <button class="btn" onclick="event.stopPropagation();shareTransactionEmail('${r.no_transaksi}')">Share Email</button>
+          <button type="button" class="btn" onclick="event.stopPropagation();printTransactionPdf('${r.no_transaksi}')">Print PDF</button>
+          <button type="button" class="btn" onclick="event.stopPropagation();shareTransactionWhatsapp('${r.no_transaksi}')">Share WA</button>
+          <button type="button" class="btn" onclick="event.stopPropagation();shareTransactionEmail('${r.no_transaksi}')">Share Email</button>
         </div>
       </td>
     </tr>
   `).join('') || '<tr><td colspan="7" class="muted">Belum ada history transaksi.</td></tr>';
 }
-
 function selectHistory(no) {
   appState.selectedHistory = (appState.transactions || []).find(r => r.no_transaksi === no) || null;
   showNotice('History terpilih: ' + no);

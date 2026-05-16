@@ -247,6 +247,62 @@
 <script>
 const API_BASE_URL = 'https://script.google.com/macros/s/AKfycby0KLRSBE-ntAwvp4vMzvclHjKIevMmcLWl81uRv3nPvjPBzBd7SoiUXIEwbMy10svbYg/exec';
 
+async function downloadBarcode(type) {
+  try {
+    let payload = { action: 'barcode_pdf', type };
+
+    if (type === 'pekerja') {
+      const id = document.getElementById('pekerja-id')?.value?.trim();
+      const nama = document.getElementById('pekerja-nama')?.value?.trim();
+      const dept = document.getElementById('pekerja-dept')?.value?.trim();
+
+      if (!id || !nama) {
+        alert('ID dan nama pekerja wajib diisi.');
+        return;
+      }
+
+      payload.id = id;
+      payload.nama = nama;
+      payload.departemen = dept || '-';
+    }
+
+    if (type === 'material') {
+      const id = document.getElementById('material-id')?.value?.trim();
+      const nama = document.getElementById('material-nama')?.value?.trim();
+      const stok = document.getElementById('material-stock')?.value?.trim();
+
+      if (!id || !nama) {
+        alert('ID dan nama material wajib diisi.');
+        return;
+      }
+
+      payload.id = id;
+      payload.nama = nama;
+      payload.stok = stok || '0';
+    }
+
+    const res = await fetch(API_BASE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert(data.message || 'Gagal membuat PDF barcode.');
+      return;
+    }
+
+    if (data.fileUrl) {
+      window.open(data.fileUrl, '_blank');
+    } else {
+      alert('PDF berhasil dibuat, tapi URL file tidak ditemukan.');
+    }
+  } catch (err) {
+    alert('Terjadi error saat membuat PDF barcode: ' + err.message);
+  }
+}
 let appState = {
   workers: [],
   materials: [],

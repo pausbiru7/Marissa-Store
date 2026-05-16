@@ -3,299 +3,265 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>inventory-storeman</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <title>Marissa Store</title>
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
   <style>
-    :root, [data-theme="light"] {
-      --font-body: 'Satoshi', Inter, sans-serif;
-      --font-display: 'Satoshi', Inter, sans-serif;
-      --text-xs: clamp(.75rem,.7rem + .25vw,.875rem);
-      --text-sm: clamp(.875rem,.8rem + .35vw,1rem);
-      --text-base: clamp(1rem,.95rem + .25vw,1.125rem);
-      --text-lg: clamp(1.125rem,1rem + .75vw,1.5rem);
-      --text-xl: clamp(1.5rem,1.2rem + 1.25vw,2.25rem);
-      --space-2: .5rem; --space-3: .75rem; --space-4: 1rem; --space-6: 1.5rem; --space-8: 2rem; --space-12: 3rem;
-      --color-bg:#f7f6f2; --color-surface:#f9f8f5; --color-surface-2:#fbfbf9; --color-border:#d4d1ca; --color-text:#28251d;
-      --color-text-muted:#7a7974; --color-primary:#01696f; --color-primary-hover:#0c4e54; --color-primary-highlight:#cedcd8;
-      --color-success:#437a22; --color-error:#a12c7b; --radius-md:.5rem; --radius-lg:.75rem; --radius-full:9999px;
-      --shadow-sm:0 1px 2px rgba(0,0,0,.06); --shadow-md:0 4px 12px rgba(0,0,0,.08);
-    }
-    [data-theme="dark"] {
-      --color-bg:#171614; --color-surface:#1c1b19; --color-surface-2:#201f1d; --color-border:#393836; --color-text:#cdccca;
-      --color-text-muted:#797876; --color-primary:#4f98a3; --color-primary-hover:#227f8b; --color-primary-highlight:#313b3b;
-      --color-success:#6daa45; --color-error:#d163a7;
-    }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:var(--font-body);font-size:var(--text-base);background:var(--color-bg);color:var(--color-text);line-height:1.5}
-    button,input,select{font:inherit}
-    .app{max-width:1200px;margin:0 auto;padding:var(--space-6)}
-    .topbar{display:flex;justify-content:space-between;align-items:center;gap:var(--space-4);margin-bottom:var(--space-6)}
-    .brand{display:flex;align-items:center;gap:var(--space-3)}
-    .logo{width:42px;height:42px;border-radius:12px;background:var(--color-primary);color:#fff;display:grid;place-items:center}
-    .logo svg{width:24px;height:24px}
-    h1{font-size:var(--text-xl);font-family:var(--font-display)}
-    .muted{color:var(--color-text-muted)}
-    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--space-4)}
-    .card{grid-column:span 12;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:var(--space-4)}
-    .card h2{font-size:var(--text-lg);margin-bottom:var(--space-4)}
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4)}
-    .stat{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-4)}
-    .stat strong{display:block;font-size:1.6rem;margin-top:.25rem}
-    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-4)}
-    .field{display:flex;flex-direction:column;gap:.4rem}
-    .field.full{grid-column:1/-1}
-    input,select{width:100%;padding:.85rem 1rem;border-radius:var(--radius-md);border:1px solid var(--color-border);background:var(--color-surface-2);color:var(--color-text)}
-    .actions{display:flex;flex-wrap:wrap;gap:var(--space-3);margin-top:var(--space-4)}
-    .btn{border:none;border-radius:var(--radius-full);padding:.9rem 1.1rem;min-height:44px;cursor:pointer}
-    .btn-primary{background:var(--color-primary);color:#fff}.btn-primary:hover{background:var(--color-primary-hover)}
-    .btn-secondary{background:var(--color-primary-highlight);color:var(--color-primary)}
-    .btn-ghost{background:transparent;border:1px solid var(--color-border);color:var(--color-text)}
-    .status{margin-top:var(--space-3);font-size:var(--text-sm)}
-    .status.ok{color:var(--color-success)} .status.err{color:var(--color-error)}
-    table{width:100%;border-collapse:collapse;font-size:var(--text-sm)}
-    th,td{padding:.8rem;text-align:left;border-bottom:1px solid var(--color-border)}
-    .table-wrap{overflow:auto}
-    @media (min-width: 900px){.span-7{grid-column:span 7}.span-5{grid-column:span 5}}
-    @media (max-width: 760px){.stats,.form-grid{grid-template-columns:1fr}.topbar{flex-direction:column;align-items:flex-start}.app{padding:var(--space-4)}}
+    :root,[data-theme="light"]{--font-body:'Satoshi',Arial,sans-serif;--font-display:'Satoshi',Arial,sans-serif;--text-xs:clamp(.75rem,.7rem + .25vw,.875rem);--text-sm:clamp(.875rem,.8rem + .35vw,1rem);--text-base:clamp(1rem,.95rem + .25vw,1.125rem);--text-lg:clamp(1.125rem,1rem + .75vw,1.5rem);--text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);--space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;--space-12:3rem;--radius-sm:.375rem;--radius-md:.5rem;--radius-lg:.75rem;--radius-xl:1rem;--transition-interactive:180ms cubic-bezier(.16,1,.3,1);--color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;--color-surface-offset:#f3f0ec;--color-border:#d4d1ca;--color-divider:#dcd9d5;--color-text:#28251d;--color-text-muted:#6e6a63;--color-text-inverse:#f9f8f4;--color-primary:#01696f;--color-primary-hover:#0c4e54;--color-warning:#b55a19;--color-success:#437a22;--color-error:#a12c7b;--shadow-sm:0 1px 2px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.08)}
+    [data-theme="dark"]{--color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;--color-surface-offset:#1d1c1a;--color-border:#393836;--color-divider:#262523;--color-text:#cdccca;--color-text-muted:#918f8a;--color-text-inverse:#2b2a28;--color-primary:#4f98a3;--color-primary-hover:#227f8b;--color-warning:#d88947;--color-success:#6daa45;--color-error:#d163a7;--shadow-sm:0 1px 2px rgba(0,0,0,.2);--shadow-md:0 4px 12px rgba(0,0,0,.3)}
+    *,*::before,*::after{box-sizing:border-box} html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth} body{margin:0;min-height:100dvh;font-family:var(--font-body);font-size:var(--text-base);background:var(--color-bg);color:var(--color-text)} button,input,select,textarea{font:inherit} button{cursor:pointer} a{color:inherit}
+    .app{display:grid;grid-template-columns:280px 1fr;min-height:100dvh}.sidebar{background:var(--color-surface);border-right:1px solid var(--color-border);padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)}.brand{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3)}.brand-mark{display:flex;align-items:center;gap:var(--space-3)}.logo{width:36px;height:36px;border-radius:10px;background:var(--color-primary);color:var(--color-text-inverse);display:grid;place-items:center;box-shadow:var(--shadow-sm)}.brand h1{margin:0;font-size:var(--text-lg)}.brand p{margin:0;color:var(--color-text-muted);font-size:var(--text-sm)}.theme-btn,.icon-btn{min-width:44px;min-height:44px;border:1px solid var(--color-border);background:var(--color-surface-2);border-radius:var(--radius-md)}
+    .nav{display:grid;gap:var(--space-2)} .nav button{display:flex;align-items:center;gap:var(--space-3);border:1px solid transparent;background:transparent;padding:14px 16px;border-radius:var(--radius-md);text-align:left;color:var(--color-text)} .nav button.active{background:var(--color-surface-offset);border-color:var(--color-border);color:var(--color-primary);font-weight:700}
+    .main{display:grid;grid-template-rows:auto 1fr;min-width:0}.topbar{display:flex;justify-content:space-between;gap:var(--space-4);padding:var(--space-5) var(--space-6);border-bottom:1px solid var(--color-border);background:color-mix(in srgb,var(--color-surface) 88%, transparent);position:sticky;top:0;backdrop-filter:blur(8px);z-index:5}.topbar h2{margin:0;font-size:var(--text-xl)}.topbar p{margin:4px 0 0;color:var(--color-text-muted);font-size:var(--text-sm)}.actions{display:flex;gap:var(--space-3);flex-wrap:wrap;align-items:center}
+    .content{padding:var(--space-6);display:grid;gap:var(--space-6)}.page{display:none;gap:var(--space-6)}.page.active{display:grid}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-4)}.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-5);box-shadow:var(--shadow-sm)}.stat-label{font-size:var(--text-sm);color:var(--color-text-muted)}.stat-value{font-size:var(--text-xl);font-weight:700;margin-top:var(--space-2)}
+    .grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:var(--space-4)}.panel-title{display:flex;justify-content:space-between;align-items:center;gap:var(--space-4);margin-bottom:var(--space-4)}.panel-title h3{margin:0;font-size:var(--text-lg)} .panel-title p{margin:0;color:var(--color-text-muted);font-size:var(--text-sm)}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4)}.field{display:grid;gap:var(--space-2)}.field.full{grid-column:1 / -1}.field label{font-size:var(--text-sm);font-weight:700}.field:nth-child(4n+1) .input,.field:nth-child(4n+1) select,.field:nth-child(4n+1) textarea{background:color-mix(in srgb,var(--color-primary) 8%, var(--color-surface-2));}.field:nth-child(4n+2) .input,.field:nth-child(4n+2) select,.field:nth-child(4n+2) textarea{background:color-mix(in srgb,var(--color-success) 10%, var(--color-surface-2));}.field:nth-child(4n+3) .input,.field:nth-child(4n+3) select,.field:nth-child(4n+3) textarea{background:color-mix(in srgb,var(--color-warning) 10%, var(--color-surface-2));}.field:nth-child(4n+4) .input,.field:nth-child(4n+4) select,.field:nth-child(4n+4) textarea{background:color-mix(in srgb,var(--color-error) 8%, var(--color-surface-2));}.input,select,textarea{width:100%;padding:12px 14px;border-radius:var(--radius-md);border:1px solid var(--color-border);color:var(--color-text)} textarea{min-height:100px;resize:vertical}
+    .btn{min-height:44px;padding:0 16px;border-radius:var(--radius-md);border:1px solid var(--color-border);background:var(--color-surface-2);color:var(--color-text);font-weight:700}.btn-primary{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-text-inverse)}.btn-primary:hover{background:var(--color-primary-hover)}.btn-danger{color:var(--color-error)}.btn-row{display:flex;gap:var(--space-3);flex-wrap:wrap}
+    .table-wrap{overflow:auto;border:1px solid var(--color-border);border-radius:var(--radius-lg)} table{width:100%;border-collapse:collapse;background:var(--color-surface)} th,td{padding:12px 14px;border-bottom:1px solid var(--color-divider);text-align:left;font-size:var(--text-sm);white-space:nowrap} th{background:var(--color-surface-offset);position:sticky;top:0} .muted{color:var(--color-text-muted)} .status-low{color:var(--color-warning);font-weight:700}
+    .result-box{display:grid;gap:var(--space-3);padding:var(--space-4);border:1px dashed var(--color-border);border-radius:var(--radius-lg);background:var(--color-surface-2)} .result-item{display:flex;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap}.hidden{display:none!important}.notice{padding:12px 14px;border-radius:var(--radius-md);background:var(--color-surface-offset);border:1px solid var(--color-border)}
+    @media (max-width: 1080px){.app{grid-template-columns:1fr}.sidebar{border-right:none;border-bottom:1px solid var(--color-border)}.stats,.grid-2,.form-grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <div class="app">
-    <header class="topbar">
+    <aside class="sidebar">
       <div class="brand">
-        <div class="logo" aria-label="Warehouse logo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <path d="M3 9.5 12 4l9 5.5v9L12 20l-9-1.5v-9Z"></path>
-            <path d="M12 4v16M3 9.5l9 5.5 9-5.5"></path>
-          </svg>
+        <div class="brand-mark">
+          <div class="logo" aria-hidden="true">PB</div>
+          <div>
+            <h1>Marissa Store</h1>
+            <p>Sistem gudang & pengambilan material</p>
+          </div>
         </div>
+        <button class="theme-btn" data-theme-toggle aria-label="Toggle theme">◐</button>
+      </div>
+      <nav class="nav" aria-label="Menu utama">
+        <button class="active" data-page="dashboard">Dashboard</button>
+        <button data-page="workers">Data Pekerja</button>
+        <button data-page="materials">Data Material</button>
+        <button data-page="transactions">Pengambilan</button>
+        <button data-page="history">History</button>
+        <button data-page="reports">Laporan Bulanan</button>
+        <button data-page="tools">Sync / Tools</button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
         <div>
-          <h1>Aplikasi Pengambilan Material</h1>
-          <p class="muted">Terkoneksi ke Google Sheets dan Web App GAS</p>
+          <h2 id="pageTitle">Dashboard</h2>
+          <p id="pageDesc">Pantau stok, transaksi, dan material dengan cepat.</p>
         </div>
-      </div>
-      <div class="actions">
-        <button class="btn btn-ghost" data-theme-toggle aria-label="Toggle theme">Mode</button>
-        <button class="btn btn-secondary" onclick="loadDashboard()">Refresh</button>
-      </div>
-    </header>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="syncAll()">Sync Google Sheet</button>
+        </div>
+      </header>
 
-    <section class="card">
-      <h2>Koneksi</h2>
-      <p><strong>Spreadsheet ID:</strong> <span id="sheetId"></span></p>
-      <p><strong>Web App URL:</strong> <a id="webAppUrl" href="#" target="_blank" rel="noopener noreferrer">Buka endpoint</a></p>
-      <div id="pingStatus" class="status">Belum cek koneksi.</div>
-      <div class="actions">
-        <button class="btn btn-primary" onclick="pingServer()">Tes koneksi</button>
-      </div>
-    </section>
+      <section class="content">
+        <div id="notice" class="notice hidden"></div>
 
-    <div class="grid" style="margin-top:1rem;">
-      <section class="card span-7">
-        <h2>Transaksi Pengambilan</h2>
-        <form id="trxForm" class="form-grid">
-          <div class="field">
-            <label for="tanggal">Tanggal</label>
-            <input type="date" id="tanggal" required>
+        <section class="page active" id="page-dashboard">
+          <div class="stats">
+            <article class="card"><div class="stat-label">Total Material</div><div class="stat-value" id="stat-material">0</div></article>
+            <article class="card"><div class="stat-label">Total Pekerja</div><div class="stat-value" id="stat-workers">0</div></article>
+            <article class="card"><div class="stat-label">Transaksi Hari Ini</div><div class="stat-value" id="stat-transactions">0</div></article>
+            <article class="card"><div class="stat-label">Stok Rendah</div><div class="stat-value" id="stat-low">0</div></article>
           </div>
-          <div class="field">
-            <label for="pemohon">Pemohon</label>
-            <input type="text" id="pemohon" placeholder="Nama pemohon" required>
+          <div class="grid-2">
+            <article class="card">
+              <div class="panel-title"><div><h3>Transaksi Terbaru</h3><p>10 transaksi paling baru</p></div></div>
+              <div class="table-wrap"><table><thead><tr><th>No</th><th>Tanggal</th><th>Pekerja</th><th>Material</th><th>Qty</th></tr></thead><tbody id="latest-transactions"></tbody></table></div>
+            </article>
+            <article class="card">
+              <div class="panel-title"><div><h3>Material Stok Rendah</h3><p>Pantau item yang butuh perhatian</p></div></div>
+              <div class="table-wrap"><table><thead><tr><th>ID</th><th>Nama</th><th>Stok</th><th>Minimum</th></tr></thead><tbody id="low-stock-list"></tbody></table></div>
+            </article>
           </div>
-          <div class="field">
-            <label for="departemen">Departemen</label>
-            <input type="text" id="departemen" placeholder="Produksi / Maintenance" required>
+        </section>
+
+        <section class="page" id="page-workers">
+          <div class="grid-2">
+            <article class="card">
+              <div class="panel-title"><div><h3>Input Data Pekerja</h3><p>Generate ID dan barcode otomatis</p></div></div>
+              <form id="workerForm" class="form-grid" onsubmit="saveWorkerForm(event)">
+                <input type="hidden" id="worker_id_pekerja" />
+                <div class="field"><label>Nama Pekerja</label><input class="input" id="worker_nama_pekerja" required></div>
+                <div class="field"><label>No ID</label><input class="input" id="worker_no_id" required></div>
+                <div class="field full"><label>Posisi</label><input class="input" id="worker_posisi" required></div>
+                <div class="field full"><div class="btn-row"><button class="btn btn-primary" type="submit">Simpan</button><button class="btn" type="button" onclick="resetWorkerForm()">Reset</button></div></div>
+              </form>
+            </article>
+            <article class="card">
+              <div class="panel-title"><div><h3>Aksi Barcode</h3><p>Pilih data pekerja dari tabel untuk cetak</p></div></div>
+              <div id="workerActionBox" class="result-box muted">Belum ada data pekerja terpilih.</div>
+            </article>
           </div>
-          <div class="field">
-            <label for="kodeMaterial">Kode material</label>
-            <input type="text" id="kodeMaterial" placeholder="MTL-001" required>
+          <article class="card">
+            <div class="panel-title"><div><h3>Database Pekerja</h3><p>Data pekerja aktif</p></div></div>
+            <div class="table-wrap"><table><thead><tr><th>ID</th><th>Nama</th><th>No ID</th><th>Posisi</th><th>Barcode</th><th>Aksi</th></tr></thead><tbody id="workers-table"></tbody></table></div>
+          </article>
+        </section>
+
+        <section class="page" id="page-materials">
+          <div class="grid-2">
+            <article class="card">
+              <div class="panel-title"><div><h3>Input Data Material</h3><p>Barcode, stok awal, rak, dan minimum stok</p></div></div>
+              <form id="materialForm" class="form-grid" onsubmit="saveMaterialForm(event)">
+                <input type="hidden" id="material_id_material" />
+                <div class="field full"><label>Nama Material</label><input class="input" id="material_nama_material" required></div>
+                <div class="field"><label>Satuan</label><select id="material_satuan"><option>pcs</option><option>pair</option><option>box</option><option>lainnya</option></select></div>
+                <div class="field"><label>Kategori</label><select id="material_kategori"><option>spare part</option><option>consumable</option><option>lainnya</option></select></div>
+                <div class="field"><label>Stok Awal</label><input class="input" id="material_stok_awal" type="number" min="0" value="0"></div>
+                <div class="field"><label>Rak</label><input class="input" id="material_rak"></div>
+                <div class="field"><label>Minimum Stok</label><input class="input" id="material_minimum_stok" type="number" min="0" value="0"></div>
+                <div class="field full"><div class="btn-row"><button class="btn btn-primary" type="submit">Simpan</button><button class="btn" type="button" onclick="resetMaterialForm()">Reset</button></div></div>
+              </form>
+            </article>
+            <article class="card">
+              <div class="panel-title"><div><h3>Aksi Barcode</h3><p>Pilih data material dari tabel untuk cetak</p></div></div>
+              <div id="materialActionBox" class="result-box muted">Belum ada data material terpilih.</div>
+            </article>
           </div>
-          <div class="field full">
-            <label for="namaMaterial">Nama material</label>
-            <input type="text" id="namaMaterial" placeholder="Terisi otomatis bila ditemukan">
+          <article class="card">
+            <div class="panel-title"><div><h3>Database Material</h3><p>Data material aktif</p></div></div>
+            <div class="table-wrap"><table><thead><tr><th>ID</th><th>Nama</th><th>Satuan</th><th>Kategori</th><th>Stok</th><th>Rak</th><th>Min</th><th>Aksi</th></tr></thead><tbody id="materials-table"></tbody></table></div>
+          </article>
+        </section>
+
+        <section class="page" id="page-transactions">
+          <div class="grid-2">
+            <article class="card">
+              <div class="panel-title"><div><h3>Pengambilan Material</h3><p>Scan barcode pekerja dan material</p></div></div>
+              <form id="transactionForm" class="form-grid" onsubmit="saveTransactionForm(event)">
+                <div class="field full"><label>Barcode Pekerja</label><input class="input" id="trx_barcode_pekerja" onblur="lookupWorker()" placeholder="Scan / input barcode pekerja"></div>
+                <div class="field full"><label>Barcode Material</label><input class="input" id="trx_barcode_material" onblur="lookupMaterial()" placeholder="Scan / input barcode material"></div>
+                <div class="field"><label>Qty Kebutuhan</label><input class="input" id="trx_qty_keluar" type="number" min="1" required></div>
+                <div class="field"><label>Storeman</label><input class="input" id="trx_storeman" placeholder="Nama / email petugas"></div>
+                <div class="field full"><label>Tujuan Penggunaan</label><textarea id="trx_tujuan_penggunaan" required></textarea></div>
+                <div class="field full"><div class="btn-row"><button class="btn btn-primary" type="submit">Simpan Transaksi</button><button class="btn" type="button" onclick="resetTransactionForm()">Reset</button></div></div>
+              </form>
+            </article>
+            <article class="card">
+              <div class="panel-title"><div><h3>Rangkuman Scan</h3><p>Data pekerja dan material yang terbaca</p></div></div>
+              <div class="result-box" id="scanSummary">
+                <div class="result-item"><strong>Pekerja</strong><span class="muted" id="summaryWorker">Belum discan</span></div>
+                <div class="result-item"><strong>Material</strong><span class="muted" id="summaryMaterial">Belum discan</span></div>
+                <div class="result-item"><strong>Stok</strong><span class="muted" id="summaryStock">-</span></div>
+              </div>
+            </article>
           </div>
-          <div class="field">
-            <label for="qty">Qty ambil</label>
-            <input type="number" id="qty" min="1" step="1" required>
+          <article class="card">
+            <div class="panel-title"><div><h3>Ringkasan Transaksi Terakhir</h3><p>Print PDF atau share WhatsApp / email</p></div></div>
+            <div id="transactionResult" class="result-box muted">Belum ada transaksi baru.</div>
+            <div class="btn-row" style="margin-top:16px"><button class="btn" onclick="printLastTransactionPdf()">Print PDF</button><button class="btn" onclick="shareLastTransactionWhatsapp()">Share WA</button><button class="btn" onclick="shareLastTransactionEmail()">Share Email</button></div>
+          </article>
+        </section>
+
+        <section class="page" id="page-history">
+          <article class="card">
+            <div class="panel-title"><div><h3>Filter History</h3><p>Cari transaksi berdasarkan pekerja, material, dan tanggal</p></div></div>
+            <div class="form-grid">
+              <div class="field"><label>Nama Pekerja</label><input class="input" id="filter_pekerja"></div>
+              <div class="field"><label>Nama Material</label><input class="input" id="filter_material"></div>
+              <div class="field"><label>Dari Tanggal</label><input class="input" id="filter_date_from" type="date"></div>
+              <div class="field"><label>Sampai Tanggal</label><input class="input" id="filter_date_to" type="date"></div>
+              <div class="field full"><div class="btn-row"><button class="btn btn-primary" onclick="loadHistory()">Cari</button><button class="btn" onclick="resetHistoryFilter()">Reset</button></div></div>
+            </div>
+          </article>
+          <article class="card">
+            <div class="panel-title"><div><h3>History Transaksi</h3><p>Print PDF dan share dari setiap transaksi</p></div><div class="btn-row"><button class="btn" onclick="printSelectedHistoryPdf()">Print PDF</button><button class="btn" onclick="shareSelectedHistoryWhatsapp()">Share WA</button><button class="btn" onclick="shareSelectedHistoryEmail()">Share Email</button></div></div>
+            <div class="table-wrap"><table><thead><tr><th>No</th><th>Tanggal</th><th>Pekerja</th><th>Material</th><th>Qty</th><th>Tujuan</th><th>Aksi</th></tr></thead><tbody id="history-table"></tbody></table></div>
+          </article>
+        </section>
+
+        <section class="page" id="page-reports">
+          <div class="grid-2">
+            <article class="card">
+              <div class="panel-title"><div><h3>Laporan Bulanan</h3><p>Pilih bulan dan tahun</p></div></div>
+              <div class="form-grid">
+                <div class="field"><label>Bulan</label><select id="report_month"><option value="1">01</option><option value="2">02</option><option value="3">03</option><option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option><option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></div>
+                <div class="field"><label>Tahun</label><input class="input" id="report_year" type="number" value="2026"></div>
+                <div class="field full"><div class="btn-row"><button class="btn btn-primary" onclick="loadMonthlyReport()">Tampilkan</button></div></div>
+              </div>
+            </article>
+            <article class="card">
+              <div class="panel-title"><div><h3>Aksi Laporan</h3><p>Print PDF dan share laporan</p></div></div>
+              <div id="reportActions" class="result-box muted">Belum ada laporan yang dimuat.</div>
+              <div class="btn-row" style="margin-top:16px"><button class="btn" onclick="printCurrentMonthlyReportPdf()">Print PDF</button><button class="btn" onclick="shareCurrentMonthlyReportWhatsapp()">Share WA</button><button class="btn" onclick="shareCurrentMonthlyReportEmail()">Share Email</button></div>
+            </article>
           </div>
-          <div class="field">
-            <label for="satuan">Satuan</label>
-            <input type="text" id="satuan" placeholder="pcs / box">
-          </div>
-          <div class="field full">
-            <label for="keperluan">Keperluan</label>
-            <input type="text" id="keperluan" placeholder="Keperluan pengambilan material" required>
-          </div>
-          <div class="actions full">
-            <button type="button" class="btn btn-secondary" onclick="cekMaterial()">Cek material</button>
-            <button type="submit" class="btn btn-primary">Simpan transaksi</button>
-            <button type="reset" class="btn btn-ghost">Reset</button>
-          </div>
-        </form>
-        <div id="formStatus" class="status"></div>
+          <article class="card">
+            <div class="panel-title"><div><h3>Ringkasan Laporan</h3><p>Rekap bulanan transaksi material</p></div></div>
+            <div id="reportSummary" class="result-box muted">Belum ada data.</div>
+          </article>
+          <article class="card">
+            <div class="panel-title"><div><h3>Detail Laporan</h3><p>Daftar transaksi pada periode terpilih</p></div></div>
+            <div class="table-wrap"><table><thead><tr><th>No</th><th>Tanggal</th><th>Pekerja</th><th>Material</th><th>Qty</th><th>Tujuan</th></tr></thead><tbody id="report-table"></tbody></table></div>
+          </article>
+        </section>
+
+        <section class="page" id="page-tools">
+          <article class="card">
+            <div class="panel-title"><div><h3>Sinkronisasi dan PDF</h3><p>Fungsi bantu untuk operasional</p></div></div>
+            <div class="btn-row">
+              <button class="btn btn-primary" onclick="syncAll()">Sync Semua Data</button>
+            </div>
+            <p class="muted">Atur folder PDF di sheet SETTING pada key <strong>folder_pdf_id</strong> agar file PDF tersimpan ke Google Drive.</p>
+          </article>
+        </section>
       </section>
-
-      <aside class="card span-5">
-        <h2>Ringkasan</h2>
-        <div class="stats">
-          <div class="stat"><span class="muted">Total material</span><strong id="totalMaterial">0</strong></div>
-          <div class="stat"><span class="muted">Stok rendah</span><strong id="stokMinimum">0</strong></div>
-          <div class="stat"><span class="muted">Transaksi hari ini</span><strong id="trxHariIni">0</strong></div>
-          <div class="stat"><span class="muted">Qty keluar</span><strong id="qtyKeluar">0</strong></div>
-        </div>
-      </aside>
-    </div>
-
-    <section class="card" style="margin-top:1rem;">
-      <h2>Riwayat transaksi terbaru</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Tanggal</th>
-              <th>No Transaksi</th>
-              <th>Pemohon</th>
-              <th>Departemen</th>
-              <th>Kode</th>
-              <th>Material</th>
-              <th>Qty</th>
-              <th>Satuan</th>
-              <th>Keperluan</th>
-            </tr>
-          </thead>
-          <tbody id="historyBody">
-            <tr><td colspan="10" class="muted">Belum ada data.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+    </main>
   </div>
 
-  <script>
-    const CONFIG = {
-      spreadsheetId: '1WoF-Z8n2IPyI5aaT9TGTq4Hrqvk-4yLlvExw8onV9sE',
-      webAppUrl: 'https://script.google.com/macros/s/AKfycby0KLRSBE-ntAwvp4vMzvclHjKIevMmcLWl81uRv3nPvjPBzBd7SoiUXIEwbMy10svbYg/exec'
-    };
-
-    const state = { theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' };
-    document.documentElement.setAttribute('data-theme', state.theme);
-    document.querySelector('[data-theme-toggle]').addEventListener('click', () => {
-      state.theme = state.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', state.theme);
-    });
-
-    document.getElementById('sheetId').textContent = CONFIG.spreadsheetId;
-    document.getElementById('webAppUrl').href = CONFIG.webAppUrl;
-    document.getElementById('webAppUrl').textContent = CONFIG.webAppUrl;
-    document.getElementById('tanggal').value = new Date().toISOString().slice(0,10);
-
-    function setStatus(id, text, ok=true){
-      const el = document.getElementById(id);
-      el.textContent = text;
-      el.className = 'status ' + (ok ? 'ok' : 'err');
-    }
-
-    async function requestApi(action, payload={}) {
-      const response = await fetch(CONFIG.webAppUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action, ...payload })
-      });
-      return response.json();
-    }
-
-    async function pingServer(){
-      try {
-        const res = await requestApi('ping');
-        setStatus('pingStatus', `Koneksi berhasil: ${res.message || 'OK'}`, true);
-      } catch (error) {
-        setStatus('pingStatus', 'Koneksi gagal. Pastikan deploy Web App mengizinkan akses.', false);
-      }
-    }
-
-    async function loadDashboard(){
-      try {
-        const res = await requestApi('dashboard');
-        if(!res.success) throw new Error(res.message || 'Gagal load dashboard');
-        const d = res.data || {};
-        document.getElementById('totalMaterial').textContent = d.totalMaterial ?? 0;
-        document.getElementById('stokMinimum').textContent = d.stokMinimum ?? 0;
-        document.getElementById('trxHariIni').textContent = d.transaksiHariIni ?? 0;
-        document.getElementById('qtyKeluar').textContent = d.qtyKeluarHariIni ?? 0;
-        renderHistory(d.riwayat || []);
-      } catch (error) {
-        renderHistory([]);
-      }
-    }
-
-    function renderHistory(rows){
-      const body = document.getElementById('historyBody');
-      if(!rows.length){
-        body.innerHTML = '<tr><td colspan="10" class="muted">Belum ada data.</td></tr>';
-        return;
-      }
-      body.innerHTML = rows.map((row, i) => `
-        <tr>
-          <td>${i + 1}</td>
-          <td>${row.tanggal || ''}</td>
-          <td>${row.noTransaksi || ''}</td>
-          <td>${row.pemohon || ''}</td>
-          <td>${row.departemen || ''}</td>
-          <td>${row.kodeMaterial || ''}</td>
-          <td>${row.namaMaterial || ''}</td>
-          <td>${row.qty || ''}</td>
-          <td>${row.satuan || ''}</td>
-          <td>${row.keperluan || ''}</td>
-        </tr>`).join('');
-    }
-
-    async function cekMaterial(){
-      const kodeMaterial = document.getElementById('kodeMaterial').value.trim();
-      if(!kodeMaterial){
-        setStatus('formStatus', 'Kode material wajib diisi.', false);
-        return;
-      }
-      try {
-        const res = await requestApi('getMaterial', { kodeMaterial });
-        if(!res.success) throw new Error(res.message || 'Material tidak ditemukan');
-        const m = res.data;
-        document.getElementById('namaMaterial').value = m.namaMaterial || '';
-        document.getElementById('satuan').value = m.satuan || '';
-        setStatus('formStatus', `Material ditemukan. Stok tersedia: ${m.stok}`, true);
-      } catch (error) {
-        setStatus('formStatus', error.message || 'Material tidak ditemukan.', false);
-      }
-    }
-
-    document.getElementById('trxForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const payload = {
-        tanggal: document.getElementById('tanggal').value,
-        pemohon: document.getElementById('pemohon').value.trim(),
-        departemen: document.getElementById('departemen').value.trim(),
-        kodeMaterial: document.getElementById('kodeMaterial').value.trim(),
-        namaMaterial: document.getElementById('namaMaterial').value.trim(),
-        qty: Number(document.getElementById('qty').value || 0),
-        satuan: document.getElementById('satuan').value.trim(),
-        keperluan: document.getElementById('keperluan').value.trim()
-      };
-      try {
-        const res = await requestApi('submitTransaction', { payload });
-        if(!res.success) throw new Error(res.message || 'Gagal menyimpan transaksi');
-        setStatus('formStatus', `Transaksi tersimpan. Nomor: ${res.data.noTransaksi}`, true);
-        e.target.reset();
-        document.getElementById('tanggal').value = new Date().toISOString().slice(0,10);
-        loadDashboard();
-      } catch (error) {
-        setStatus('formStatus', error.message || 'Transaksi gagal disimpan.', false);
-      }
-    });
-
-    pingServer();
-    loadDashboard();
-  </script>
+<script>
+let appState = { workers: [], materials: [], transactions: [], dashboard: null, lastTransaction: null, lastReport: null, selectedWorker: null, selectedMaterial: null, selectedHistory: null };
+(function(){const root=document.documentElement;let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';root.setAttribute('data-theme',d);document.querySelector('[data-theme-toggle]').addEventListener('click',()=>{d=d==='dark'?'light':'dark';root.setAttribute('data-theme',d);});})();
+document.querySelectorAll('.nav button').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
+document.addEventListener('DOMContentLoaded', syncAll);
+function showNotice(msg, type='info'){const box=document.getElementById('notice');box.textContent=msg;box.classList.remove('hidden');box.style.borderColor=type==='error'?'var(--color-error)':'var(--color-border)';box.style.color=type==='error'?'var(--color-error)':'var(--color-text)';setTimeout(()=>box.classList.add('hidden'),4000)}
+function showError(err){showNotice(err && err.message ? err.message : err, 'error')}
+function runServer(fn, args, onSuccess){google.script.run.withSuccessHandler(onSuccess).withFailureHandler(showError)[fn](...(args||[]))}
+function showPage(page){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.page===page));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+page).classList.add('active');const titles={dashboard:['Dashboard','Pantau stok, transaksi, dan material dengan cepat.'],workers:['Data Pekerja','Kelola identitas pekerja dan barcode.'],materials:['Data Material','Kelola item material, stok, dan lokasi rak.'],transactions:['Pengambilan Material','Scan pekerja dan material, lalu simpan transaksi.'],history:['History Transaksi','Cari dan cetak riwayat transaksi.'],reports:['Laporan Bulanan','Lihat rekap bulanan, print PDF, dan share.'],tools:['Sync / Tools','Sinkronisasi data dan PDF.']};document.getElementById('pageTitle').textContent=titles[page][0];document.getElementById('pageDesc').textContent=titles[page][1];}
+function syncAll(){runServer('syncAllData',[],res=>{appState={...appState,...res};renderDashboard(res.dashboard);renderWorkers(res.workers);renderMaterials(res.materials);renderHistory(res.transactions);showNotice('Data berhasil disinkronkan.');});}
+function renderDashboard(data){if(!data)return;document.getElementById('stat-material').textContent=data.total_material||0;document.getElementById('stat-workers').textContent=data.total_pekerja||0;document.getElementById('stat-transactions').textContent=data.transaksi_hari_ini||0;document.getElementById('stat-low').textContent=data.stok_rendah||0;document.getElementById('latest-transactions').innerHTML=(data.transaksi_terbaru||[]).map(r=>`<tr><td>${r.no_transaksi}</td><td>${r.tanggal}</td><td>${r.nama_pekerja}</td><td>${r.nama_material}</td><td>${r.qty_keluar}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">Belum ada transaksi.</td></tr>';document.getElementById('low-stock-list').innerHTML=(data.stok_rendah_list||[]).map(r=>`<tr><td>${r.id_material}</td><td>${r.nama_material}</td><td class="status-low">${r.stok_saat_ini}</td><td>${r.minimum_stok}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Tidak ada stok rendah.</td></tr>';}
+function saveWorkerForm(e){e.preventDefault();const payload={id_pekerja:val('worker_id_pekerja'),nama_pekerja:val('worker_nama_pekerja'),no_id:val('worker_no_id'),posisi:val('worker_posisi')};runServer('saveWorker',[payload],res=>{showNotice(res.message);resetWorkerForm();syncAll();});}
+function resetWorkerForm(){['worker_id_pekerja','worker_nama_pekerja','worker_no_id','worker_posisi'].forEach(id=>document.getElementById(id).value='');}
+function renderWorkers(list){document.getElementById('workers-table').innerHTML=(list||[]).map(r=>`<tr><td>${r.id_pekerja}</td><td>${r.nama_pekerja}</td><td>${r.no_id}</td><td>${r.posisi}</td><td>${r.barcode_value}</td><td><div class="btn-row"><button class="btn" onclick='editWorker(${JSON.stringify(JSON.stringify(r))})'>Edit</button><button class="btn" onclick="printWorkerBarcode('${r.id_pekerja}')">Print PDF</button><button class="btn btn-danger" onclick="deleteWorkerRow('${r.id_pekerja}')">Hapus</button></div></td></tr>`).join('')||'<tr><td colspan="6" class="muted">Belum ada data pekerja.</td></tr>';}
+function editWorker(raw){const r=JSON.parse(raw);setVal('worker_id_pekerja',r.id_pekerja);setVal('worker_nama_pekerja',r.nama_pekerja);setVal('worker_no_id',r.no_id);setVal('worker_posisi',r.posisi);showPage('workers');document.getElementById('workerActionBox').innerHTML=`<div class="result-item"><strong>${r.nama_pekerja}</strong><span>${r.id_pekerja}</span></div><div class="result-item"><span>${r.no_id}</span><span>${r.posisi}</span></div><div class="btn-row"><button class="btn" onclick="printWorkerBarcode('${r.id_pekerja}')">Print Barcode PDF</button></div>`;}
+function deleteWorkerRow(id){if(!confirm('Nonaktifkan pekerja ini?'))return;runServer('deleteWorker',[id],res=>{showNotice(res.message);syncAll();});}
+function printWorkerBarcode(id){runServer('generateBarcodePdf',['worker',id],res=>window.open(res.url||'#','_blank'));}
+function saveMaterialForm(e){e.preventDefault();const payload={id_material:val('material_id_material'),nama_material:val('material_nama_material'),satuan:val('material_satuan'),kategori:val('material_kategori'),stok_awal:val('material_stok_awal'),rak:val('material_rak'),minimum_stok:val('material_minimum_stok')};runServer('saveMaterial',[payload],res=>{showNotice(res.message);resetMaterialForm();syncAll();});}
+function resetMaterialForm(){['material_id_material','material_nama_material','material_rak'].forEach(id=>document.getElementById(id).value='');setVal('material_stok_awal',0);setVal('material_minimum_stok',0);setVal('material_satuan','pcs');setVal('material_kategori','spare part');}
+function renderMaterials(list){document.getElementById('materials-table').innerHTML=(list||[]).map(r=>`<tr><td>${r.id_material}</td><td>${r.nama_material}</td><td>${r.satuan}</td><td>${r.kategori}</td><td>${r.stok_saat_ini}</td><td>${r.rak||'-'}</td><td>${r.minimum_stok}</td><td><div class="btn-row"><button class="btn" onclick='editMaterial(${JSON.stringify(JSON.stringify(r))})'>Edit</button><button class="btn" onclick="printMaterialBarcode('${r.id_material}')">Print PDF</button><button class="btn btn-danger" onclick="deleteMaterialRow('${r.id_material}')">Hapus</button></div></td></tr>`).join('')||'<tr><td colspan="8" class="muted">Belum ada data material.</td></tr>';}
+function editMaterial(raw){const r=JSON.parse(raw);setVal('material_id_material',r.id_material);setVal('material_nama_material',r.nama_material);setVal('material_satuan',r.satuan);setVal('material_kategori',r.kategori);setVal('material_stok_awal',r.stok_awal);setVal('material_rak',r.rak);setVal('material_minimum_stok',r.minimum_stok);showPage('materials');document.getElementById('materialActionBox').innerHTML=`<div class="result-item"><strong>${r.nama_material}</strong><span>${r.id_material}</span></div><div class="result-item"><span>${r.satuan}</span><span>${r.kategori}</span></div><div class="btn-row"><button class="btn" onclick="printMaterialBarcode('${r.id_material}')">Print Barcode PDF</button></div>`;}
+function deleteMaterialRow(id){if(!confirm('Nonaktifkan material ini?'))return;runServer('deleteMaterial',[id],res=>{showNotice(res.message);syncAll();});}
+function printMaterialBarcode(id){runServer('generateBarcodePdf',['material',id],res=>window.open(res.url||'#','_blank'));}
+function lookupWorker(){const barcode=val('trx_barcode_pekerja');if(!barcode)return;runServer('getWorkerByBarcode',[barcode],res=>{appState.selectedWorker=res;document.getElementById('summaryWorker').textContent=`${res.nama_pekerja} | ${res.no_id} | ${res.posisi}`;});}
+function lookupMaterial(){const barcode=val('trx_barcode_material');if(!barcode)return;runServer('getMaterialByBarcode',[barcode],res=>{appState.selectedMaterial=res;document.getElementById('summaryMaterial').textContent=`${res.nama_material} | ${res.satuan} | Rak ${res.rak||'-'}`;document.getElementById('summaryStock').textContent=`${res.stok_saat_ini} (min ${res.minimum_stok})`;});}
+function saveTransactionForm(e){e.preventDefault();const payload={barcode_pekerja:val('trx_barcode_pekerja'),barcode_material:val('trx_barcode_material'),qty_keluar:val('trx_qty_keluar'),tujuan_penggunaan:val('trx_tujuan_penggunaan'),storeman:val('trx_storeman')};runServer('saveTransaction',[payload],res=>{appState.lastTransaction=res.data;renderTransactionResult(res.data);showNotice(res.message);resetTransactionForm();syncAll();});}
+function resetTransactionForm(){['trx_barcode_pekerja','trx_barcode_material','trx_qty_keluar','trx_tujuan_penggunaan','trx_storeman'].forEach(id=>document.getElementById(id).value='');document.getElementById('summaryWorker').textContent='Belum discan';document.getElementById('summaryMaterial').textContent='Belum discan';document.getElementById('summaryStock').textContent='-';}
+function renderTransactionResult(r){document.getElementById('transactionResult').innerHTML=`<div class="result-item"><strong>No Transaksi</strong><span>${r.no_transaksi}</span></div><div class="result-item"><strong>Pekerja</strong><span>${r.pekerja.nama_pekerja} - ${r.pekerja.no_id}</span></div><div class="result-item"><strong>Material</strong><span>${r.material.nama_material}</span></div><div class="result-item"><strong>Qty</strong><span>${r.qty_keluar} ${r.material.satuan}</span></div><div class="result-item"><strong>Tujuan</strong><span>${r.tujuan_penggunaan}</span></div><div class="result-item"><strong>Stok</strong><span>${r.stok_sebelum} → ${r.stok_sesudah}</span></div>`;}
+function printTransactionPdf(no){runServer('generateTransactionPdf',[no],res=>{if(res.url)window.open(res.url,'_blank');else showNotice('PDF dibuat, tetapi folder_pdf_id belum diisi.', 'error');});}
+function shareTransactionWhatsapp(no){const text=`Bukti transaksi ${no}`;runServer('getWhatsappShareLink',[text,''],res=>window.open(res.url,'_blank'));}
+function shareTransactionEmail(no){const to=prompt('Masukkan email tujuan');if(!to)return;runServer('shareByEmail',[{to,subject:'Bukti Transaksi '+no,text:'Berikut bukti transaksi '+no}],res=>showNotice(res.message));}
+function printLastTransactionPdf(){if(!appState.lastTransaction)return showNotice('Belum ada transaksi terakhir.', 'error');printTransactionPdf(appState.lastTransaction.no_transaksi);}
+function shareLastTransactionWhatsapp(){if(!appState.lastTransaction)return showNotice('Belum ada transaksi terakhir.', 'error');shareTransactionWhatsapp(appState.lastTransaction.no_transaksi);}
+function shareLastTransactionEmail(){if(!appState.lastTransaction)return showNotice('Belum ada transaksi terakhir.', 'error');shareTransactionEmail(appState.lastTransaction.no_transaksi);}
+function loadHistory(){const filters={keyword_pekerja:val('filter_pekerja'),keyword_material:val('filter_material'),date_from:val('filter_date_from'),date_to:val('filter_date_to')};runServer('getTransactionHistory',[filters],renderHistory);}
+function renderHistory(list){appState.transactions=list||[];document.getElementById('history-table').innerHTML=(list||[]).map(r=>`<tr onclick="selectHistory('${r.no_transaksi}')" style="cursor:pointer"><td>${r.no_transaksi}</td><td>${r.tanggal}</td><td>${r.nama_pekerja}</td><td>${r.nama_material}</td><td>${r.qty_keluar}</td><td>${r.tujuan_penggunaan}</td><td><div class="btn-row"><button class="btn" onclick="event.stopPropagation();printTransactionPdf('${r.no_transaksi}')">Print PDF</button><button class="btn" onclick="event.stopPropagation();shareTransactionWhatsapp('${r.no_transaksi}')">Share WA</button><button class="btn" onclick="event.stopPropagation();shareTransactionEmail('${r.no_transaksi}')">Share Email</button></div></td></tr>`).join('')||'<tr><td colspan="7" class="muted">Belum ada history transaksi.</td></tr>';}
+function selectHistory(no){appState.selectedHistory=(appState.transactions||[]).find(r=>r.no_transaksi===no)||null;showNotice('History terpilih: '+no);}
+function printSelectedHistoryPdf(){if(!appState.selectedHistory)return showNotice('Pilih history transaksi terlebih dahulu.', 'error');printTransactionPdf(appState.selectedHistory.no_transaksi);}
+function shareSelectedHistoryWhatsapp(){if(!appState.selectedHistory)return showNotice('Pilih history transaksi terlebih dahulu.', 'error');shareTransactionWhatsapp(appState.selectedHistory.no_transaksi);}
+function shareSelectedHistoryEmail(){if(!appState.selectedHistory)return showNotice('Pilih history transaksi terlebih dahulu.', 'error');shareTransactionEmail(appState.selectedHistory.no_transaksi);}
+function resetHistoryFilter(){['filter_pekerja','filter_material','filter_date_from','filter_date_to'].forEach(id=>document.getElementById(id).value='');loadHistory();}
+function loadMonthlyReport(){const month=val('report_month');const year=val('report_year');runServer('getMonthlyReport',[month,year],res=>{appState.lastReport={month,year,data:res};document.getElementById('reportSummary').innerHTML=`<div class="result-item"><strong>Periode</strong><span>${res.periode}</span></div><div class="result-item"><strong>Total Transaksi</strong><span>${res.total_transaksi}</span></div><div class="result-item"><strong>Total Qty Keluar</strong><span>${res.total_qty_keluar}</span></div><div class="result-item"><strong>Top Material</strong><span>${(res.top_material||[]).slice(0,3).map(i=>i.nama_material+' ('+i.total_qty+')').join(', ')||'-'}</span></div>`;document.getElementById('reportActions').innerHTML=`<div class="result-item"><strong>Periode Aktif</strong><span>${res.periode}</span></div><div class="result-item"><strong>Detail</strong><span>${res.total_transaksi} transaksi</span></div>`;document.getElementById('report-table').innerHTML=(res.detail||[]).map(r=>`<tr><td>${r.no_transaksi}</td><td>${r.tanggal}</td><td>${r.nama_pekerja}</td><td>${r.nama_material}</td><td>${r.qty_keluar}</td><td>${r.tujuan_penggunaan}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">Tidak ada data untuk periode ini.</td></tr>';});}
+function printMonthlyReportPdf(month,year){runServer('generateMonthlyReportPdf',[month,year],res=>{if(res.url)window.open(res.url,'_blank');else showNotice('PDF dibuat, tetapi folder_pdf_id belum diisi.', 'error');});}
+function shareMonthlyReportWhatsapp(periode){runServer('getWhatsappShareLink',[`Laporan bulanan ${periode}`,''],res=>window.open(res.url,'_blank'));}
+function shareMonthlyReportEmail(periode){const to=prompt('Masukkan email tujuan');if(!to)return;runServer('shareByEmail',[{to,subject:'Laporan Bulanan '+periode,text:'Berikut laporan bulanan '+periode}],res=>showNotice(res.message));}
+function printCurrentMonthlyReportPdf(){if(!appState.lastReport)return showNotice('Belum ada laporan bulanan yang dimuat.', 'error');printMonthlyReportPdf(appState.lastReport.month, appState.lastReport.year);}
+function shareCurrentMonthlyReportWhatsapp(){if(!appState.lastReport)return showNotice('Belum ada laporan bulanan yang dimuat.', 'error');shareMonthlyReportWhatsapp(appState.lastReport.data.periode);}
+function shareCurrentMonthlyReportEmail(){if(!appState.lastReport)return showNotice('Belum ada laporan bulanan yang dimuat.', 'error');shareMonthlyReportEmail(appState.lastReport.data.periode);}
+function val(id){return document.getElementById(id).value.trim();}
+function setVal(id,v){document.getElementById(id).value=v ?? '';}
+</script>
 </body>
 </html>

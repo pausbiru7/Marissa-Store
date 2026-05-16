@@ -242,55 +242,568 @@
   </div>
 
 <script>
-let appState = { workers: [], materials: [], transactions: [], dashboard: null, lastTransaction: null, lastReport: null, selectedWorker: null, selectedMaterial: null, selectedHistory: null };
-(function(){const root=document.documentElement;let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';root.setAttribute('data-theme',d);document.querySelector('[data-theme-toggle]').addEventListener('click',()=>{d=d==='dark'?'light':'dark';root.setAttribute('data-theme',d);});})();
-document.querySelectorAll('.nav button').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page)));
+<script>
+const API_BASE_URL = 'PASTE_URL_WEBAPP_EXEC_DI_SINI';
+
+let appState = {
+  workers: [],
+  materials: [],
+  transactions: [],
+  dashboard: null,
+  lastTransaction: null,
+  lastReport: null,
+  selectedWorker: null,
+  selectedMaterial: null,
+  selectedHistory: null
+};
+
+(function(){
+  const root = document.documentElement;
+  let d = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+  root.setAttribute('data-theme', d);
+  const toggle = document.querySelector('[data-theme-toggle]');
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      d = d === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', d);
+    });
+  }
+})();
+
+document.querySelectorAll('.nav button').forEach(btn => btn.addEventListener('click', () => showPage(btn.dataset.page)));
 document.addEventListener('DOMContentLoaded', syncAll);
-function showNotice(msg, type='info'){const box=document.getElementById('notice');box.textContent=msg;box.classList.remove('hidden');box.style.borderColor=type==='error'?'var(--color-error)':'var(--color-border)';box.style.color=type==='error'?'var(--color-error)':'var(--color-text)';setTimeout(()=>box.classList.add('hidden'),4000)}
-function showError(err){showNotice(err && err.message ? err.message : err, 'error')}
-function runServer(fn, args, onSuccess){google.script.run.withSuccessHandler(onSuccess).withFailureHandler(showError)[fn](...(args||[]))}
-function showPage(page){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.page===page));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+page).classList.add('active');const titles={dashboard:['Dashboard','Pantau stok, transaksi, dan material dengan cepat.'],workers:['Data Pekerja','Kelola identitas pekerja dan barcode.'],materials:['Data Material','Kelola item material, stok, dan lokasi rak.'],transactions:['Pengambilan Material','Scan pekerja dan material, lalu simpan transaksi.'],history:['History Transaksi','Cari dan cetak riwayat transaksi.'],reports:['Laporan Bulanan','Lihat rekap bulanan, print PDF, dan share.'],tools:['Sync / Tools','Sinkronisasi data dan PDF.']};document.getElementById('pageTitle').textContent=titles[page][0];document.getElementById('pageDesc').textContent=titles[page][1];}
-function syncAll(){runServer('syncAllData',[],res=>{appState={...appState,...res};renderDashboard(res.dashboard);renderWorkers(res.workers);renderMaterials(res.materials);renderHistory(res.transactions);showNotice('Data berhasil disinkronkan.');});}
-function renderDashboard(data){if(!data)return;document.getElementById('stat-material').textContent=data.total_material||0;document.getElementById('stat-workers').textContent=data.total_pekerja||0;document.getElementById('stat-transactions').textContent=data.transaksi_hari_ini||0;document.getElementById('stat-low').textContent=data.stok_rendah||0;document.getElementById('latest-transactions').innerHTML=(data.transaksi_terbaru||[]).map(r=>`<tr><td>${r.no_transaksi}</td><td>${r.tanggal}</td><td>${r.nama_pekerja}</td><td>${r.nama_material}</td><td>${r.qty_keluar}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">Belum ada transaksi.</td></tr>';document.getElementById('low-stock-list').innerHTML=(data.stok_rendah_list||[]).map(r=>`<tr><td>${r.id_material}</td><td>${r.nama_material}</td><td class="status-low">${r.stok_saat_ini}</td><td>${r.minimum_stok}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">Tidak ada stok rendah.</td></tr>';}
-function saveWorkerForm(e){e.preventDefault();const payload={id_pekerja:val('worker_id_pekerja'),nama_pekerja:val('worker_nama_pekerja'),no_id:val('worker_no_id'),posisi:val('worker_posisi')};runServer('saveWorker',[payload],res=>{showNotice(res.message);resetWorkerForm();syncAll();});}
-function resetWorkerForm(){['worker_id_pekerja','worker_nama_pekerja','worker_no_id','worker_posisi'].forEach(id=>document.getElementById(id).value='');}
-function renderWorkers(list){document.getElementById('workers-table').innerHTML=(list||[]).map(r=>`<tr><td>${r.id_pekerja}</td><td>${r.nama_pekerja}</td><td>${r.no_id}</td><td>${r.posisi}</td><td>${r.barcode_value}</td><td><div class="btn-row"><button class="btn" onclick='editWorker(${JSON.stringify(JSON.stringify(r))})'>Edit</button><button class="btn" onclick="printWorkerBarcode('${r.id_pekerja}')">Print PDF</button><button class="btn btn-danger" onclick="deleteWorkerRow('${r.id_pekerja}')">Hapus</button></div></td></tr>`).join('')||'<tr><td colspan="6" class="muted">Belum ada data pekerja.</td></tr>';}
-function editWorker(raw){const r=JSON.parse(raw);setVal('worker_id_pekerja',r.id_pekerja);setVal('worker_nama_pekerja',r.nama_pekerja);setVal('worker_no_id',r.no_id);setVal('worker_posisi',r.posisi);showPage('workers');document.getElementById('workerActionBox').innerHTML=`<div class="result-item"><strong>${r.nama_pekerja}</strong><span>${r.id_pekerja}</span></div><div class="result-item"><span>${r.no_id}</span><span>${r.posisi}</span></div><div class="btn-row"><button class="btn" onclick="printWorkerBarcode('${r.id_pekerja}')">Print Barcode PDF</button></div>`;}
-function deleteWorkerRow(id){if(!confirm('Nonaktifkan pekerja ini?'))return;runServer('deleteWorker',[id],res=>{showNotice(res.message);syncAll();});}
-function printWorkerBarcode(id){runServer('generateBarcodePdf',['worker',id],res=>window.open(res.url||'#','_blank'));}
-function saveMaterialForm(e){e.preventDefault();const payload={id_material:val('material_id_material'),nama_material:val('material_nama_material'),satuan:val('material_satuan'),kategori:val('material_kategori'),stok_awal:val('material_stok_awal'),rak:val('material_rak'),minimum_stok:val('material_minimum_stok')};runServer('saveMaterial',[payload],res=>{showNotice(res.message);resetMaterialForm();syncAll();});}
-function resetMaterialForm(){['material_id_material','material_nama_material','material_rak'].forEach(id=>document.getElementById(id).value='');setVal('material_stok_awal',0);setVal('material_minimum_stok',0);setVal('material_satuan','pcs');setVal('material_kategori','spare part');}
-function renderMaterials(list){document.getElementById('materials-table').innerHTML=(list||[]).map(r=>`<tr><td>${r.id_material}</td><td>${r.nama_material}</td><td>${r.satuan}</td><td>${r.kategori}</td><td>${r.stok_saat_ini}</td><td>${r.rak||'-'}</td><td>${r.minimum_stok}</td><td><div class="btn-row"><button class="btn" onclick='editMaterial(${JSON.stringify(JSON.stringify(r))})'>Edit</button><button class="btn" onclick="printMaterialBarcode('${r.id_material}')">Print PDF</button><button class="btn btn-danger" onclick="deleteMaterialRow('${r.id_material}')">Hapus</button></div></td></tr>`).join('')||'<tr><td colspan="8" class="muted">Belum ada data material.</td></tr>';}
-function editMaterial(raw){const r=JSON.parse(raw);setVal('material_id_material',r.id_material);setVal('material_nama_material',r.nama_material);setVal('material_satuan',r.satuan);setVal('material_kategori',r.kategori);setVal('material_stok_awal',r.stok_awal);setVal('material_rak',r.rak);setVal('material_minimum_stok',r.minimum_stok);showPage('materials');document.getElementById('materialActionBox').innerHTML=`<div class="result-item"><strong>${r.nama_material}</strong><span>${r.id_material}</span></div><div class="result-item"><span>${r.satuan}</span><span>${r.kategori}</span></div><div class="btn-row"><button class="btn" onclick="printMaterialBarcode('${r.id_material}')">Print Barcode PDF</button></div>`;}
-function deleteMaterialRow(id){if(!confirm('Nonaktifkan material ini?'))return;runServer('deleteMaterial',[id],res=>{showNotice(res.message);syncAll();});}
-function printMaterialBarcode(id){runServer('generateBarcodePdf',['material',id],res=>window.open(res.url||'#','_blank'));}
-function lookupWorker(){const barcode=val('trx_barcode_pekerja');if(!barcode)return;runServer('getWorkerByBarcode',[barcode],res=>{appState.selectedWorker=res;document.getElementById('summaryWorker').textContent=`${res.nama_pekerja} | ${res.no_id} | ${res.posisi}`;});}
-function lookupMaterial(){const barcode=val('trx_barcode_material');if(!barcode)return;runServer('getMaterialByBarcode',[barcode],res=>{appState.selectedMaterial=res;document.getElementById('summaryMaterial').textContent=`${res.nama_material} | ${res.satuan} | Rak ${res.rak||'-'}`;document.getElementById('summaryStock').textContent=`${res.stok_saat_ini} (min ${res.minimum_stok})`;});}
-function saveTransactionForm(e){e.preventDefault();const payload={barcode_pekerja:val('trx_barcode_pekerja'),barcode_material:val('trx_barcode_material'),qty_keluar:val('trx_qty_keluar'),tujuan_penggunaan:val('trx_tujuan_penggunaan'),storeman:val('trx_storeman')};runServer('saveTransaction',[payload],res=>{appState.lastTransaction=res.data;renderTransactionResult(res.data);showNotice(res.message);resetTransactionForm();syncAll();});}
-function resetTransactionForm(){['trx_barcode_pekerja','trx_barcode_material','trx_qty_keluar','trx_tujuan_penggunaan','trx_storeman'].forEach(id=>document.getElementById(id).value='');document.getElementById('summaryWorker').textContent='Belum discan';document.getElementById('summaryMaterial').textContent='Belum discan';document.getElementById('summaryStock').textContent='-';}
-function renderTransactionResult(r){document.getElementById('transactionResult').innerHTML=`<div class="result-item"><strong>No Transaksi</strong><span>${r.no_transaksi}</span></div><div class="result-item"><strong>Pekerja</strong><span>${r.pekerja.nama_pekerja} - ${r.pekerja.no_id}</span></div><div class="result-item"><strong>Material</strong><span>${r.material.nama_material}</span></div><div class="result-item"><strong>Qty</strong><span>${r.qty_keluar} ${r.material.satuan}</span></div><div class="result-item"><strong>Tujuan</strong><span>${r.tujuan_penggunaan}</span></div><div class="result-item"><strong>Stok</strong><span>${r.stok_sebelum} → ${r.stok_sesudah}</span></div>`;}
-function printTransactionPdf(no){runServer('generateTransactionPdf',[no],res=>{if(res.url)window.open(res.url,'_blank');else showNotice('PDF dibuat, tetapi folder_pdf_id belum diisi.', 'error');});}
-function shareTransactionWhatsapp(no){const text=`Bukti transaksi ${no}`;runServer('getWhatsappShareLink',[text,''],res=>window.open(res.url,'_blank'));}
-function shareTransactionEmail(no){const to=prompt('Masukkan email tujuan');if(!to)return;runServer('shareByEmail',[{to,subject:'Bukti Transaksi '+no,text:'Berikut bukti transaksi '+no}],res=>showNotice(res.message));}
-function printLastTransactionPdf(){if(!appState.lastTransaction)return showNotice('Belum ada transaksi terakhir.', 'error');printTransactionPdf(appState.lastTransaction.no_transaksi);}
-function shareLastTransactionWhatsapp(){if(!appState.lastTransaction)return showNotice('Belum ada transaksi terakhir.', 'error');shareTransactionWhatsapp(appState.lastTransaction.no_transaksi);}
-function shareLastTransactionEmail(){if(!appState.lastTransaction)return showNotice('Belum ada transaksi terakhir.', 'error');shareTransactionEmail(appState.lastTransaction.no_transaksi);}
-function loadHistory(){const filters={keyword_pekerja:val('filter_pekerja'),keyword_material:val('filter_material'),date_from:val('filter_date_from'),date_to:val('filter_date_to')};runServer('getTransactionHistory',[filters],renderHistory);}
-function renderHistory(list){appState.transactions=list||[];document.getElementById('history-table').innerHTML=(list||[]).map(r=>`<tr onclick="selectHistory('${r.no_transaksi}')" style="cursor:pointer"><td>${r.no_transaksi}</td><td>${r.tanggal}</td><td>${r.nama_pekerja}</td><td>${r.nama_material}</td><td>${r.qty_keluar}</td><td>${r.tujuan_penggunaan}</td><td><div class="btn-row"><button class="btn" onclick="event.stopPropagation();printTransactionPdf('${r.no_transaksi}')">Print PDF</button><button class="btn" onclick="event.stopPropagation();shareTransactionWhatsapp('${r.no_transaksi}')">Share WA</button><button class="btn" onclick="event.stopPropagation();shareTransactionEmail('${r.no_transaksi}')">Share Email</button></div></td></tr>`).join('')||'<tr><td colspan="7" class="muted">Belum ada history transaksi.</td></tr>';}
-function selectHistory(no){appState.selectedHistory=(appState.transactions||[]).find(r=>r.no_transaksi===no)||null;showNotice('History terpilih: '+no);}
-function printSelectedHistoryPdf(){if(!appState.selectedHistory)return showNotice('Pilih history transaksi terlebih dahulu.', 'error');printTransactionPdf(appState.selectedHistory.no_transaksi);}
-function shareSelectedHistoryWhatsapp(){if(!appState.selectedHistory)return showNotice('Pilih history transaksi terlebih dahulu.', 'error');shareTransactionWhatsapp(appState.selectedHistory.no_transaksi);}
-function shareSelectedHistoryEmail(){if(!appState.selectedHistory)return showNotice('Pilih history transaksi terlebih dahulu.', 'error');shareTransactionEmail(appState.selectedHistory.no_transaksi);}
-function resetHistoryFilter(){['filter_pekerja','filter_material','filter_date_from','filter_date_to'].forEach(id=>document.getElementById(id).value='');loadHistory();}
-function loadMonthlyReport(){const month=val('report_month');const year=val('report_year');runServer('getMonthlyReport',[month,year],res=>{appState.lastReport={month,year,data:res};document.getElementById('reportSummary').innerHTML=`<div class="result-item"><strong>Periode</strong><span>${res.periode}</span></div><div class="result-item"><strong>Total Transaksi</strong><span>${res.total_transaksi}</span></div><div class="result-item"><strong>Total Qty Keluar</strong><span>${res.total_qty_keluar}</span></div><div class="result-item"><strong>Top Material</strong><span>${(res.top_material||[]).slice(0,3).map(i=>i.nama_material+' ('+i.total_qty+')').join(', ')||'-'}</span></div>`;document.getElementById('reportActions').innerHTML=`<div class="result-item"><strong>Periode Aktif</strong><span>${res.periode}</span></div><div class="result-item"><strong>Detail</strong><span>${res.total_transaksi} transaksi</span></div>`;document.getElementById('report-table').innerHTML=(res.detail||[]).map(r=>`<tr><td>${r.no_transaksi}</td><td>${r.tanggal}</td><td>${r.nama_pekerja}</td><td>${r.nama_material}</td><td>${r.qty_keluar}</td><td>${r.tujuan_penggunaan}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">Tidak ada data untuk periode ini.</td></tr>';});}
-function printMonthlyReportPdf(month,year){runServer('generateMonthlyReportPdf',[month,year],res=>{if(res.url)window.open(res.url,'_blank');else showNotice('PDF dibuat, tetapi folder_pdf_id belum diisi.', 'error');});}
-function shareMonthlyReportWhatsapp(periode){runServer('getWhatsappShareLink',[`Laporan bulanan ${periode}`,''],res=>window.open(res.url,'_blank'));}
-function shareMonthlyReportEmail(periode){const to=prompt('Masukkan email tujuan');if(!to)return;runServer('shareByEmail',[{to,subject:'Laporan Bulanan '+periode,text:'Berikut laporan bulanan '+periode}],res=>showNotice(res.message));}
-function printCurrentMonthlyReportPdf(){if(!appState.lastReport)return showNotice('Belum ada laporan bulanan yang dimuat.', 'error');printMonthlyReportPdf(appState.lastReport.month, appState.lastReport.year);}
-function shareCurrentMonthlyReportWhatsapp(){if(!appState.lastReport)return showNotice('Belum ada laporan bulanan yang dimuat.', 'error');shareMonthlyReportWhatsapp(appState.lastReport.data.periode);}
-function shareCurrentMonthlyReportEmail(){if(!appState.lastReport)return showNotice('Belum ada laporan bulanan yang dimuat.', 'error');shareMonthlyReportEmail(appState.lastReport.data.periode);}
-function val(id){return document.getElementById(id).value.trim();}
-function setVal(id,v){document.getElementById(id).value=v ?? '';}
+
+function showNotice(msg, type='info') {
+  const box = document.getElementById('notice');
+  box.textContent = msg;
+  box.classList.remove('hidden');
+  box.style.borderColor = type === 'error' ? 'var(--color-error)' : 'var(--color-border)';
+  box.style.color = type === 'error' ? 'var(--color-error)' : 'var(--color-text)';
+  clearTimeout(showNotice.timer);
+  showNotice.timer = setTimeout(() => box.classList.add('hidden'), 4000);
+}
+
+function showError(err) {
+  showNotice(err && err.message ? err.message : String(err), 'error');
+}
+
+async function apiGet(action, params = {}) {
+  const url = new URL(API_BASE_URL);
+  url.searchParams.set('action', action);
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v);
+  });
+  const res = await fetch(url.toString(), { method: 'GET' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || 'Request gagal');
+  return data;
+}
+
+async function apiPost(action, payload = {}) {
+  const res = await fetch(API_BASE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, payload })
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || 'Request gagal');
+  return data;
+}
+
+function showPage(page) {
+  document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+
+  const titles = {
+    dashboard:['Dashboard','Pantau stok, transaksi, dan material dengan cepat.'],
+    workers:['Data Pekerja','Kelola identitas pekerja dan barcode.'],
+    materials:['Data Material','Kelola item material, stok, dan lokasi rak.'],
+    transactions:['Pengambilan Material','Scan pekerja dan material, lalu simpan transaksi.'],
+    history:['History Transaksi','Cari dan cetak riwayat transaksi.'],
+    reports:['Laporan Bulanan','Lihat rekap bulanan, print PDF, dan share.'],
+    tools:['Sync / Tools','Sinkronisasi data dan PDF.']
+  };
+
+  document.getElementById('pageTitle').textContent = titles[page][0];
+  document.getElementById('pageDesc').textContent = titles[page][1];
+}
+
+async function syncAll() {
+  try {
+    const res = await apiGet('syncAllData');
+    appState = { ...appState, ...res };
+    renderDashboard(res.dashboard);
+    renderWorkers(res.workers);
+    renderMaterials(res.materials);
+    renderHistory(res.transactions);
+    showNotice('Data berhasil disinkronkan.');
+  } catch (err) {
+    showError(err);
+  }
+}
+
+function renderDashboard(data) {
+  if (!data) return;
+  document.getElementById('stat-material').textContent = data.total_material || 0;
+  document.getElementById('stat-workers').textContent = data.total_pekerja || 0;
+  document.getElementById('stat-transactions').textContent = data.transaksi_hari_ini || 0;
+  document.getElementById('stat-low').textContent = data.stok_rendah || 0;
+
+  document.getElementById('latest-transactions').innerHTML =
+    (data.transaksi_terbaru || []).map(r => `
+      <tr>
+        <td>${r.no_transaksi}</td>
+        <td>${String(r.tanggal || '').slice(0, 10)}</td>
+        <td>${r.nama_pekerja}</td>
+        <td>${r.nama_material}</td>
+        <td>${r.qty_keluar}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="5" class="muted">Belum ada transaksi.</td></tr>';
+
+  document.getElementById('low-stock-list').innerHTML =
+    (data.stok_rendah_list || []).map(r => `
+      <tr>
+        <td>${r.id_material}</td>
+        <td>${r.nama_material}</td>
+        <td class="status-low">${r.stok_saat_ini}</td>
+        <td>${r.minimum_stok}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" class="muted">Tidak ada stok rendah.</td></tr>';
+}
+
+async function saveWorkerForm(e) {
+  e.preventDefault();
+  try {
+    const payload = {
+      id_pekerja: val('worker_id_pekerja'),
+      nama_pekerja: val('worker_nama_pekerja'),
+      no_id: val('worker_no_id'),
+      posisi: val('worker_posisi')
+    };
+    const res = await apiPost('saveWorker', payload);
+    showNotice(res.message);
+    resetWorkerForm();
+    syncAll();
+  } catch (err) {
+    showError(err);
+  }
+}
+
+function resetWorkerForm() {
+  ['worker_id_pekerja','worker_nama_pekerja','worker_no_id','worker_posisi'].forEach(id => document.getElementById(id).value = '');
+}
+
+function renderWorkers(list) {
+  document.getElementById('workers-table').innerHTML = (list || []).map(r => `
+    <tr>
+      <td>${r.id_pekerja}</td>
+      <td>${r.nama_pekerja}</td>
+      <td>${r.no_id}</td>
+      <td>${r.posisi}</td>
+      <td>${r.barcode_value}</td>
+      <td>
+        <div class="btn-row">
+          <button class="btn" onclick='editWorker(${JSON.stringify(JSON.stringify(r))})'>Edit</button>
+          <button class="btn" onclick="printWorkerBarcode('${r.id_pekerja}')">Print PDF</button>
+          <button class="btn btn-danger" onclick="deleteWorkerRow('${r.id_pekerja}')">Hapus</button>
+        </div>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" class="muted">Belum ada data pekerja.</td></tr>';
+}
+
+function editWorker(raw) {
+  const r = JSON.parse(raw);
+  setVal('worker_id_pekerja', r.id_pekerja);
+  setVal('worker_nama_pekerja', r.nama_pekerja);
+  setVal('worker_no_id', r.no_id);
+  setVal('worker_posisi', r.posisi);
+  showPage('workers');
+  document.getElementById('workerActionBox').innerHTML = `
+    <div class="result-item"><strong>${r.nama_pekerja}</strong><span>${r.id_pekerja}</span></div>
+    <div class="result-item"><span>${r.no_id}</span><span>${r.posisi}</span></div>
+    <div class="btn-row"><button class="btn" onclick="printWorkerBarcode('${r.id_pekerja}')">Print Barcode PDF</button></div>
+  `;
+}
+
+async function deleteWorkerRow(id) {
+  if (!confirm('Nonaktifkan pekerja ini?')) return;
+  try {
+    const res = await apiPost('deleteWorker', { id });
+    showNotice(res.message);
+    syncAll();
+  } catch (err) {
+    showError(err);
+  }
+}
+
+async function printWorkerBarcode(id) {
+  try {
+    const res = await apiGet('generateBarcodePdf', { type: 'worker', id });
+    if (res.url) window.open(res.url, '_blank');
+    else showNotice(res.message || 'PDF barcode belum tersedia.', 'error');
+  } catch (err) {
+    showError(err);
+  }
+}
+
+async function saveMaterialForm(e) {
+  e.preventDefault();
+  try {
+    const payload = {
+      id_material: val('material_id_material'),
+      nama_material: val('material_nama_material'),
+      satuan: val('material_satuan'),
+      kategori: val('material_kategori'),
+      stok_awal: val('material_stok_awal'),
+      rak: val('material_rak'),
+      minimum_stok: val('material_minimum_stok')
+    };
+    const res = await apiPost('saveMaterial', payload);
+    showNotice(res.message);
+    resetMaterialForm();
+    syncAll();
+  } catch (err) {
+    showError(err);
+  }
+}
+
+function resetMaterialForm() {
+  ['material_id_material','material_nama_material','material_rak'].forEach(id => document.getElementById(id).value = '');
+  setVal('material_stok_awal', 0);
+  setVal('material_minimum_stok', 0);
+  setVal('material_satuan', 'pcs');
+  setVal('material_kategori', 'spare part');
+}
+
+function renderMaterials(list) {
+  document.getElementById('materials-table').innerHTML = (list || []).map(r => `
+    <tr>
+      <td>${r.id_material}</td>
+      <td>${r.nama_material}</td>
+      <td>${r.satuan}</td>
+      <td>${r.kategori}</td>
+      <td>${r.stok_saat_ini}</td>
+      <td>${r.rak || '-'}</td>
+      <td>${r.minimum_stok}</td>
+      <td>
+        <div class="btn-row">
+          <button class="btn" onclick='editMaterial(${JSON.stringify(JSON.stringify(r))})'>Edit</button>
+          <button class="btn" onclick="printMaterialBarcode('${r.id_material}')">Print PDF</button>
+          <button class="btn btn-danger" onclick="deleteMaterialRow('${r.id_material}')">Hapus</button>
+        </div>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="8" class="muted">Belum ada data material.</td></tr>';
+}
+
+function editMaterial(raw) {
+  const r = JSON.parse(raw);
+  setVal('material_id_material', r.id_material);
+  setVal('material_nama_material', r.nama_material);
+  setVal('material_satuan', r.satuan);
+  setVal('material_kategori', r.kategori);
+  setVal('material_stok_awal', r.stok_awal);
+  setVal('material_rak', r.rak);
+  setVal('material_minimum_stok', r.minimum_stok);
+  showPage('materials');
+  document.getElementById('materialActionBox').innerHTML = `
+    <div class="result-item"><strong>${r.nama_material}</strong><span>${r.id_material}</span></div>
+    <div class="result-item"><span>${r.satuan}</span><span>${r.kategori}</span></div>
+    <div class="btn-row"><button class="btn" onclick="printMaterialBarcode('${r.id_material}')">Print Barcode PDF</button></div>
+  `;
+}
+
+async function deleteMaterialRow(id) {
+  if (!confirm('Nonaktifkan material ini?')) return;
+  try {
+    const res = await apiPost('deleteMaterial', { id });
+    showNotice(res.message);
+    syncAll();
+  } catch (err) {
+    showError(err);
+  }
+}
+
+async function printMaterialBarcode(id) {
+  try {
+    const res = await apiGet('generateBarcodePdf', { type: 'material', id });
+    if (res.url) window.open(res.url, '_blank');
+    else showNotice(res.message || 'PDF barcode belum tersedia.', 'error');
+  } catch (err) {
+    showError(err);
+  }
+}
+
+async function lookupWorker() {
+  const barcode = val('trx_barcode_pekerja');
+  if (!barcode) return;
+  try {
+    const res = await apiGet('getWorkerByBarcode', { barcode });
+    appState.selectedWorker = res.data;
+    document.getElementById('summaryWorker').textContent =
+      `${res.data.nama_pekerja} | ${res.data.no_id} | ${res.data.posisi}`;
+  } catch (err) {
+    showError(err);
+  }
+}
+
+async function lookupMaterial() {
+  const barcode = val('trx_barcode_material');
+  if (!barcode) return;
+  try {
+    const res = await apiGet('getMaterialByBarcode', { barcode });
+    appState.selectedMaterial = res.data;
+    document.getElementById('summaryMaterial').textContent =
+      `${res.data.nama_material} | ${res.data.satuan} | Rak ${res.data.rak || '-'}`;
+    document.getElementById('summaryStock').textContent =
+      `${res.data.stok_saat_ini} (min ${res.data.minimum_stok})`;
+  } catch (err) {
+    showError(err);
+  }
+}
+
+async function saveTransactionForm(e) {
+  e.preventDefault();
+  try {
+    const payload = {
+      barcode_pekerja: val('trx_barcode_pekerja'),
+      barcode_material: val('trx_barcode_material'),
+      qty_keluar: val('trx_qty_keluar'),
+      tujuan_penggunaan: val('trx_tujuan_penggunaan'),
+      storeman: val('trx_storeman')
+    };
+    const res = await apiPost('saveTransaction', payload);
+    appState.lastTransaction = res.data;
+    renderTransactionResult(res.data);
+    showNotice(res.message);
+    resetTransactionForm();
+    syncAll();
+  } catch (err) {
+    showError(err);
+  }
+}
+
+function resetTransactionForm() {
+  ['trx_barcode_pekerja','trx_barcode_material','trx_qty_keluar','trx_tujuan_penggunaan','trx_storeman'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('summaryWorker').textContent = 'Belum discan';
+  document.getElementById('summaryMaterial').textContent = 'Belum discan';
+  document.getElementById('summaryStock').textContent = '-';
+}
+
+function renderTransactionResult(r) {
+  document.getElementById('transactionResult').innerHTML = `
+    <div class="result-item"><strong>No Transaksi</strong><span>${r.no_transaksi}</span></div>
+    <div class="result-item"><strong>Pekerja</strong><span>${r.pekerja.nama_pekerja} - ${r.pekerja.no_id}</span></div>
+    <div class="result-item"><strong>Material</strong><span>${r.material.nama_material}</span></div>
+    <div class="result-item"><strong>Qty</strong><span>${r.qty_keluar} ${r.material.satuan}</span></div>
+    <div class="result-item"><strong>Tujuan</strong><span>${r.tujuan_penggunaan}</span></div>
+    <div class="result-item"><strong>Stok</strong><span>${r.stok_sebelum} → ${r.stok_sesudah}</span></div>
+  `;
+}
+
+async function printTransactionPdf(no) {
+  try {
+    const res = await apiGet('generateTransactionPdf', { no_transaksi: no });
+    if (res.url) window.open(res.url, '_blank');
+    else showNotice(res.message || 'PDF belum tersedia.', 'error');
+  } catch (err) {
+    showError(err);
+  }
+}
+
+async function shareTransactionWhatsapp(no) {
+  try {
+    const res = await apiGet('getWhatsappShareLink', { text: `Bukti transaksi ${no}`, url: '' });
+    if (res.url) window.open(res.url, '_blank');
+  } catch (err) {
+    showError(err);
+  }
+}
+
+async function shareTransactionEmail(no) {
+  const to = prompt('Masukkan email tujuan');
+  if (!to) return;
+  try {
+    const res = await apiPost('shareByEmail', {
+      to,
+      subject: 'Bukti Transaksi ' + no,
+      text: 'Berikut bukti transaksi ' + no
+    });
+    showNotice(res.message);
+  } catch (err) {
+    showError(err);
+  }
+}
+
+function printLastTransactionPdf() {
+  if (!appState.lastTransaction) return showNotice('Belum ada transaksi terakhir.', 'error');
+  printTransactionPdf(appState.lastTransaction.no_transaksi);
+}
+
+function shareLastTransactionWhatsapp() {
+  if (!appState.lastTransaction) return showNotice('Belum ada transaksi terakhir.', 'error');
+  shareTransactionWhatsapp(appState.lastTransaction.no_transaksi);
+}
+
+function shareLastTransactionEmail() {
+  if (!appState.lastTransaction) return showNotice('Belum ada transaksi terakhir.', 'error');
+  shareTransactionEmail(appState.lastTransaction.no_transaksi);
+}
+
+async function loadHistory() {
+  try {
+    const filters = {
+      keyword_pekerja: val('filter_pekerja'),
+      keyword_material: val('filter_material'),
+      date_from: val('filter_date_from'),
+      date_to: val('filter_date_to')
+    };
+    const res = await apiGet('getTransactionHistory', filters);
+    renderHistory(res.data);
+  } catch (err) {
+    showError(err);
+  }
+}
+
+function renderHistory(list) {
+  appState.transactions = list || [];
+  document.getElementById('history-table').innerHTML = (list || []).map(r => `
+    <tr onclick="selectHistory('${r.no_transaksi}')" style="cursor:pointer">
+      <td>${r.no_transaksi}</td>
+      <td>${String(r.tanggal || '').slice(0, 10)}</td>
+      <td>${r.nama_pekerja}</td>
+      <td>${r.nama_material}</td>
+      <td>${r.qty_keluar}</td>
+      <td>${r.tujuan_penggunaan}</td>
+      <td>
+        <div class="btn-row">
+          <button class="btn" onclick="event.stopPropagation();printTransactionPdf('${r.no_transaksi}')">Print PDF</button>
+          <button class="btn" onclick="event.stopPropagation();shareTransactionWhatsapp('${r.no_transaksi}')">Share WA</button>
+          <button class="btn" onclick="event.stopPropagation();shareTransactionEmail('${r.no_transaksi}')">Share Email</button>
+        </div>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" class="muted">Belum ada history transaksi.</td></tr>';
+}
+
+function selectHistory(no) {
+  appState.selectedHistory = (appState.transactions || []).find(r => r.no_transaksi === no) || null;
+  showNotice('History terpilih: ' + no);
+}
+
+function printSelectedHistoryPdf() {
+  if (!appState.selectedHistory) return showNotice('Pilih history transaksi terlebih dahulu.', 'error');
+  printTransactionPdf(appState.selectedHistory.no_transaksi);
+}
+
+function shareSelectedHistoryWhatsapp() {
+  if (!appState.selectedHistory) return showNotice('Pilih history transaksi terlebih dahulu.', 'error');
+  shareTransactionWhatsapp(appState.selectedHistory.no_transaksi);
+}
+
+function shareSelectedHistoryEmail() {
+  if (!appState.selectedHistory) return showNotice('Pilih history transaksi terlebih dahulu.', 'error');
+  shareTransactionEmail(appState.selectedHistory.no_transaksi);
+}
+
+function resetHistoryFilter() {
+  ['filter_pekerja','filter_material','filter_date_from','filter_date_to'].forEach(id => document.getElementById(id).value = '');
+  loadHistory();
+}
+
+async function loadMonthlyReport() {
+  try {
+    const month = val('report_month');
+    const year = val('report_year');
+    const res = await apiGet('getMonthlyReport', { month, year });
+    const data = res.data;
+    appState.lastReport = { month, year, data };
+
+    document.getElementById('reportSummary').innerHTML = `
+      <div class="result-item"><strong>Periode</strong><span>${data.periode}</span></div>
+      <div class="result-item"><strong>Total Transaksi</strong><span>${data.total_transaksi}</span></div>
+      <div class="result-item"><strong>Total Qty Keluar</strong><span>${data.total_qty_keluar}</span></div>
+      <div class="result-item"><strong>Top Material</strong><span>${(data.top_material || []).slice(0,3).map(i => i.nama_material + ' (' + i.total_qty + ')').join(', ') || '-'}</span></div>
+    `;
+
+    document.getElementById('reportActions').innerHTML = `
+      <div class="result-item"><strong>Periode Aktif</strong><span>${data.periode}</span></div>
+      <div class="result-item"><strong>Detail</strong><span>${data.total_transaksi} transaksi</span></div>
+    `;
+
+    document.getElementById('report-table').innerHTML = (data.detail || []).map(r => `
+      <tr>
+        <td>${r.no_transaksi}</td>
+        <td>${String(r.tanggal || '').slice(0, 10)}</td>
+        <td>${r.nama_pekerja}</td>
+        <td>${r.nama_material}</td>
+        <td>${r.qty_keluar}</td>
+        <td>${r.tujuan_penggunaan}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" class="muted">Tidak ada data untuk periode ini.</td></tr>';
+  } catch (err) {
+    showError(err);
+  }
+}
+
+async function printMonthlyReportPdf(month, year) {
+  try {
+    const res = await apiGet('generateMonthlyReportPdf', { month, year });
+    if (res.url) window.open(res.url, '_blank');
+    else showNotice(res.message || 'PDF laporan belum tersedia.', 'error');
+  } catch (err) {
+    showError(err);
+  }
+}
+
+async function shareMonthlyReportWhatsapp(periode) {
+  try {
+    const res = await apiGet('getWhatsappShareLink', { text: `Laporan bulanan ${periode}`, url: '' });
+    if (res.url) window.open(res.url, '_blank');
+  } catch (err) {
+    showError(err);
+  }
+}
+
+async function shareMonthlyReportEmail(periode) {
+  const to = prompt('Masukkan email tujuan');
+  if (!to) return;
+  try {
+    const res = await apiPost('shareByEmail', {
+      to,
+      subject: 'Laporan Bulanan ' + periode,
+      text: 'Berikut laporan bulanan ' + periode
+    });
+    showNotice(res.message);
+  } catch (err) {
+    showError(err);
+  }
+}
+
+function printCurrentMonthlyReportPdf() {
+  if (!appState.lastReport) return showNotice('Belum ada laporan bulanan yang dimuat.', 'error');
+  printMonthlyReportPdf(appState.lastReport.month, appState.lastReport.year);
+}
+
+function shareCurrentMonthlyReportWhatsapp() {
+  if (!appState.lastReport) return showNotice('Belum ada laporan bulanan yang dimuat.', 'error');
+  shareMonthlyReportWhatsapp(appState.lastReport.data.periode);
+}
+
+function shareCurrentMonthlyReportEmail() {
+  if (!appState.lastReport) return showNotice('Belum ada laporan bulanan yang dimuat.', 'error');
+  shareMonthlyReportEmail(appState.lastReport.data.periode);
+}
+
+function val(id) {
+  return document.getElementById(id).value.trim();
+}
+
+function setVal(id, v) {
+  document.getElementById(id).value = v ?? '';
+}
 </script>
 </body>
 </html>

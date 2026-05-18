@@ -259,75 +259,204 @@
     <button onclick="showSection('laporan')" id="bnav-laporan"><span class="icon">📅</span>Laporan</button>
   </div>
 <script>
-// ===== CONFIG =====
-const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
-// ===== DATA (localStorage) =====
+// ==================== KONFIGURASI ====================
+const API_URL = 'https://script.google.com/macros/s/AKfycby0KLRSBE-ntAwvp4vMzvclHjKIevMmcLWl81uRv3nPvjPBzBd7SoiUXIEwbMy10svbYg/exec';
+const API_KEY = 'marissa-warehouse-2025-xyz';
+
+// ==================== DATA LOCAL ====================
 let workers = JSON.parse(localStorage.getItem('wh_workers') || '[]');
 let materials = JSON.parse(localStorage.getItem('wh_materials') || '[]');
 let transactions = JSON.parse(localStorage.getItem('wh_transactions') || '[]');
+
 function saveLocal() {
   localStorage.setItem('wh_workers', JSON.stringify(workers));
   localStorage.setItem('wh_materials', JSON.stringify(materials));
   localStorage.setItem('wh_transactions', JSON.stringify(transactions));
 }
-// ===== API =====
-async function apiCall(action, params = {}) {
+
+// ==================== API CALL ====================
+async function apiCall(action, data = {}) {
   try {
-    const res = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({action,...params}), redirect:'follow' });
-    return JSON.parse(await res.text());
-  } catch(e) { console.warn('API offline:', e.message); return null; }
+    const body = {
+      api_key: API_KEY,
+      action: action,
+      ...data
+    };
+
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      redirect: 'follow'
+    });
+
+    return await res.json();
+  } catch (e) {
+    console.error('API Error:', e.message);
+    return { success: false, message: 'Gagal menghubungi server' };
+  }
 }
-// ===== TOAST =====
-function showToast(msg, type='info') {
-  const t = document.createElement('div'); t.className=`toast ${type}`; t.textContent=msg;
-  document.body.appendChild(t); setTimeout(()=>t.remove(), 3000);
+
+// ==================== TOAST ====================
+function showToast(msg, type = 'info') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
 }
-// ===== NAV =====
+
+// ==================== NAVIGASI ====================
 let activeScanner = null;
+
 function showSection(name) {
-  // Stop any active scanner when leaving scan section
-  if (activeScanner) { activeScanner.stop().catch(()=>{}); activeScanner = null; }
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+  if (activeScanner) {
+    activeScanner.stop().catch(() => {});
+    activeScanner = null;
+  }
+
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
+
   document.getElementById(`section-${name}`).classList.add('active');
   document.getElementById(`bnav-${name}`).classList.add('active');
-  if (name==='workers') renderWorkers();
-  if (name==='materials') renderMaterials();
-  if (name==='history') renderHistory();
-  if (name==='scan') resetScan();
-  if (name==='dashboard') renderDashboard();
+
+  if (name === 'workers') renderWorkers();
+  if (name === 'materials') renderMaterials();
+  if (name === 'history') renderHistory();
+  if (name === 'scan') resetScan();
+  if (name === 'dashboard') renderDashboard();
 }
-// ===== WORKERS =====
-function saveWorker() {
+
+// ==================== SIMPAN PEKERJA ====================
+async function saveWorker() {
   const nik = document.getElementById('w-nik').value.trim();
   const name = document.getElementById('w-name').value.trim();
   const dept = document.getElementById('w-dept').value;
   const position = document.getElementById('w-position').value.trim();
-  if (!nik||!name) { showToast('NIK dan Nama wajib diisi!','error'); return; }
-  if (workers.find(w=>w.nik===nik)) { showToast('NIK sudah terdaftar!','error'); return; }
-  const w = { id:'W'+Date.now(), nik, name, dept, position };
-  workers.push(w); saveLocal(); apiCall('addWorker', w);
-  JsBarcode('#w-barcode', nik, { format:'CODE128', width:2, height:70, displayValue:true, text:`${nik}` });
-  document.getElementById('w-barcode-label').textContent = `${name} | ${dept}`;
-  document.getElementById('w-barcode-box').style.display = 'block';
-  showToast('Pekerja disimpan + barcode dibuat!','success');
-  ['w-nik','w-name','w-position'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('w-dept').value='';
+
+  if (!nik || !name) {
+    showToast('NIK dan Nama wajib diisi!', 'error');
+    return;
+  }
+
+  if (workers.find(w => w.nik === nik)) {
+    showToast('NIK sudah terdaftar!', 'error');
+    return;
+  }
+
+  const workerData = {
+    no_id: nik,
+    nama_pekerja: name,
+    departemen: dept,
+    posisi: position
+  };
+
+  const result = await apiCall('saveWorker', workerData);
+
+  if (!result || !result.success) {
+    showToast('Gagal menyimpan ke server: ' + (result ? result.message : ''), 'error');
+    return;
+  }
+
+  const w = {
+    id: result.data.id_pekerja || 'W' + Date.now(),
+    nik: nik,
+    name: name,
+    dept: dept,
+    position: position,
+    barcode: result.data.barcode_value || nik
+  };
+
+  workers.push(w);
+  saveLocal();
+
+  showToast('Pekerja berhasil disimpan!', 'success');
+  clearWorkerForm();
   renderWorkers();
 }
+
+// ==================== EDIT & UPDATE PEKERJA ====================
+function editWorker(id) {
+  const worker = workers.find(w => w.id === id);
+  if (!worker) return;
+
+  document.getElementById('w-nik').value = worker.nik;
+  document.getElementById('w-name').value = worker.name;
+  document.getElementById('w-dept').value = worker.dept;
+  document.getElementById('w-position').value = worker.position;
+
+  const btn = document.querySelector('#section-workers .btn-primary');
+  btn.textContent = '✏️ Update Pekerja';
+  btn.onclick = () => updateWorker(id);
+}
+
+async function updateWorker(id) {
+  const nik = document.getElementById('w-nik').value.trim();
+  const name = document.getElementById('w-name').value.trim();
+  const dept = document.getElementById('w-dept').value;
+  const position = document.getElementById('w-position').value.trim();
+
+  if (!nik || !name) {
+    showToast('NIK dan Nama wajib diisi!', 'error');
+    return;
+  }
+
+  const index = workers.findIndex(w => w.id === id);
+  if (index === -1) return;
+
+  workers[index].nik = nik;
+  workers[index].name = name;
+  workers[index].dept = dept;
+  workers[index].position = position;
+
+  saveLocal();
+  showToast('Data pekerja berhasil diupdate!', 'success');
+
+  const btn = document.querySelector('#section-workers .btn-primary');
+  btn.textContent = '💾 Simpan & Generate Barcode';
+  btn.onclick = saveWorker;
+
+  clearWorkerForm();
+  renderWorkers();
+}
+
+// ==================== CLEAR FORM ====================
+function clearWorkerForm() {
+  ['w-nik', 'w-name', 'w-position'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('w-dept').value = '';
+}
+
+// ==================== RENDER & DELETE ====================
 function renderWorkers() {
   const el = document.getElementById('workers-list');
-  if (!workers.length) { el.innerHTML='<div class="empty">Belum ada pekerja</div>'; return; }
-  el.innerHTML = workers.map(w=>`<div class="list-item">
-    <div class="info"><h4>${w.nik} - ${w.name}</h4><p>${w.dept} | ${w.position}</p></div>
-    <div style="display:flex;gap:4px;">
-      <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="editWorker('${w.id}')">✏️</button>
-      <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="deleteWorker('${w.id}')">🗑️</button>
+  if (!workers.length) {
+    el.innerHTML = '<div class="empty">Belum ada pekerja</div>';
+    return;
+  }
+
+  el.innerHTML = workers.map(w => `
+    <div class="list-item">
+      <div class="info">
+        <h4>${w.nik} - ${w.name}</h4>
+        <p>${w.dept} | ${w.position}</p>
+      </div>
+      <div style="display:flex;gap:4px;">
+        <button class="btn btn-outline" onclick="editWorker('${w.id}')" style="width:auto;padding:6px 10px;font-size:0.7rem;">✏️</button>
+        <button class="btn btn-danger" onclick="deleteWorker('${w.id}')" style="width:auto;padding:6px 10px;font-size:0.7rem;">🗑️</button>
+      </div>
     </div>
-  </div>`).join('');
+  `).join('');
 }
-function deleteWorker(id) { workers=workers.filter(w=>w.id!==id); saveLocal(); renderWorkers(); showToast('Dihapus','success'); }
-// ===== MATERIALS =====
+
+function deleteWorker(id) {
+  workers = workers.filter(w => w.id !== id);
+  saveLocal();
+  renderWorkers();
+  showToast('Pekerja dihapus', 'success');
+}
+</script>
+  // ===== MATERIALS =====
 function saveMaterial() {
   const code = document.getElementById('m-code').value.trim();
   const name = document.getElementById('m-name').value.trim();

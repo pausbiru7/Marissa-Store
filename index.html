@@ -270,12 +270,34 @@ function saveLocal() {
   localStorage.setItem('wh_materials', JSON.stringify(materials));
   localStorage.setItem('wh_transactions', JSON.stringify(transactions));
 }
-// ===== API =====
+// ==================== API CALL (Dengan API Key) ====================
+const API_URL = 'https://script.google.com/macros/s/AKfycby0KLRSBE-ntAwvp4vMzvclHjKIevMmcLWl81uRv3nPvjPBzBd7SoiUXIEwbMy10svbYg/exec';
+const API_KEY = 'marissa-warehouse-2025-xyz';
+
 async function apiCall(action, params = {}) {
   try {
-    const res = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({action,...params}), redirect:'follow' });
-    return JSON.parse(await res.text());
-  } catch(e) { console.warn('API offline:', e.message); return null; }
+    const body = {
+      api_key: API_KEY,
+      action: action,
+      ...params
+    };
+
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      redirect: 'follow'
+    });
+
+    const text = await res.text();
+    return JSON.parse(text);
+
+  } catch (e) {
+    console.error('API Error:', e.message);
+    return { success: false, message: 'Gagal menghubungi server' };
+  }
 }
 // ===== TOAST =====
 function showToast(msg, type='info') {

@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marissa Store</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f0f2f5; min-height:100vh; padding-bottom:80px; }
+    .navbar { background:linear-gradient(135deg,#1a73e8,#0d47a1); color:white; padding:14px 20px; text-align:center; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,0.2); }
+    .navbar h1 { font-size:1.2rem; }
+    .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:white; display:flex; box-shadow:0 -2px 10px rgba(0,0,0,0.1); z-index:100; }
+    .bottom-nav button { flex:1; padding:10px 4px; border:none; background:none; cursor:pointer; font-size:0.7rem; color:#666; display:flex; flex-direction:column; align-items:center; gap:3px; transition:color 0.2s; }
+    .bottom-nav button.active { color:#1a73e8; }
+    .bottom-nav button .icon { font-size:1.3rem; }
+    .container { max-width:600px; margin:0 auto; padding:16px; }
+    .card { background:white; border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+    .card h2 { font-size:1rem; color:#1a73e8; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .form-group { margin-bottom:12px; }
+    .form-group label { display:block; font-size:0.8rem; color:#555; font-weight:600; margin-bottom:4px; }
+    .form-group input, .form-group select { width:100%; padding:11px 14px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:0.95rem; }
+    .form-group input:focus, .form-group select:focus { border-color:#1a73e8; outline:none; box-shadow:0 0 0 3px rgba(26,115,232,0.1); }
+    .btn { padding:12px 20px; border:none; border-radius:10px; cursor:pointer; font-size:0.9rem; font-weight:600; width:100%; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .btn-primary { background:#1a73e8; color:white; }
+    .btn-primary:hover { background:#1557b0; }
+    .btn-success { background:#28a745; color:white; }
+    .btn-danger { background:#dc3545; color:white; }
+    .btn-outline { background:white; color:#1a73e8; border:1.5px solid #1a73e8; }
+    .btn-share { background:#25D366; color:white; }
+    .btn-row { display:flex; gap:10px; margin-top:12px; }
+    .btn-row .btn { flex:1; }
+    .barcode-box { text-align:center; padding:20px; background:#fafafa; border-radius:12px; margin-top:14px; border:2px dashed #ddd; }
+    .barcode-box svg { max-width:100%; height:auto; }
+    .barcode-box .label { margin-top:8px; font-size:0.82rem; color:#555; }
+    .scan-container { border-radius:12px; overflow:hidden; margin-bottom:14px; }
+    #scanner-worker, #scanner-material { width:100%; min-height:250px; }
+    .scan-prompt { background:linear-gradient(135deg,#e8f5e9,#f1f8e9); border:2px dashed #4caf50; border-radius:12px; padding:24px; text-align:center; }
+    .scan-prompt p { font-weight:600; color:#2e7d32; margin-bottom:8px; }
+    .scan-prompt .sub { font-size:0.82rem; color:#666; }
+    .result-card { background:#f8f9fa; border-radius:10px; padding:16px; margin-top:12px; border-left:4px solid #1a73e8; }
+    .result-card h3 { font-size:0.95rem; color:#1a73e8; margin-bottom:10px; }
+    .result-card .row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #eee; font-size:0.88rem; }
+    .result-card .row:last-child { border:none; }
+    .result-card .row .key { color:#666; }
+    .result-card .row .val { font-weight:600; color:#333; }
+    .stock-badge { padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:600; }
+    .stock-ok { background:#e8f5e9; color:#2e7d32; }
+    .stock-low { background:#fff3e0; color:#e65100; }
+    .stock-empty { background:#ffebee; color:#c62828; }
+    .steps { display:flex; justify-content:center; gap:8px; margin-bottom:16px; }
+    .steps .step { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:700; background:#e0e0e0; color:#999; }
+    .steps .step.active { background:#1a73e8; color:white; }
+    .steps .step.done { background:#28a745; color:white; }
+    .summary-box { background:linear-gradient(135deg,#e8f5e9,#f1f8e9); border-radius:12px; padding:20px; margin-top:12px; }
+    .summary-box h3 { color:#2e7d32; margin-bottom:12px; font-size:1rem; }
+    .summary-box .row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.06); font-size:0.88rem; }
+    .manual-input { margin-top:10px; }
+    .manual-input input { width:100%; padding:11px; border:1.5px solid #4caf50; border-radius:10px; font-size:1rem; text-align:center; }
+    .section { display:none; }
+    .section.active { display:block; }
+    .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%); padding:12px 24px; border-radius:10px; color:white; font-size:0.88rem; z-index:9999; animation:fadeIn 0.3s; max-width:90%; text-align:center; }
+    .toast.success { background:#28a745; }
+    .toast.error { background:#dc3545; }
+    .toast.info { background:#1a73e8; }
+    @keyframes fadeIn { from { opacity:0; transform:translateX(-50%) translateY(-10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+    .list-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; }
+    .list-item:last-child { border:none; }
+    .list-item .info h4 { font-size:0.9rem; color:#333; }
+    .list-item .info p { font-size:0.78rem; color:#666; }
+    .empty { text-align:center; padding:30px; color:#999; font-size:0.9rem; }
+    .tab-bar { display:flex; gap:6px; margin-bottom:14px; }
+    .tab-bar button { flex:1; padding:8px; border:1.5px solid #e0e0e0; border-radius:8px; background:white; font-size:0.82rem; cursor:pointer; font-weight:500; }
+    .tab-bar button.active { border-color:#1a73e8; background:#e8f0fe; color:#1a73e8; }
+  </style>
+</head>
+<body>
+  <nav class="navbar"><h1>🏪 Marissa Store</h1></nav>
+
+  <div class="container">
+    <!-- SECTION: INPUT PEKERJA -->
+    <div class="section active" id="section-workers">
+      <div class="card">
+        <h2>👷 Input Data Pekerja</h2>
+        <div class="form-group"><label>NIK</label><input type="text" id="w-nik" placeholder="Nomor Induk Karyawan"></div>
+        <div class="form-group"><label>Nama Lengkap</label><input type="text" id="w-name" placeholder="Nama pekerja"></div>
+        <div class="form-group"><label>Departemen</label><select id="w-dept"><option value="">Pilih Departemen</option><option>Electrical</option><option>Mechanical</option><option>Store</option><option>Manajemen</option><option>HSE</option><option>HRD</option></select></div>
+        <div class="form-group"><label>Jabatan</label><input type="text" id="w-position" placeholder="Operator / Teknisi / dll"></div>
+        <button class="btn btn-primary" onclick="saveWorker()">💾 Simpan & Generate Barcode</button>
+        <div class="barcode-box" id="w-barcode-box" style="display:none;">
+          <svg id="w-barcode"></svg>
+          <div class="label" id="w-barcode-label"></div>
+          <div class="btn-row">
+            <button class="btn btn-outline" onclick="downloadBarcode('w')">📥 Download</button>
+            <button class="btn btn-outline" onclick="printBarcode('w')">🖨️ Print</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>📋 Daftar Pekerja</h2>
+        <div id="workers-list"></div>
+      </div>
+    </div>
+
+    <!-- SECTION: INPUT MATERIAL -->
+    <div class="section" id="section-materials">
+      <div class="card">
+        <h2>📦 Input Data Material</h2>
+        <div class="form-group"><label>Departemen</label><select id="m-dept" onchange="generateMaterialCode()"><option value="">Pilih Departemen</option><option>Electrical</option><option>Mechanical</option><option>Store</option><option>Manajemen</option><option>HSE</option><option>HRD</option></select></div>
+        <div class="form-group"><label>Kode Material (Auto)</label><input type="text" id="m-code" placeholder="Otomatis" readonly style="background:#f0f0f0;"></div>
+        <div class="form-group"><label>Nama Material</label><input type="text" id="m-name" placeholder="Bearing SKF 6205"></div>
+        <div class="form-group"><label>Kategori</label><select id="m-category"><option value="">Pilih</option><option>Electric</option><option>Mekanikal</option><option>Consumable</option><option>Safety</option><option>Tools</option></select></div>
+        <div class="form-group"><label>Satuan</label><input type="text" id="m-unit" placeholder="pcs / kg / meter"></div>
+        <div class="form-group"><label>Stok Awal</label><input type="number" id="m-stock" min="0" placeholder="0"></div>
+        <div class="form-group"><label>Stok Minimum</label><input type="number" id="m-min" min="0" placeholder="5"></div>
+        <div class="form-group"><label>Lokasi Rak</label><input type="text" id="m-location" placeholder="A-01-02"></div>
+        <button class="btn btn-primary" onclick="saveMaterial()">💾 Simpan & Generate Barcode</button>
+        <div class="barcode-box" id="m-barcode-box" style="display:none;">
+          <svg id="m-barcode"></svg>
+          <div class="label" id="m-barcode-label"></div>
+          <div class="btn-row">
+            <button class="btn btn-outline" onclick="downloadBarcode('m')">📥 Download</button>
+            <button class="btn btn-outline" onclick="printBarcode('m')">🖨️ Print</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>📋 Daftar Material</h2>
+        <div id="materials-list"></div>
+      </div>
+    </div>
+
+    <!-- SECTION: PENGAMBILAN (SCAN) -->
+    <div class="section" id="section-scan">
+      <div class="card">
+        <h2>📤 Pengambilan Material</h2>
+        <div class="steps">
+          <div class="step active" id="step-ind-1">1</div>
+          <div class="step" id="step-ind-2">2</div>
+          <div class="step" id="step-ind-3">3</div>
+          <div class="step" id="step-ind-4">✓</div>
+        </div>
+
+        <!-- STEP 1: Scan Pekerja -->
+        <div id="scan-step-1">
+          <div class="scan-prompt">
+            <p>Step 1: Scan Barcode Pekerja</p>
+            <p class="sub">Arahkan kamera ke barcode ID pekerja</p>
+          </div>
+          <div class="scan-container"><div id="scanner-worker"></div></div>
+          <div class="manual-input">
+            <input type="text" id="manual-worker" placeholder="Atau ketik NIK manual..." onkeydown="if(event.key==='Enter')manualScanWorker()">
+          </div>
+          <button class="btn btn-success" style="margin-top:10px;" onclick="manualScanWorker()">Cari Manual</button>
+          <button class="btn btn-danger" style="margin-top:8px;" onclick="cancelScan()">❌ Batal / Kembali</button>
+          <div class="result-card" id="res-worker" style="display:none;">
+            <h3>✅ Pekerja Ditemukan</h3>
+            <div class="row"><span class="key">NIK</span><span class="val" id="rs-w-nik"></span></div>
+            <div class="row"><span class="key">Nama</span><span class="val" id="rs-w-name"></span></div>
+            <div class="row"><span class="key">Dept</span><span class="val" id="rs-w-dept"></span></div>
+            <div class="row"><span class="key">Jabatan</span><span class="val" id="rs-w-pos"></span></div>
+            <button class="btn btn-success" style="margin-top:12px;" onclick="toStep2()">Lanjut Scan Material →</button>
+          </div>
+        </div>
+
+        <!-- STEP 2: Scan Material -->
+        <div id="scan-step-2" style="display:none;">
+          <div class="scan-prompt">
+            <p>Step 2: Scan Barcode Material</p>
+            <p class="sub">Arahkan kamera ke barcode material</p>
+          </div>
+          <div class="scan-container"><div id="scanner-material"></div></div>
+          <div class="manual-input">
+            <input type="text" id="manual-material" placeholder="Atau ketik kode material..." onkeydown="if(event.key==='Enter')manualScanMaterial()">
+          </div>
+          <button class="btn btn-success" style="margin-top:10px;" onclick="manualScanMaterial()">Cari Manual</button>
+          <button class="btn btn-danger" style="margin-top:8px;" onclick="cancelScan()">❌ Batal / Kembali</button>
+          <div class="result-card" id="res-material" style="display:none;">
+            <h3>✅ Material Ditemukan</h3>
+            <div class="row"><span class="key">Kode</span><span class="val" id="rs-m-code"></span></div>
+            <div class="row"><span class="key">Nama</span><span class="val" id="rs-m-name"></span></div>
+            <div class="row"><span class="key">Kategori</span><span class="val" id="rs-m-cat"></span></div>
+            <div class="row"><span class="key">Stok</span><span class="val" id="rs-m-stock"></span></div>
+            <div class="row"><span class="key">Lokasi</span><span class="val" id="rs-m-loc"></span></div>
+            <button class="btn btn-success" style="margin-top:12px;" onclick="toStep3()">Lanjut Input Jumlah →</button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Input Qty -->
+        <div id="scan-step-3" style="display:none;">
+          <div class="scan-prompt" style="background:linear-gradient(135deg,#e3f2fd,#e8eaf6);border-color:#1a73e8;">
+            <p style="color:#1a73e8;">Step 3: Jumlah Pengambilan</p>
+            <p class="sub">Masukkan jumlah material yang diambil</p>
+          </div>
+          <div class="form-group" style="margin-top:14px;"><label>Jumlah</label><input type="number" id="take-qty" min="1" placeholder="0" style="font-size:1.3rem;text-align:center;"></div>
+          <div class="form-group"><label>Keterangan (opsional)</label><input type="text" id="take-note" placeholder="Untuk keperluan..."></div>
+          <button class="btn btn-success" onclick="submitTrx()">✅ Simpan Transaksi</button>
+        </div>
+
+        <!-- STEP 4: Done -->
+        <div id="scan-step-4" style="display:none;">
+          <div class="summary-box" id="trx-summary"></div>
+          <div class="btn-row" style="margin-top:14px;">
+            <button class="btn btn-primary" onclick="printTrxPdf()">🖨️ Print PDF</button>
+            <button class="btn btn-share" onclick="shareTrx()">📤 Share</button>
+          </div>
+          <button class="btn btn-outline" style="margin-top:10px;" onclick="resetScan()">🔄 Transaksi Baru</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION: RIWAYAT -->
+    <div class="section" id="section-history">
+      <div class="card">
+        <h2>📊 Riwayat Pengambilan</h2>
+        <div id="history-list"></div>
+      </div>
+    </div>
+
+    <!-- SECTION: DASHBOARD -->
+    <div class="section" id="section-dashboard">
+      <div class="card">
+        <h2>📊 Dashboard</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div style="background:linear-gradient(135deg,#e3f2fd,#bbdefb);padding:16px;border-radius:12px;text-align:center;">
+            <div style="font-size:1.8rem;font-weight:700;color:#1565c0;" id="dash-total-material">0</div>
+            <div style="font-size:0.78rem;color:#555;">Total Material</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#e8f5e9,#c8e6c9);padding:16px;border-radius:12px;text-align:center;">
+            <div style="font-size:1.8rem;font-weight:700;color:#2e7d32;" id="dash-total-stok">0</div>
+            <div style="font-size:0.78rem;color:#555;">Total Stok</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#fff3e0,#ffe0b2);padding:16px;border-radius:12px;text-align:center;">
+            <div style="font-size:1.8rem;font-weight:700;color:#e65100;" id="dash-total-trx">0</div>
+            <div style="font-size:0.78rem;color:#555;">Total Transaksi</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#fce4ec,#f8bbd0);padding:16px;border-radius:12px;text-align:center;">
+            <div style="font-size:1.8rem;font-weight:700;color:#c62828;" id="dash-low-stok">0</div>
+            <div style="font-size:0.78rem;color:#555;">Stok Rendah</div>
+          </div>
+        </div>
+        <h2>⚠️ Material Stok Rendah</h2>
+        <div id="dash-low-list"></div>
+      </div>
+    </div>
+
+    <!-- SECTION: LAPORAN BULANAN -->
+    <div class="section" id="section-laporan">
+      <div class="card">
+        <h2>📅 Laporan Bulanan</h2>
+        <div class="form-group">
+          <label>Pilih Bulan</label>
+          <input type="month" id="lap-month" onchange="generateLaporan()">
+        </div>
+        <div id="laporan-content"></div>
+        <button class="btn btn-primary" style="margin-top:12px;" onclick="printLaporan()">🖨️ Print Laporan PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button onclick="showSection('dashboard')" id="bnav-dashboard"><span class="icon">📊</span>Dashboard</button>
+    <button onclick="showSection('workers')" id="bnav-workers" class="active"><span class="icon">👷</span>Pekerja</button>
+    <button onclick="showSection('materials')" id="bnav-materials"><span class="icon">📦</span>Material</button>
+    <button onclick="showSection('scan')" id="bnav-scan"><span class="icon">📷</span>Ambil</button>
+    <button onclick="showSection('history')" id="bnav-history"><span class="icon">📊</span>Riwayat</button>
+    <button onclick="showSection('laporan')" id="bnav-laporan"><span class="icon">📅</span>Laporan</button>
+  </div>
+
+<script>
+// ===== CONFIG =====
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+
+// ===== DATA (localStorage) =====
+let workers = JSON.parse(localStorage.getItem('wh_workers') || '[]');
+let materials = JSON.parse(localStorage.getItem('wh_materials') || '[]');
+let transactions = JSON.parse(localStorage.getItem('wh_transactions') || '[]');
+function saveLocal() {
+  localStorage.setItem('wh_workers', JSON.stringify(workers));
+  localStorage.setItem('wh_materials', JSON.stringify(materials));
+  localStorage.setItem('wh_transactions', JSON.stringify(transactions));
+}
+
+// ===== API =====
+async function apiCall(action, params = {}) {
+  try {
+    const res = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({action,...params}), redirect:'follow' });
+    return JSON.parse(await res.text());
+  } catch(e) { console.warn('API offline:', e.message); return null; }
+}
+
+// ===== TOAST =====
+function showToast(msg, type='info') {
+  const t = document.createElement('div'); t.className=`toast ${type}`; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(), 3000);
+}
+
+// ===== NAV =====
+let activeScanner = null;
+function showSection(name) {
+  // Stop any active scanner when leaving scan section
+  if (activeScanner) { activeScanner.stop().catch(()=>{}); activeScanner = null; }
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`section-${name}`).classList.add('active');
+  document.getElementById(`bnav-${name}`).classList.add('active');
+  if (name==='workers') renderWorkers();
+  if (name==='materials') renderMaterials();
+  if (name==='history') renderHistory();
+  if (name==='scan') resetScan();
+  if (name==='dashboard') renderDashboard();
+}
+
+// ===== WORKERS =====
+function saveWorker() {
+  const nik = document.getElementById('w-nik').value.trim();
+  const name = document.getElementById('w-name').value.trim();
+  const dept = document.getElementById('w-dept').value;
+  const position = document.getElementById('w-position').value.trim();
+  if (!nik||!name) { showToast('NIK dan Nama wajib diisi!','error'); return; }
+  if (workers.find(w=>w.nik===nik)) { showToast('NIK sudah terdaftar!','error'); return; }
+  const w = { id:'W'+Date.now(), nik, name, dept, position };
+  workers.push(w); saveLocal(); apiCall('addWorker', w);
+
+  JsBarcode('#w-barcode', nik, { format:'CODE128', width:2, height:70, displayValue:true, text:`${nik}` });
+  document.getElementById('w-barcode-label').textContent = `${name} | ${dept}`;
+  document.getElementById('w-barcode-box').style.display = 'block';
+  showToast('Pekerja disimpan + barcode dibuat!','success');
+  ['w-nik','w-name','w-position'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('w-dept').value='';
+  renderWorkers();
+}
+
+function renderWorkers() {
+  const el = document.getElementById('workers-list');
+  if (!workers.length) { el.innerHTML='<div class="empty">Belum ada pekerja</div>'; return; }
+  el.innerHTML = workers.map(w=>`<div class="list-item">
+    <div class="info"><h4>${w.nik} - ${w.name}</h4><p>${w.dept} | ${w.position}</p></div>
+    <div style="display:flex;gap:4px;">
+      <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="editWorker('${w.id}')">✏️</button>
+      <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="deleteWorker('${w.id}')">🗑️</button>
+    </div>
+  </div>`).join('');
+}
+
+function deleteWorker(id) { workers=workers.filter(w=>w.id!==id); saveLocal(); renderWorkers(); showToast('Dihapus','success'); }
+
+// ===== MATERIALS =====
+function saveMaterial() {
+  const code = document.getElementById('m-code').value.trim();
+  const name = document.getElementById('m-name').value.trim();
+  const category = document.getElementById('m-category').value;
+  const unit = document.getElementById('m-unit').value.trim();
+  const stock = parseInt(document.getElementById('m-stock').value)||0;
+  const minStock = parseInt(document.getElementById('m-min').value)||0;
+  const location = document.getElementById('m-location').value.trim();
+  if (!code||!name) { showToast('Kode dan Nama wajib diisi!','error'); return; }
+  if (materials.find(m=>m.code===code)) { showToast('Kode sudah ada!','error'); return; }
+  const m = { id:'M'+Date.now(), code, name, category, unit, stock, minStock, location };
+  materials.push(m); saveLocal(); apiCall('addMaterial', m);
+
+  JsBarcode('#m-barcode', code, { format:'CODE128', width:2, height:70, displayValue:true, text:`${code}` });
+  document.getElementById('m-barcode-label').textContent = `${name} | Stok: ${stock} ${unit} | Rak: ${location}`;
+  document.getElementById('m-barcode-box').style.display = 'block';
+  showToast('Material disimpan + barcode dibuat!','success');
+  ['m-code','m-name','m-unit','m-stock','m-min','m-location'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m-category').value='';
+  document.getElementById('m-dept').value='';
+  renderMaterials();
+}
+
+function renderMaterials() {
+  const el = document.getElementById('materials-list');
+  if (!materials.length) { el.innerHTML='<div class="empty">Belum ada material</div>'; return; }
+  el.innerHTML = materials.map(m=>{
+    const cls = m.stock<=0?'stock-empty':m.stock<=m.minStock?'stock-low':'stock-ok';
+    return `<div class="list-item">
+      <div class="info"><h4>${m.code} - ${m.name}</h4><p>${m.category} | Rak: ${m.location} | <span class="stock-badge ${cls}">${m.stock} ${m.unit}</span></p></div>
+      <div style="display:flex;gap:4px;">
+        <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="editMaterial('${m.id}')">✏️</button>
+        <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="deleteMaterial('${m.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteMaterial(id) { materials=materials.filter(m=>m.id!==id); saveLocal(); renderMaterials(); showToast('Dihapus','success'); }
+
+function editWorker(id) {
+  const w = workers.find(x=>x.id===id); if(!w) return;
+  const name = prompt('Nama:', w.name); if(name===null) return;
+  const dept = prompt('Departemen (Electrical/Mechanical/Store/Manajemen/HSE/HRD):', w.dept); if(dept===null) return;
+  const position = prompt('Jabatan:', w.position); if(position===null) return;
+  w.name=name||w.name; w.dept=dept||w.dept; w.position=position||w.position;
+  saveLocal(); renderWorkers(); showToast('Data pekerja diperbarui!','success');
+}
+
+function editMaterial(id) {
+  const m = materials.find(x=>x.id===id); if(!m) return;
+  const name = prompt('Nama Material:', m.name); if(name===null) return;
+  const stock = prompt('Stok:', m.stock); if(stock===null) return;
+  const location = prompt('Lokasi Rak:', m.location); if(location===null) return;
+  m.name=name||m.name; m.stock=parseInt(stock)||m.stock; m.location=location||m.location;
+  saveLocal(); renderMaterials(); showToast('Data material diperbarui!','success');
+}
+
+// ===== SCAN / PENGAMBILAN =====
+let currentWorker = null, currentMaterial = null;
+
+function resetScan() {
+  currentWorker = null; currentMaterial = null;
+  if (activeScanner) { activeScanner.stop().catch(()=>{}); activeScanner = null; }
+  document.getElementById('scan-step-1').style.display='block';
+  document.getElementById('scan-step-2').style.display='none';
+  document.getElementById('scan-step-3').style.display='none';
+  document.getElementById('scan-step-4').style.display='none';
+  document.getElementById('res-worker').style.display='none';
+  document.getElementById('res-material').style.display='none';
+  document.getElementById('manual-worker').value='';
+  document.getElementById('manual-material').value='';
+  document.getElementById('take-qty').value='';
+  document.getElementById('take-note').value='';
+  updateSteps(1);
+  startWorkerScanner();
+}
+
+function updateSteps(current) {
+  for(let i=1;i<=4;i++){
+    const el=document.getElementById(`step-ind-${i}`);
+    el.className='step'+(i<current?' done':i===current?' active':'');
+  }
+}
+
+function startWorkerScanner() {
+  const config = { fps:10, qrbox:{width:280,height:100}, formatsToSupport:[Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_39] };
+  const scanner = new Html5Qrcode('scanner-worker');
+  activeScanner = scanner;
+  scanner.start({ facingMode:'environment' }, config, (code)=>{
+    scanner.stop().then(()=>{ activeScanner=null; processWorkerScan(code); }).catch(()=>{});
+  }, ()=>{}).catch(err=>{
+    console.warn('Camera error:', err);
+    document.getElementById('scanner-worker').innerHTML='<p style="padding:20px;color:#666;text-align:center;">Kamera tidak tersedia.<br>Gunakan input manual di bawah.</p>';
+  });
+}
+
+function startMaterialScanner() {
+  const config = { fps:10, qrbox:{width:280,height:100}, formatsToSupport:[Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_39] };
+  const scanner = new Html5Qrcode('scanner-material');
+  activeScanner = scanner;
+  scanner.start({ facingMode:'environment' }, config, (code)=>{
+    scanner.stop().then(()=>{ activeScanner=null; processMaterialScan(code); }).catch(()=>{});
+  }, ()=>{}).catch(err=>{
+    console.warn('Camera error:', err);
+    document.getElementById('scanner-material').innerHTML='<p style="padding:20px;color:#666;text-align:center;">Kamera tidak tersedia.<br>Gunakan input manual di bawah.</p>';
+  });
+}
+
+function manualScanWorker() { const v=document.getElementById('manual-worker').value.trim(); if(v) processWorkerScan(v); }
+function manualScanMaterial() { const v=document.getElementById('manual-material').value.trim(); if(v) processMaterialScan(v); }
+
+function processWorkerScan(code) {
+  const w = workers.find(x=>x.nik===code);
+  if(!w) { showToast('Pekerja tidak ditemukan: '+code,'error'); if(!activeScanner) startWorkerScanner(); return; }
+  currentWorker = w;
+  document.getElementById('rs-w-nik').textContent=w.nik;
+  document.getElementById('rs-w-name').textContent=w.name;
+  document.getElementById('rs-w-dept').textContent=w.dept;
+  document.getElementById('rs-w-pos').textContent=w.position;
+  document.getElementById('res-worker').style.display='block';
+  showToast('Pekerja: '+w.name,'success');
+}
+
+function processMaterialScan(code) {
+  const m = materials.find(x=>x.code===code);
+  if(!m) { showToast('Material tidak ditemukan: '+code,'error'); if(!activeScanner) startMaterialScanner(); return; }
+  currentMaterial = m;
+  document.getElementById('rs-m-code').textContent=m.code;
+  document.getElementById('rs-m-name').textContent=m.name;
+  document.getElementById('rs-m-cat').textContent=m.category;
+  const cls = m.stock<=0?'stock-empty':m.stock<=m.minStock?'stock-low':'stock-ok';
+  document.getElementById('rs-m-stock').innerHTML=`<span class="stock-badge ${cls}">${m.stock} ${m.unit}</span>`;
+  document.getElementById('rs-m-loc').textContent=m.location;
+  document.getElementById('res-material').style.display='block';
+  showToast('Material: '+m.name,'success');
+}
+
+function toStep2() {
+  if(activeScanner){activeScanner.stop().catch(()=>{});activeScanner=null;}
+  document.getElementById('scan-step-1').style.display='none';
+  document.getElementById('scan-step-2').style.display='block';
+  updateSteps(2);
+  startMaterialScanner();
+}
+
+function toStep3() {
+  if(activeScanner){activeScanner.stop().catch(()=>{});activeScanner=null;}
+  document.getElementById('scan-step-2').style.display='none';
+  document.getElementById('scan-step-3').style.display='block';
+  updateSteps(3);
+  document.getElementById('take-qty').focus();
+}
+
+function submitTrx() {
+  const qty = parseInt(document.getElementById('take-qty').value)||0;
+  const note = document.getElementById('take-note').value.trim();
+  if(qty<=0) { showToast('Jumlah harus > 0!','error'); return; }
+  if(qty>currentMaterial.stock) { showToast(`Stok tidak cukup! Tersedia: ${currentMaterial.stock}`,'error'); return; }
+
+  const mat = materials.find(m=>m.id===currentMaterial.id);
+  mat.stock -= qty;
+
+  const trx = {
+    id:'T'+Date.now(),
+    date: new Date().toLocaleString('id-ID'),
+    workerNik: currentWorker.nik,
+    workerName: currentWorker.name,
+    workerDept: currentWorker.dept,
+    materialCode: currentMaterial.code,
+    materialName: currentMaterial.name,
+    qty, unit: currentMaterial.unit,
+    stockAfter: mat.stock,
+    note
+  };
+  transactions.unshift(trx); saveLocal(); apiCall('addTransaction', trx);
+
+  document.getElementById('scan-step-3').style.display='none';
+  document.getElementById('scan-step-4').style.display='block';
+  updateSteps(4);
+
+  document.getElementById('trx-summary').innerHTML=`
+    <h3>✅ Transaksi Berhasil!</h3>
+    <div class="row"><span class="key">Tanggal</span><span class="val">${trx.date}</span></div>
+    <div class="row"><span class="key">Pekerja</span><span class="val">${trx.workerNik} - ${trx.workerName}</span></div>
+    <div class="row"><span class="key">Dept</span><span class="val">${trx.workerDept}</span></div>
+    <div class="row"><span class="key">Material</span><span class="val">${trx.materialCode} - ${trx.materialName}</span></div>
+    <div class="row"><span class="key">Jumlah</span><span class="val">${trx.qty} ${trx.unit}</span></div>
+    <div class="row"><span class="key">Sisa Stok</span><span class="val">${trx.stockAfter} ${trx.unit}</span></div>
+    ${trx.note?`<div class="row"><span class="key">Ket</span><span class="val">${trx.note}</span></div>`:''}`;
+  showToast('Transaksi berhasil!','success');
+}
+
+// ===== PRINT PDF =====
+function printTrxPdf() {
+  const trx = transactions[0]; if(!trx) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14); doc.text('BUKTI PENGAMBILAN MATERIAL', 105, 20, {align:'center'});
+  doc.setFontSize(9); doc.text('Warehouse Management System', 105, 26, {align:'center'});
+  doc.line(20,30,190,30);
+  doc.setFontSize(11); let y=40;
+  [['Tanggal',trx.date],['NIK',trx.workerNik],['Nama Pekerja',trx.workerName],['Departemen',trx.workerDept],
+   ['Kode Material',trx.materialCode],['Nama Material',trx.materialName],
+   ['Jumlah Diambil',`${trx.qty} ${trx.unit}`],['Sisa Stok',`${trx.stockAfter} ${trx.unit}`],['Keterangan',trx.note||'-']
+  ].forEach(([k,v])=>{ doc.setFont(undefined,'bold'); doc.text(k,25,y); doc.setFont(undefined,'normal'); doc.text(`: ${v}`,75,y); y+=9; });
+  doc.line(20,y+5,190,y+5); y+=18;
+  doc.setFontSize(9);
+  doc.text('Pengambil,',50,y,{align:'center'}); doc.text('Petugas Gudang,',155,y,{align:'center'});
+  y+=20; doc.text('(_______________)',50,y,{align:'center'}); doc.text('(_______________)',155,y,{align:'center'});
+  doc.save(`pengambilan_${trx.materialCode}_${trx.workerNik}.pdf`);
+  showToast('PDF diunduh!','success');
+}
+
+// ===== SHARE =====
+function shareTrx() {
+  const trx = transactions[0]; if(!trx) return;
+  const text=`📤 PENGAMBILAN MATERIAL\n\n📅 ${trx.date}\n👷 ${trx.workerNik} - ${trx.workerName}\n🏢 ${trx.workerDept}\n📦 ${trx.materialCode} - ${trx.materialName}\n🔢 Jumlah: ${trx.qty} ${trx.unit}\n📊 Sisa: ${trx.stockAfter} ${trx.unit}\n📝 ${trx.note||'-'}`;
+  if(navigator.share) { navigator.share({title:'Bukti Pengambilan',text}).catch(()=>{}); }
+  else { navigator.clipboard.writeText(text).then(()=>showToast('Disalin ke clipboard!','success')); }
+}
+
+// ===== HISTORY =====
+function renderHistory() {
+  const el=document.getElementById('history-list');
+  if(!transactions.length){el.innerHTML='<div class="empty">Belum ada riwayat</div>';return;}
+  el.innerHTML=transactions.slice(0,50).map(t=>`<div class="list-item">
+    <div class="info"><h4>${t.materialCode} - ${t.materialName}</h4><p>${t.date} | ${t.workerName} | ${t.qty} ${t.unit}</p></div>
+    <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="reprintTrx('${t.id}')">🖨️</button>
+  </div>`).join('');
+}
+
+function reprintTrx(id) {
+  const trx=transactions.find(t=>t.id===id); if(!trx)return;
+  const orig=transactions[0]; transactions[0]=trx; printTrxPdf(); transactions[0]=orig;
+}
+
+// ===== BARCODE UTILS =====
+function downloadBarcode(prefix) {
+  const svg=document.getElementById(`${prefix}-barcode`);
+  const canvas=document.createElement('canvas');const ctx=canvas.getContext('2d');
+  const data=new XMLSerializer().serializeToString(svg);const img=new Image();
+  img.onload=()=>{canvas.width=img.width*2;canvas.height=img.height*2;ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    const a=document.createElement('a');a.download=`barcode_${Date.now()}.png`;a.href=canvas.toDataURL('image/png');a.click();showToast('Barcode diunduh!','success');};
+  img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(data)));
+}
+
+function printBarcode(prefix) {
+  const svg=document.getElementById(`${prefix}-barcode`);
+  const label=document.getElementById(`${prefix}-barcode-label`).textContent;
+  const w=window.open('','_blank');
+  w.document.write(`<html><body style="text-align:center;padding:30px;font-family:sans-serif;">${svg.outerHTML}<br><p style="margin-top:8px;">${label}</p></body></html>`);
+  w.document.close(); w.print();
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  document.getElementById('dash-total-material').textContent = materials.length;
+  document.getElementById('dash-total-stok').textContent = materials.reduce((s,m)=>s+m.stock,0);
+  document.getElementById('dash-total-trx').textContent = transactions.length;
+  const lowItems = materials.filter(m=>m.stock<=m.minStock);
+  document.getElementById('dash-low-stok').textContent = lowItems.length;
+  const el = document.getElementById('dash-low-list');
+  if(!lowItems.length){ el.innerHTML='<div class="empty">Semua stok aman 👍</div>'; return; }
+  el.innerHTML = lowItems.map(m=>{
+    const cls = m.stock<=0?'stock-empty':'stock-low';
+    return `<div class="list-item"><div class="info"><h4>${m.code} - ${m.name}</h4><p>Stok: <span class="stock-badge ${cls}">${m.stock} ${m.unit}</span> | Min: ${m.minStock}</p></div></div>`;
+  }).join('');
+}
+
+// ===== LAPORAN BULANAN =====
+function generateLaporan() {
+  const month = document.getElementById('lap-month').value;
+  if(!month) return;
+  const [y,m] = month.split('-');
+  const filtered = transactions.filter(t=>{
+    const d = new Date(t.date.split(',')[0].split('/').reverse().join('-'));
+    return d.getFullYear()==parseInt(y) && (d.getMonth()+1)==parseInt(m);
+  });
+  const el = document.getElementById('laporan-content');
+  if(!filtered.length){ el.innerHTML='<div class="empty">Tidak ada transaksi di bulan ini</div>'; return; }
+  const totalQty = filtered.reduce((s,t)=>s+t.qty,0);
+  el.innerHTML = `<div class="result-card"><h3>Ringkasan Bulan ${m}/${y}</h3>
+    <div class="row"><span class="key">Total Transaksi</span><span class="val">${filtered.length}</span></div>
+    <div class="row"><span class="key">Total Item Diambil</span><span class="val">${totalQty}</span></div></div>
+    <div style="margin-top:12px;">${filtered.map(t=>`<div class="list-item"><div class="info"><h4>${t.materialCode} - ${t.materialName}</h4><p>${t.date} | ${t.workerName} | ${t.qty} ${t.unit}</p></div></div>`).join('')}</div>`;
+}
+
+function printLaporan() {
+  const month = document.getElementById('lap-month').value;
+  if(!month){ showToast('Pilih bulan dulu!','error'); return; }
+  const [y,m] = month.split('-');
+  const filtered = transactions.filter(t=>{
+    const d = new Date(t.date.split(',')[0].split('/').reverse().join('-'));
+    return d.getFullYear()==parseInt(y) && (d.getMonth()+1)==parseInt(m);
+  });
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14); doc.text(`LAPORAN BULANAN - ${m}/${y}`, 105, 20, {align:'center'});
+  doc.setFontSize(9); doc.text('Marissa Store', 105, 26, {align:'center'});
+  doc.line(20,30,190,30);
+  doc.setFontSize(10); let yy=40;
+  doc.text(`Total Transaksi: ${filtered.length}`, 25, yy); yy+=8;
+  doc.text(`Total Item Diambil: ${filtered.reduce((s,t)=>s+t.qty,0)}`, 25, yy); yy+=12;
+  doc.setFontSize(9);
+  filtered.forEach(t=>{
+    if(yy>270){doc.addPage();yy=20;}
+    doc.text(`${t.date} | ${t.workerName} | ${t.materialCode} - ${t.materialName} | ${t.qty} ${t.unit}`, 25, yy); yy+=7;
+  });
+  doc.save(`laporan_${y}_${m}.pdf`);
+  showToast('Laporan PDF diunduh!','success');
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded',()=>{ renderWorkers(); });
+// ===== CANCEL SCAN =====
+function cancelScan() {
+  if (activeScanner) { activeScanner.stop().catch(()=>{}); activeScanner = null; }
+  showSection('workers');
+}
+
+// ===== AUTO GENERATE MATERIAL CODE =====
+function generateMaterialCode() {
+  const dept = document.getElementById('m-dept').value;
+  if (!dept) { document.getElementById('m-code').value = ''; return; }
+  const prefix = { Electrical:'ELC', Mechanical:'MEC', Store:'STR', Manajemen:'MNJ', HSE:'HSE', HRD:'HRD' };
+  const code = prefix[dept] || 'GEN';
+  const count = materials.filter(m => m.code.includes(code)).length + 1;
+  document.getElementById('m-code').value = `MTR-${code}-${String(count).padStart(3,'0')}`;
+}
+</script>
+
+<footer style="position:fixed;bottom:56px;left:0;right:0;text-align:center;padding:6px;background:#1a73e8;color:white;font-size:0.72rem;z-index:99;">Powered by Pausbiru7</footer>
+</body>
+</html>

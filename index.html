@@ -1,880 +1,686 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <base target="_top">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Toko Ormas</title>
-  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marissa Store</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    :root,[data-theme="light"]{--font-body:'Satoshi',Arial,sans-serif;--font-display:'Satoshi',Arial,sans-serif;--text-xs:clamp(.75rem,.7rem + .25vw,.875rem);--text-sm:clamp(.875rem,.8rem + .35vw,1rem);--text-base:clamp(1rem,.95rem + .25vw,1.125rem);--text-lg:clamp(1.125rem,1rem + .75vw,1.5rem);--text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);--space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;--space-12:3rem;--radius-sm:.375rem;--radius-md:.5rem;--radius-lg:.75rem;--radius-xl:1rem;--transition-interactive:180ms cubic-bezier(.16,1,.3,1);--color-bg:#f7f6f2;--color-surface:#f9f8f5;--color-surface-2:#fbfbf9;--color-surface-offset:#f3f0ec;--color-border:#d4d1ca;--color-divider:#dcd9d5;--color-text:#28251d;--color-text-muted:#6e6a63;--color-text-inverse:#f9f8f4;--color-primary:#01696f;--color-primary-hover:#0c4e54;--color-warning:#b55a19;--color-success:#437a22;--color-error:#a12c7b;--shadow-sm:0 1px 2px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.08)}
-    [data-theme="dark"]{--color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;--color-surface-offset:#1d1c1a;--color-border:#393836;--color-divider:#262523;--color-text:#cdccca;--color-text-muted:#918f8a;--color-text-inverse:#2b2a28;--color-primary:#4f98a3;--color-primary-hover:#227f8b;--color-warning:#d88947;--color-success:#6daa45;--color-error:#d163a7;--shadow-sm:0 1px 2px rgba(0,0,0,.2);--shadow-md:0 4px 12px rgba(0,0,0,.3)}
-    *,*::before,*::after{box-sizing:border-box} html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth} body{margin:0;min-height:100dvh;font-family:var(--font-body);font-size:var(--text-base);background:var(--color-bg);color:var(--color-text)} button,input,select,textarea{font:inherit} button{cursor:pointer} a{color:inherit}
-    .app{display:grid;grid-template-columns:280px 1fr;min-height:100dvh}.sidebar{background:var(--color-surface);border-right:1px solid var(--color-border);padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)}.brand{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3)}.brand-mark{display:flex;align-items:center;gap:var(--space-3)}.logo{width:36px;height:36px;border-radius:10px;background:var(--color-primary);color:var(--color-text-inverse);display:grid;place-items:center;box-shadow:var(--shadow-sm)}.logo svg{
-  width:20px;
-  height:20px;
-  display:block;
-}.brand h1{margin:0;font-size:var(--text-lg)}.brand p{margin:0;color:var(--color-text-muted);font-size:var(--text-sm)}.theme-btn,.icon-btn{min-width:44px;min-height:44px;border:1px solid var(--color-border);background:var(--color-surface-2);border-radius:var(--radius-md)}
-    .nav{display:grid;gap:var(--space-2)} .nav button{display:flex;align-items:center;gap:var(--space-3);border:1px solid transparent;background:transparent;padding:14px 16px;border-radius:var(--radius-md);text-align:left;color:var(--color-text)} .nav button.active{background:var(--color-surface-offset);border-color:var(--color-border);color:var(--color-primary);font-weight:700}
-    .main{display:grid;grid-template-rows:auto 1fr;min-width:0}.topbar{display:flex;justify-content:space-between;gap:var(--space-4);padding:var(--space-5) var(--space-6);border-bottom:1px solid var(--color-border);background:color-mix(in srgb,var(--color-surface) 88%, transparent);position:sticky;top:0;backdrop-filter:blur(8px);z-index:5}.topbar h2{margin:0;font-size:var(--text-xl)}.topbar p{margin:4px 0 0;color:var(--color-text-muted);font-size:var(--text-sm)}.actions{display:flex;gap:var(--space-3);flex-wrap:wrap;align-items:center}
-    .content{padding:var(--space-6);display:grid;gap:var(--space-6)}.page{display:none;gap:var(--space-6)}.page.active{display:grid}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-4)}.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-5);box-shadow:var(--shadow-sm)}.stat-label{font-size:var(--text-sm);color:var(--color-text-muted)}.stat-value{font-size:var(--text-xl);font-weight:700;margin-top:var(--space-2)}
-    .grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:var(--space-4)}.panel-title{display:flex;justify-content:space-between;align-items:center;gap:var(--space-4);margin-bottom:var(--space-4)}.panel-title h3{margin:0;font-size:var(--text-lg)} .panel-title p{margin:0;color:var(--color-text-muted);font-size:var(--text-sm)}
-    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4)}.field{display:grid;gap:var(--space-2)}.field.full{grid-column:1 / -1}.field label{font-size:var(--text-sm);font-weight:700}.field:nth-child(4n+1) .input,.field:nth-child(4n+1) select,.field:nth-child(4n+1) textarea{background:color-mix(in srgb,var(--color-primary) 8%, var(--color-surface-2));}.field:nth-child(4n+2) .input,.field:nth-child(4n+2) select,.field:nth-child(4n+2) textarea{background:color-mix(in srgb,var(--color-success) 10%, var(--color-surface-2));}.field:nth-child(4n+3) .input,.field:nth-child(4n+3) select,.field:nth-child(4n+3) textarea{background:color-mix(in srgb,var(--color-warning) 10%, var(--color-surface-2));}.field:nth-child(4n+4) .input,.field:nth-child(4n+4) select,.field:nth-child(4n+4) textarea{background:color-mix(in srgb,var(--color-error) 8%, var(--color-surface-2));}.input,select,textarea{width:100%;padding:12px 14px;border-radius:var(--radius-md);border:1px solid var(--color-border);color:var(--color-text)} textarea{min-height:100px;resize:vertical}
-    .btn{min-height:44px;padding:0 16px;border-radius:var(--radius-md);border:1px solid var(--color-border);background:var(--color-surface-2);color:var(--color-text);font-weight:700}.btn-primary{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-text-inverse)}.btn-primary:hover{background:var(--color-primary-hover)}.btn-danger{color:var(--color-error)}.btn-row{display:flex;gap:var(--space-3);flex-wrap:wrap}
-    .table-wrap{overflow:auto;border:1px solid var(--color-border);border-radius:var(--radius-lg)} table{width:100%;border-collapse:collapse;background:var(--color-surface)} th,td{padding:12px 14px;border-bottom:1px solid var(--color-divider);text-align:left;font-size:var(--text-sm);white-space:nowrap} th{background:var(--color-surface-offset);position:sticky;top:0} .muted{color:var(--color-text-muted)} .status-low{color:var(--color-warning);font-weight:700}
-    .result-box{display:grid;gap:var(--space-3);padding:var(--space-4);border:1px dashed var(--color-border);border-radius:var(--radius-lg);background:var(--color-surface-2)} .result-item{display:flex;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap}.hidden{display:none!important}.notice{padding:12px 14px;border-radius:var(--radius-md);background:var(--color-surface-offset);border:1px solid var(--color-border)}
-.sidebar-footer{
-  margin-top:auto;
-  padding-top:var(--space-4);
-  border-top:1px solid var(--color-divider);
-  font-size:var(--text-xs);
-  color:var(--color-text-muted);
-  text-align:left;
-  opacity:.85;
-}
-
-@media (max-width: 1080px){
-  .app{grid-template-columns:1fr}
-  .sidebar{border-right:none;border-bottom:1px solid var(--color-border)}
-  .stats,.grid-2,.form-grid{grid-template-columns:1fr}
-}
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f0f2f5; min-height:100vh; padding-bottom:80px; }
+    .navbar { background:linear-gradient(135deg,#1a73e8,#0d47a1); color:white; padding:14px 20px; text-align:center; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,0.2); }
+    .navbar h1 { font-size:1.2rem; }
+    .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:white; display:flex; box-shadow:0 -2px 10px rgba(0,0,0,0.1); z-index:100; }
+    .bottom-nav button { flex:1; padding:10px 4px; border:none; background:none; cursor:pointer; font-size:0.7rem; color:#666; display:flex; flex-direction:column; align-items:center; gap:3px; transition:color 0.2s; }
+    .bottom-nav button.active { color:#1a73e8; }
+    .bottom-nav button .icon { font-size:1.3rem; }
+    .container { max-width:600px; margin:0 auto; padding:16px; }
+    .card { background:white; border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+    .card h2 { font-size:1rem; color:#1a73e8; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .form-group { margin-bottom:12px; }
+    .form-group label { display:block; font-size:0.8rem; color:#555; font-weight:600; margin-bottom:4px; }
+    .form-group input, .form-group select { width:100%; padding:11px 14px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:0.95rem; }
+    .form-group input:focus, .form-group select:focus { border-color:#1a73e8; outline:none; box-shadow:0 0 0 3px rgba(26,115,232,0.1); }
+    .btn { padding:12px 20px; border:none; border-radius:10px; cursor:pointer; font-size:0.9rem; font-weight:600; width:100%; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .btn-primary { background:#1a73e8; color:white; }
+    .btn-primary:hover { background:#1557b0; }
+    .btn-success { background:#28a745; color:white; }
+    .btn-danger { background:#dc3545; color:white; }
+    .btn-outline { background:white; color:#1a73e8; border:1.5px solid #1a73e8; }
+    .btn-share { background:#25D366; color:white; }
+    .btn-row { display:flex; gap:10px; margin-top:12px; }
+    .btn-row .btn { flex:1; }
+    .barcode-box { text-align:center; padding:20px; background:#fafafa; border-radius:12px; margin-top:14px; border:2px dashed #ddd; }
+    .barcode-box svg { max-width:100%; height:auto; }
+    .barcode-box .label { margin-top:8px; font-size:0.82rem; color:#555; }
+    .scan-container { border-radius:12px; overflow:hidden; margin-bottom:14px; }
+    #scanner-worker, #scanner-material { width:100%; min-height:250px; }
+    .scan-prompt { background:linear-gradient(135deg,#e8f5e9,#f1f8e9); border:2px dashed #4caf50; border-radius:12px; padding:24px; text-align:center; }
+    .scan-prompt p { font-weight:600; color:#2e7d32; margin-bottom:8px; }
+    .scan-prompt .sub { font-size:0.82rem; color:#666; }
+    .result-card { background:#f8f9fa; border-radius:10px; padding:16px; margin-top:12px; border-left:4px solid #1a73e8; }
+    .result-card h3 { font-size:0.95rem; color:#1a73e8; margin-bottom:10px; }
+    .result-card .row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #eee; font-size:0.88rem; }
+    .result-card .row:last-child { border:none; }
+    .result-card .row .key { color:#666; }
+    .result-card .row .val { font-weight:600; color:#333; }
+    .stock-badge { padding:3px 10px; border-radius:20px; font-size:0.78rem; font-weight:600; }
+    .stock-ok { background:#e8f5e9; color:#2e7d32; }
+    .stock-low { background:#fff3e0; color:#e65100; }
+    .stock-empty { background:#ffebee; color:#c62828; }
+    .steps { display:flex; justify-content:center; gap:8px; margin-bottom:16px; }
+    .steps .step { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:700; background:#e0e0e0; color:#999; }
+    .steps .step.active { background:#1a73e8; color:white; }
+    .steps .step.done { background:#28a745; color:white; }
+    .summary-box { background:linear-gradient(135deg,#e8f5e9,#f1f8e9); border-radius:12px; padding:20px; margin-top:12px; }
+    .summary-box h3 { color:#2e7d32; margin-bottom:12px; font-size:1rem; }
+    .summary-box .row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.06); font-size:0.88rem; }
+    .manual-input { margin-top:10px; }
+    .manual-input input { width:100%; padding:11px; border:1.5px solid #4caf50; border-radius:10px; font-size:1rem; text-align:center; }
+    .section { display:none; }
+    .section.active { display:block; }
+    .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%); padding:12px 24px; border-radius:10px; color:white; font-size:0.88rem; z-index:9999; animation:fadeIn 0.3s; max-width:90%; text-align:center; }
+    .toast.success { background:#28a745; }
+    .toast.error { background:#dc3545; }
+    .toast.info { background:#1a73e8; }
+    @keyframes fadeIn { from { opacity:0; transform:translateX(-50%) translateY(-10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+    .list-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; }
+    .list-item:last-child { border:none; }
+    .list-item .info h4 { font-size:0.9rem; color:#333; }
+    .list-item .info p { font-size:0.78rem; color:#666; }
+    .empty { text-align:center; padding:30px; color:#999; font-size:0.9rem; }
+    .tab-bar { display:flex; gap:6px; margin-bottom:14px; }
+    .tab-bar button { flex:1; padding:8px; border:1.5px solid #e0e0e0; border-radius:8px; background:white; font-size:0.82rem; cursor:pointer; font-weight:500; }
+    .tab-bar button.active { border-color:#1a73e8; background:#e8f0fe; color:#1a73e8; }
   </style>
 </head>
 <body>
- <div class="app">
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-mark">
-        <div class="" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 10l2-5h14l2 5"></path>
-            <path d="M4 10h16"></path>
-            <path d="M5 10v9h14v-9"></path>
-            <path d="M9 19v-5h6v5"></path>
-          </svg>
-        </div>
-        <div>
-          <h1>Toko Ormas</h1>
-          <p>Sistem gudang & pengambilan material</p>
+  <nav class="navbar"><h1>🏪 Marissa Store</h1></nav>
+
+  <div class="container">
+    <!-- SECTION: INPUT PEKERJA -->
+    <div class="section active" id="section-workers">
+      <div class="card">
+        <h2>👷 Input Data Pekerja</h2>
+        <div class="form-group"><label>NIK</label><input type="text" id="w-nik" placeholder="Nomor Induk Karyawan"></div>
+        <div class="form-group"><label>Nama Lengkap</label><input type="text" id="w-name" placeholder="Nama pekerja"></div>
+        <div class="form-group"><label>Departemen</label><select id="w-dept"><option value="">Pilih Departemen</option><option>Electrical</option><option>Mechanical</option><option>Store</option><option>Manajemen</option><option>HSE</option><option>HRD</option></select></div>
+        <div class="form-group"><label>Jabatan</label><input type="text" id="w-position" placeholder="Operator / Teknisi / dll"></div>
+        <button class="btn btn-primary" onclick="saveWorker()">💾 Simpan & Generate Barcode</button>
+        <div class="barcode-box" id="w-barcode-box" style="display:none;">
+          <svg id="w-barcode"></svg>
+          <div class="label" id="w-barcode-label"></div>
+          <div class="btn-row">
+            <button class="btn btn-outline" onclick="downloadBarcode('w')">📥 Download</button>
+            <button class="btn btn-outline" onclick="printBarcode('w')">🖨️ Print</button>
+          </div>
         </div>
       </div>
-      <button class="theme-btn" data-theme-toggle aria-label="Toggle theme">◐</button>
+      <div class="card">
+        <h2>📋 Daftar Pekerja</h2>
+        <div id="workers-list"></div>
+      </div>
     </div>
-           <nav class="nav" aria-label="Menu utama">
-        <button class="active" data-page="dashboard">Dashboard</button>
-        <button data-page="workers">Data Pekerja</button>
-        <button data-page="materials">Data Material</button>
-        <button data-page="transactions">Pengambilan</button>
-        <button data-page="history">History</button>
-        <button data-page="reports">Laporan Bulanan</button>
-        <button data-page="tools">Sync / Tools</button>
-      </nav>
 
-      <div class="sidebar-footer">
-        Powered by Pausbiru7
+    <!-- SECTION: INPUT MATERIAL -->
+    <div class="section" id="section-materials">
+      <div class="card">
+        <h2>📦 Input Data Material</h2>
+        <div class="form-group"><label>Departemen</label><select id="m-dept" onchange="generateMaterialCode()"><option value="">Pilih Departemen</option><option>Electrical</option><option>Mechanical</option><option>Store</option><option>Manajemen</option><option>HSE</option><option>HRD</option></select></div>
+        <div class="form-group"><label>Kode Material (Auto)</label><input type="text" id="m-code" placeholder="Otomatis" readonly style="background:#f0f0f0;"></div>
+        <div class="form-group"><label>Nama Material</label><input type="text" id="m-name" placeholder="Bearing SKF 6205"></div>
+        <div class="form-group"><label>Kategori</label><select id="m-category"><option value="">Pilih</option><option>Electric</option><option>Mekanikal</option><option>Consumable</option><option>Safety</option><option>Tools</option></select></div>
+        <div class="form-group"><label>Satuan</label><input type="text" id="m-unit" placeholder="pcs / kg / meter"></div>
+        <div class="form-group"><label>Stok Awal</label><input type="number" id="m-stock" min="0" placeholder="0"></div>
+        <div class="form-group"><label>Stok Minimum</label><input type="number" id="m-min" min="0" placeholder="5"></div>
+        <div class="form-group"><label>Lokasi Rak</label><input type="text" id="m-location" placeholder="A-01-02"></div>
+        <button class="btn btn-primary" onclick="saveMaterial()">💾 Simpan & Generate Barcode</button>
+        <div class="barcode-box" id="m-barcode-box" style="display:none;">
+          <svg id="m-barcode"></svg>
+          <div class="label" id="m-barcode-label"></div>
+          <div class="btn-row">
+            <button class="btn btn-outline" onclick="downloadBarcode('m')">📥 Download</button>
+            <button class="btn btn-outline" onclick="printBarcode('m')">🖨️ Print</button>
+          </div>
+        </div>
       </div>
-    </aside>
-    
+      <div class="card">
+        <h2>📋 Daftar Material</h2>
+        <div id="materials-list"></div>
+      </div>
+    </div>
 
-    <main class="main">
-      <header class="topbar">
-        <div>
-          <h2 id="pageTitle">Dashboard</h2>
-          <p id="pageDesc">Pantau stok, transaksi, dan material dengan cepat.</p>
+    <!-- SECTION: PENGAMBILAN (SCAN) -->
+    <div class="section" id="section-scan">
+      <div class="card">
+        <h2>📤 Pengambilan Material</h2>
+        <div class="steps">
+          <div class="step active" id="step-ind-1">1</div>
+          <div class="step" id="step-ind-2">2</div>
+          <div class="step" id="step-ind-3">3</div>
+          <div class="step" id="step-ind-4">✓</div>
         </div>
-        <div class="actions">
-          <button class="btn btn-primary" onclick="syncAll()">Sync Google Sheet</button>
+
+        <!-- STEP 1: Scan Pekerja -->
+        <div id="scan-step-1">
+          <div class="scan-prompt">
+            <p>Step 1: Scan Barcode Pekerja</p>
+            <p class="sub">Arahkan kamera ke barcode ID pekerja</p>
+          </div>
+          <div class="scan-container"><div id="scanner-worker"></div></div>
+          <div class="manual-input">
+            <input type="text" id="manual-worker" placeholder="Atau ketik NIK manual..." onkeydown="if(event.key==='Enter')manualScanWorker()">
+          </div>
+          <button class="btn btn-success" style="margin-top:10px;" onclick="manualScanWorker()">Cari Manual</button>
+          <button class="btn btn-danger" style="margin-top:8px;" onclick="cancelScan()">❌ Batal / Kembali</button>
+          <div class="result-card" id="res-worker" style="display:none;">
+            <h3>✅ Pekerja Ditemukan</h3>
+            <div class="row"><span class="key">NIK</span><span class="val" id="rs-w-nik"></span></div>
+            <div class="row"><span class="key">Nama</span><span class="val" id="rs-w-name"></span></div>
+            <div class="row"><span class="key">Dept</span><span class="val" id="rs-w-dept"></span></div>
+            <div class="row"><span class="key">Jabatan</span><span class="val" id="rs-w-pos"></span></div>
+            <button class="btn btn-success" style="margin-top:12px;" onclick="toStep2()">Lanjut Scan Material →</button>
+          </div>
         </div>
-      </header>
 
-      <section class="content">
-        <div id="notice" class="notice hidden"></div>
-
-        <section class="page active" id="page-dashboard">
-          <div class="stats">
-            <article class="card"><div class="stat-label">Total Material</div><div class="stat-value" id="stat-material">0</div></article>
-            <article class="card"><div class="stat-label">Total Pekerja</div><div class="stat-value" id="stat-workers">0</div></article>
-            <article class="card"><div class="stat-label">Transaksi Hari Ini</div><div class="stat-value" id="stat-transactions">0</div></article>
-            <article class="card"><div class="stat-label">Stok Rendah</div><div class="stat-value" id="stat-low">0</div></article>
+        <!-- STEP 2: Scan Material -->
+        <div id="scan-step-2" style="display:none;">
+          <div class="scan-prompt">
+            <p>Step 2: Scan Barcode Material</p>
+            <p class="sub">Arahkan kamera ke barcode material</p>
           </div>
-          <div class="grid-2">
-            <article class="card">
-              <div class="panel-title"><div><h3>Transaksi Terbaru</h3><p>10 transaksi paling baru</p></div></div>
-              <div class="table-wrap"><table><thead><tr><th>No</th><th>Tanggal</th><th>Pekerja</th><th>Material</th><th>Qty</th></tr></thead><tbody id="latest-transactions"></tbody></table></div>
-            </article>
-            <article class="card">
-              <div class="panel-title"><div><h3>Material Stok Rendah</h3><p>Pantau item yang butuh perhatian</p></div></div>
-              <div class="table-wrap"><table><thead><tr><th>ID</th><th>Nama</th><th>Stok</th><th>Minimum</th></tr></thead><tbody id="low-stock-list"></tbody></table></div>
-            </article>
+          <div class="scan-container"><div id="scanner-material"></div></div>
+          <div class="manual-input">
+            <input type="text" id="manual-material" placeholder="Atau ketik kode material..." onkeydown="if(event.key==='Enter')manualScanMaterial()">
           </div>
-        </section>
-
-        <section class="page" id="page-workers">
-          <div class="grid-2">
-            <article class="card">
-              <div class="panel-title"><div><h3>Input Data Pekerja</h3><p>Generate ID dan barcode otomatis</p></div></div>
-              <form id="workerForm" class="form-grid" onsubmit="saveWorkerForm(event)">
-                <input type="hidden" id="worker_id_pekerja" />
-                <div class="field"><label>Nama Pekerja</label><input class="input" id="worker_nama_pekerja" required></div>
-                <div class="field"><label>No ID</label><input class="input" id="worker_no_id" required></div>
-                <div class="field full"><label>Posisi</label><input class="input" id="worker_posisi" required></div>
-                <div class="field full"><div class="btn-row"><button class="btn btn-primary" type="submit">Simpan</button><button class="btn" type="button" onclick="resetWorkerForm()">Reset</button></div></div>
-              </form>
-            </article>
-            <article class="card">
-              <div class="panel-title"><div><h3>Aksi Barcode</h3><p>Pilih data pekerja dari tabel untuk cetak</p></div></div>
-              <div id="workerActionBox" class="result-box muted">Belum ada data pekerja terpilih.</div>
-            </article>
+          <button class="btn btn-success" style="margin-top:10px;" onclick="manualScanMaterial()">Cari Manual</button>
+          <button class="btn btn-danger" style="margin-top:8px;" onclick="cancelScan()">❌ Batal / Kembali</button>
+          <div class="result-card" id="res-material" style="display:none;">
+            <h3>✅ Material Ditemukan</h3>
+            <div class="row"><span class="key">Kode</span><span class="val" id="rs-m-code"></span></div>
+            <div class="row"><span class="key">Nama</span><span class="val" id="rs-m-name"></span></div>
+            <div class="row"><span class="key">Kategori</span><span class="val" id="rs-m-cat"></span></div>
+            <div class="row"><span class="key">Stok</span><span class="val" id="rs-m-stock"></span></div>
+            <div class="row"><span class="key">Lokasi</span><span class="val" id="rs-m-loc"></span></div>
+            <button class="btn btn-success" style="margin-top:12px;" onclick="toStep3()">Lanjut Input Jumlah →</button>
           </div>
-          <article class="card">
-            <div class="panel-title"><div><h3>Database Pekerja</h3><p>Data pekerja aktif</p></div></div>
-            <div class="table-wrap"><table><thead><tr><th>ID</th><th>Nama</th><th>No ID</th><th>Posisi</th><th>Barcode</th><th>Aksi</th></tr></thead><tbody id="workers-table"></tbody></table></div>
-          </article>
-        </section>
+        </div>
 
-        <section class="page" id="page-materials">
-          <div class="grid-2">
-            <article class="card">
-              <div class="panel-title"><div><h3>Input Data Material</h3><p>Barcode, stok awal, rak, dan minimum stok</p></div></div>
-              <form id="materialForm" class="form-grid" onsubmit="saveMaterialForm(event)">
-                <input type="hidden" id="material_id_material" />
-                <div class="field full"><label>Nama Material</label><input class="input" id="material_nama_material" required></div>
-                <div class="field"><label>Satuan</label><select id="material_satuan"><option>pcs</option><option>pair</option><option>box</option><option>lainnya</option></select></div>
-                <div class="field"><label>Kategori</label><select id="material_kategori"><option>spare part</option><option>consumable</option><option>lainnya</option></select></div>
-                <div class="field"><label>Stok Awal</label><input class="input" id="material_stok_awal" type="number" min="0" value="0"></div>
-                <div class="field"><label>Rak</label><input class="input" id="material_rak"></div>
-                <div class="field"><label>Minimum Stok</label><input class="input" id="material_minimum_stok" type="number" min="0" value="0"></div>
-                <div class="field full"><div class="btn-row"><button class="btn btn-primary" type="submit">Simpan</button><button class="btn" type="button" onclick="resetMaterialForm()">Reset</button></div></div>
-              </form>
-            </article>
-            <article class="card">
-              <div class="panel-title"><div><h3>Aksi Barcode</h3><p>Pilih data material dari tabel untuk cetak</p></div></div>
-              <div id="materialActionBox" class="result-box muted">Belum ada data material terpilih.</div>
-            </article>
+        <!-- STEP 3: Input Qty -->
+        <div id="scan-step-3" style="display:none;">
+          <div class="scan-prompt" style="background:linear-gradient(135deg,#e3f2fd,#e8eaf6);border-color:#1a73e8;">
+            <p style="color:#1a73e8;">Step 3: Jumlah Pengambilan</p>
+            <p class="sub">Masukkan jumlah material yang diambil</p>
           </div>
-          <article class="card">
-            <div class="panel-title"><div><h3>Database Material</h3><p>Data material aktif</p></div></div>
-            <div class="table-wrap"><table><thead><tr><th>ID</th><th>Nama</th><th>Satuan</th><th>Kategori</th><th>Stok</th><th>Rak</th><th>Min</th><th>Aksi</th></tr></thead><tbody id="materials-table"></tbody></table></div>
-          </article>
-        </section>
+          <div class="form-group" style="margin-top:14px;"><label>Jumlah</label><input type="number" id="take-qty" min="1" placeholder="0" style="font-size:1.3rem;text-align:center;"></div>
+          <div class="form-group"><label>Keterangan (opsional)</label><input type="text" id="take-note" placeholder="Untuk keperluan..."></div>
+          <button class="btn btn-success" onclick="submitTrx()">✅ Simpan Transaksi</button>
+        </div>
 
-        <section class="page" id="page-transactions">
-          <div class="grid-2">
-            <article class="card">
-              <div class="panel-title"><div><h3>Pengambilan Material</h3><p>Scan barcode pekerja dan material</p></div></div>
-              <form id="transactionForm" class="form-grid" onsubmit="saveTransactionForm(event)">
-                <div class="field full"><label>Barcode Pekerja</label><input class="input" id="trx_barcode_pekerja" onblur="lookupWorker()" placeholder="Scan / input barcode pekerja"></div>
-                <div class="field full"><label>Barcode Material</label><input class="input" id="trx_barcode_material" onblur="lookupMaterial()" placeholder="Scan / input barcode material"></div>
-                <div class="field"><label>Qty Kebutuhan</label><input class="input" id="trx_qty_keluar" type="number" min="1" required></div>
-                <div class="field"><label>Storeman</label><input class="input" id="trx_storeman" placeholder="Nama / email petugas"></div>
-                <div class="field full"><label>Tujuan Penggunaan</label><textarea id="trx_tujuan_penggunaan" required></textarea></div>
-                <div class="field full"><div class="btn-row"><button class="btn btn-primary" type="submit">Simpan Transaksi</button><button class="btn" type="button" onclick="resetTransactionForm()">Reset</button></div></div>
-              </form>
-            </article>
-            <article class="card">
-              <div class="panel-title"><div><h3>Rangkuman Scan</h3><p>Data pekerja dan material yang terbaca</p></div></div>
-              <div class="result-box" id="scanSummary">
-                <div class="result-item"><strong>Pekerja</strong><span class="muted" id="summaryWorker">Belum discan</span></div>
-                <div class="result-item"><strong>Material</strong><span class="muted" id="summaryMaterial">Belum discan</span></div>
-                <div class="result-item"><strong>Stok</strong><span class="muted" id="summaryStock">-</span></div>
-              </div>
-            </article>
+        <!-- STEP 4: Done -->
+        <div id="scan-step-4" style="display:none;">
+          <div class="summary-box" id="trx-summary"></div>
+          <div class="btn-row" style="margin-top:14px;">
+            <button class="btn btn-primary" onclick="printTrxPdf()">🖨️ Print PDF</button>
+            <button class="btn btn-share" onclick="shareTrx()">📤 Share</button>
           </div>
-          <article class="card">
-            <div class="panel-title"><div><h3>Ringkasan Transaksi Terakhir</h3><p>Print PDF atau share WhatsApp / email</p></div></div>
-            <div id="transactionResult" class="result-box muted">Belum ada transaksi baru.</div>
-            <div class="btn-row" style="margin-top:16px"><button class="btn" onclick="printLastTransactionPdf()">Print PDF</button><button class="btn" onclick="shareLastTransactionWhatsapp()">Share WA</button><button class="btn" onclick="shareLastTransactionEmail()">Share Email</button></div>
-          </article>
-        </section>
+          <button class="btn btn-outline" style="margin-top:10px;" onclick="resetScan()">🔄 Transaksi Baru</button>
+        </div>
+      </div>
+    </div>
 
-        <section class="page" id="page-history">
-          <article class="card">
-            <div class="panel-title"><div><h3>Filter History</h3><p>Cari transaksi berdasarkan pekerja, material, dan tanggal</p></div></div>
-            <div class="form-grid">
-              <div class="field"><label>Nama Pekerja</label><input class="input" id="filter_pekerja"></div>
-              <div class="field"><label>Nama Material</label><input class="input" id="filter_material"></div>
-              <div class="field"><label>Dari Tanggal</label><input class="input" id="filter_date_from" type="date"></div>
-              <div class="field"><label>Sampai Tanggal</label><input class="input" id="filter_date_to" type="date"></div>
-              <div class="field full"><div class="btn-row"><button class="btn btn-primary" onclick="loadHistory()">Cari</button><button class="btn" onclick="resetHistoryFilter()">Reset</button></div></div>
-            </div>
-          </article>
-          <article class="card">
-            <div class="panel-title"><div><h3>History Transaksi</h3><p>Print PDF dan share dari setiap transaksi</p></div><div class="btn-row"><button class="btn" onclick="printSelectedHistoryPdf()">Print PDF</button><button class="btn" onclick="shareSelectedHistoryWhatsapp()">Share WA</button><button class="btn" onclick="shareSelectedHistoryEmail()">Share Email</button></div></div>
-            <div class="table-wrap"><table><thead><tr><th>No</th><th>Tanggal</th><th>Pekerja</th><th>Material</th><th>Qty</th><th>Tujuan</th><th>Aksi</th></tr></thead><tbody id="history-table"></tbody></table></div>
-          </article>
-        </section>
+    <!-- SECTION: RIWAYAT -->
+    <div class="section" id="section-history">
+      <div class="card">
+        <h2>📊 Riwayat Pengambilan</h2>
+        <div id="history-list"></div>
+      </div>
+    </div>
 
-        <section class="page" id="page-reports">
-          <div class="grid-2">
-            <article class="card">
-              <div class="panel-title"><div><h3>Laporan Bulanan</h3><p>Pilih bulan dan tahun</p></div></div>
-              <div class="form-grid">
-                <div class="field"><label>Bulan</label><select id="report_month"><option value="1">01</option><option value="2">02</option><option value="3">03</option><option value="4">04</option><option value="5">05</option><option value="6">06</option><option value="7">07</option><option value="8">08</option><option value="9">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option></select></div>
-                <div class="field"><label>Tahun</label><input class="input" id="report_year" type="number" value="2026"></div>
-                <div class="field full"><div class="btn-row"><button class="btn btn-primary" onclick="loadMonthlyReport()">Tampilkan</button></div></div>
-              </div>
-            </article>
-            <article class="card">
-              <div class="panel-title"><div><h3>Aksi Laporan</h3><p>Print PDF dan share laporan</p></div></div>
-              <div id="reportActions" class="result-box muted">Belum ada laporan yang dimuat.</div>
-              <div class="btn-row" style="margin-top:16px"><button class="btn" onclick="printCurrentMonthlyReportPdf()">Print PDF</button><button class="btn" onclick="shareCurrentMonthlyReportWhatsapp()">Share WA</button><button class="btn" onclick="shareCurrentMonthlyReportEmail()">Share Email</button></div>
-            </article>
+    <!-- SECTION: DASHBOARD -->
+    <div class="section" id="section-dashboard">
+      <div class="card">
+        <h2>📊 Dashboard</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div style="background:linear-gradient(135deg,#e3f2fd,#bbdefb);padding:16px;border-radius:12px;text-align:center;">
+            <div style="font-size:1.8rem;font-weight:700;color:#1565c0;" id="dash-total-material">0</div>
+            <div style="font-size:0.78rem;color:#555;">Total Material</div>
           </div>
-          <article class="card">
-            <div class="panel-title"><div><h3>Ringkasan Laporan</h3><p>Rekap bulanan transaksi material</p></div></div>
-            <div id="reportSummary" class="result-box muted">Belum ada data.</div>
-          </article>
-          <article class="card">
-            <div class="panel-title"><div><h3>Detail Laporan</h3><p>Daftar transaksi pada periode terpilih</p></div></div>
-            <div class="table-wrap"><table><thead><tr><th>No</th><th>Tanggal</th><th>Pekerja</th><th>Material</th><th>Qty</th><th>Tujuan</th></tr></thead><tbody id="report-table"></tbody></table></div>
-          </article>
-        </section>
+          <div style="background:linear-gradient(135deg,#e8f5e9,#c8e6c9);padding:16px;border-radius:12px;text-align:center;">
+            <div style="font-size:1.8rem;font-weight:700;color:#2e7d32;" id="dash-total-stok">0</div>
+            <div style="font-size:0.78rem;color:#555;">Total Stok</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#fff3e0,#ffe0b2);padding:16px;border-radius:12px;text-align:center;">
+            <div style="font-size:1.8rem;font-weight:700;color:#e65100;" id="dash-total-trx">0</div>
+            <div style="font-size:0.78rem;color:#555;">Total Transaksi</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#fce4ec,#f8bbd0);padding:16px;border-radius:12px;text-align:center;">
+            <div style="font-size:1.8rem;font-weight:700;color:#c62828;" id="dash-low-stok">0</div>
+            <div style="font-size:0.78rem;color:#555;">Stok Rendah</div>
+          </div>
+        </div>
+        <h2>⚠️ Material Stok Rendah</h2>
+        <div id="dash-low-list"></div>
+      </div>
+    </div>
 
-        <section class="page" id="page-tools">
-          <article class="card">
-            <div class="panel-title"><div><h3>Sinkronisasi dan PDF</h3><p>Fungsi bantu untuk operasional</p></div></div>
-            <div class="btn-row">
-              <button class="btn btn-primary" onclick="syncAll()">Sync Semua Data</button>
-            </div>
-            <p class="muted">Atur folder PDF di sheet SETTING pada key <strong>folder_pdf_id</strong> agar file PDF tersimpan ke Google Drive.</p>
-          </article>
-        </section>
-      </section>
-    </main>
-      
-</div>
+    <!-- SECTION: LAPORAN BULANAN -->
+    <div class="section" id="section-laporan">
+      <div class="card">
+        <h2>📅 Laporan Bulanan</h2>
+        <div class="form-group">
+          <label>Pilih Bulan</label>
+          <input type="month" id="lap-month" onchange="generateLaporan()">
+        </div>
+        <div id="laporan-content"></div>
+        <button class="btn btn-primary" style="margin-top:12px;" onclick="printLaporan()">🖨️ Print Laporan PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button onclick="showSection('dashboard')" id="bnav-dashboard"><span class="icon">📊</span>Dashboard</button>
+    <button onclick="showSection('workers')" id="bnav-workers" class="active"><span class="icon">👷</span>Pekerja</button>
+    <button onclick="showSection('materials')" id="bnav-materials"><span class="icon">📦</span>Material</button>
+    <button onclick="showSection('scan')" id="bnav-scan"><span class="icon">📷</span>Ambil</button>
+    <button onclick="showSection('history')" id="bnav-history"><span class="icon">📊</span>Riwayat</button>
+    <button onclick="showSection('laporan')" id="bnav-laporan"><span class="icon">📅</span>Laporan</button>
+  </div>
 
 <script>
-const API_BASE_URL = 'https://script.google.com/macros/s/AKfycby0KLRSBE-ntAwvp4vMzvclHjKIevMmcLWl81uRv3nPvjPBzBd7SoiUXIEwbMy10svbYg/exec';
+// ===== CONFIG =====
+const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 
-async function downloadBarcode(type) {
+// ===== DATA (localStorage) =====
+let workers = JSON.parse(localStorage.getItem('wh_workers') || '[]');
+let materials = JSON.parse(localStorage.getItem('wh_materials') || '[]');
+let transactions = JSON.parse(localStorage.getItem('wh_transactions') || '[]');
+function saveLocal() {
+  localStorage.setItem('wh_workers', JSON.stringify(workers));
+  localStorage.setItem('wh_materials', JSON.stringify(materials));
+  localStorage.setItem('wh_transactions', JSON.stringify(transactions));
+}
+
+// ===== API =====
+async function apiCall(action, params = {}) {
   try {
-    let payload = { action: 'barcode_pdf', type };
-
-    if (type === 'pekerja') {
-      const id = document.getElementById('pekerja-id')?.value?.trim();
-      const nama = document.getElementById('pekerja-nama')?.value?.trim();
-      const dept = document.getElementById('pekerja-dept')?.value?.trim();
-
-      if (!id || !nama) {
-        alert('ID dan nama pekerja wajib diisi.');
-        return;
-      }
-
-      payload.id = id;
-      payload.nama = nama;
-      payload.departemen = dept || '-';
-    }
-
-    if (type === 'material') {
-      const id = document.getElementById('material-id')?.value?.trim();
-      const nama = document.getElementById('material-nama')?.value?.trim();
-      const stok = document.getElementById('material-stock')?.value?.trim();
-
-      if (!id || !nama) {
-        alert('ID dan nama material wajib diisi.');
-        return;
-      }
-
-      payload.id = id;
-      payload.nama = nama;
-      payload.stok = stok || '0';
-    }
-
-    const res = await fetch(API_BASE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-
-    if (!data.success) {
-      alert(data.message || 'Gagal membuat PDF barcode.');
-      return;
-    }
-
-    if (data.fileUrl) {
-      window.open(data.fileUrl, '_blank');
-    } else {
-      alert('PDF berhasil dibuat, tapi URL file tidak ditemukan.');
-    }
-  } catch (err) {
-    alert('Terjadi error saat membuat PDF barcode: ' + err.message);
-  }
-}
-let appState = {
-  workers: [],
-  materials: [],
-  transactions: [],
-  dashboard: null,
-  lastTransaction: null,
-  lastReport: null,
-  selectedWorker: null,
-  selectedMaterial: null,
-  selectedHistory: null
-};
-  
-(function(){
-  const root = document.documentElement;
-  let d = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
-  root.setAttribute('data-theme', d);
-  const toggle = document.querySelector('[data-theme-toggle]');
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      d = d === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', d);
-    });
-  }
-})();
-
-document.querySelectorAll('.nav button').forEach(btn => btn.addEventListener('click', () => showPage(btn.dataset.page)));
-document.addEventListener('DOMContentLoaded', syncAll);
-
-function showNotice(msg, type='info') {
-  const box = document.getElementById('notice');
-  box.textContent = msg;
-  box.classList.remove('hidden');
-  box.style.borderColor = type === 'error' ? 'var(--color-error)' : 'var(--color-border)';
-  box.style.color = type === 'error' ? 'var(--color-error)' : 'var(--color-text)';
-  clearTimeout(showNotice.timer);
-  showNotice.timer = setTimeout(() => box.classList.add('hidden'), 4000);
+    const res = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({action,...params}), redirect:'follow' });
+    return JSON.parse(await res.text());
+  } catch(e) { console.warn('API offline:', e.message); return null; }
 }
 
-function showError(err) {
-  showNotice(err && err.message ? err.message : String(err), 'error');
+// ===== TOAST =====
+function showToast(msg, type='info') {
+  const t = document.createElement('div'); t.className=`toast ${type}`; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(), 3000);
 }
 
-async function apiGet(action, params = {}) {
-  const url = new URL(API_BASE_URL);
-  url.searchParams.set('action', action);
-  Object.entries(params).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v);
-  });
-  const res = await fetch(url.toString(), { method: 'GET' });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Request gagal');
-  return data;
+// ===== NAV =====
+let activeScanner = null;
+function showSection(name) {
+  // Stop any active scanner when leaving scan section
+  if (activeScanner) { activeScanner.stop().catch(()=>{}); activeScanner = null; }
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`section-${name}`).classList.add('active');
+  document.getElementById(`bnav-${name}`).classList.add('active');
+  if (name==='workers') renderWorkers();
+  if (name==='materials') renderMaterials();
+  if (name==='history') renderHistory();
+  if (name==='scan') resetScan();
+  if (name==='dashboard') renderDashboard();
 }
 
-async function apiPost(action, payload = {}) {
-  const res = await fetch(API_BASE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action, payload })
-  });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Request gagal');
-  return data;
+// ===== WORKERS =====
+function saveWorker() {
+  const nik = document.getElementById('w-nik').value.trim();
+  const name = document.getElementById('w-name').value.trim();
+  const dept = document.getElementById('w-dept').value;
+  const position = document.getElementById('w-position').value.trim();
+  if (!nik||!name) { showToast('NIK dan Nama wajib diisi!','error'); return; }
+  if (workers.find(w=>w.nik===nik)) { showToast('NIK sudah terdaftar!','error'); return; }
+  const w = { id:'W'+Date.now(), nik, name, dept, position };
+  workers.push(w); saveLocal(); apiCall('addWorker', w);
+
+  JsBarcode('#w-barcode', nik, { format:'CODE128', width:2, height:70, displayValue:true, text:`${nik}` });
+  document.getElementById('w-barcode-label').textContent = `${name} | ${dept}`;
+  document.getElementById('w-barcode-box').style.display = 'block';
+  showToast('Pekerja disimpan + barcode dibuat!','success');
+  ['w-nik','w-name','w-position'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('w-dept').value='';
+  renderWorkers();
 }
 
-function showPage(page) {
-  document.querySelectorAll('.nav button').forEach(b => {
-    b.classList.toggle('active', b.dataset.page === page);
-  });
-
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-
-  const targetPage = document.getElementById('page-' + page);
-  if (!targetPage) return;
-  targetPage.classList.add('active');
-
-  const titles = {
-    dashboard:['Dashboard','Pantau stok, transaksi, dan material dengan cepat.'],
-    workers:['Data Pekerja','Kelola identitas pekerja dan barcode.'],
-    materials:['Data Material','Kelola item material, stok, dan lokasi rak.'],
-    transactions:['Pengambilan Material','Scan pekerja dan material, lalu simpan transaksi.'],
-    history:['History Transaksi','Cari dan cetak riwayat transaksi.'],
-    reports:['Laporan Bulanan','Lihat rekap bulanan, print PDF, dan share.'],
-    tools:['Sync / Tools','Sinkronisasi data dan PDF.']
-  };
-
-  if (titles[page]) {
-    document.getElementById('pageTitle').textContent = titles[page][0];
-    document.getElementById('pageDesc').textContent = titles[page][1];
-  }
+function renderWorkers() {
+  const el = document.getElementById('workers-list');
+  if (!workers.length) { el.innerHTML='<div class="empty">Belum ada pekerja</div>'; return; }
+  el.innerHTML = workers.map(w=>`<div class="list-item">
+    <div class="info"><h4>${w.nik} - ${w.name}</h4><p>${w.dept} | ${w.position}</p></div>
+    <div style="display:flex;gap:4px;">
+      <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="editWorker('${w.id}')">✏️</button>
+      <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="deleteWorker('${w.id}')">🗑️</button>
+    </div>
+  </div>`).join('');
 }
 
-async function syncAll() {
-  try {
-    const res = await apiGet('syncAllData');
-    appState = { ...appState, ...res };
-    renderDashboard(res.dashboard);
-    renderWorkers(res.workers);
-    renderMaterials(res.materials);
-    renderHistory(res.transactions);
-    showNotice('Data berhasil disinkronkan.');
-  } catch (err) {
-    showError(err);
-  }
+function deleteWorker(id) { workers=workers.filter(w=>w.id!==id); saveLocal(); renderWorkers(); showToast('Dihapus','success'); }
+
+// ===== MATERIALS =====
+function saveMaterial() {
+  const code = document.getElementById('m-code').value.trim();
+  const name = document.getElementById('m-name').value.trim();
+  const category = document.getElementById('m-category').value;
+  const unit = document.getElementById('m-unit').value.trim();
+  const stock = parseInt(document.getElementById('m-stock').value)||0;
+  const minStock = parseInt(document.getElementById('m-min').value)||0;
+  const location = document.getElementById('m-location').value.trim();
+  if (!code||!name) { showToast('Kode dan Nama wajib diisi!','error'); return; }
+  if (materials.find(m=>m.code===code)) { showToast('Kode sudah ada!','error'); return; }
+  const m = { id:'M'+Date.now(), code, name, category, unit, stock, minStock, location };
+  materials.push(m); saveLocal(); apiCall('addMaterial', m);
+
+  JsBarcode('#m-barcode', code, { format:'CODE128', width:2, height:70, displayValue:true, text:`${code}` });
+  document.getElementById('m-barcode-label').textContent = `${name} | Stok: ${stock} ${unit} | Rak: ${location}`;
+  document.getElementById('m-barcode-box').style.display = 'block';
+  showToast('Material disimpan + barcode dibuat!','success');
+  ['m-code','m-name','m-unit','m-stock','m-min','m-location'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m-category').value='';
+  document.getElementById('m-dept').value='';
+  renderMaterials();
 }
 
-function renderDashboard(data) {
-  if (!data) return;
-  document.getElementById('stat-material').textContent = data.total_material || 0;
-  document.getElementById('stat-workers').textContent = data.total_pekerja || 0;
-  document.getElementById('stat-transactions').textContent = data.transaksi_hari_ini || 0;
-  document.getElementById('stat-low').textContent = data.stok_rendah || 0;
-
-  document.getElementById('latest-transactions').innerHTML =
-    (data.transaksi_terbaru || []).map(r => `
-      <tr>
-        <td>${r.no_transaksi}</td>
-        <td>${String(r.tanggal || '').slice(0, 10)}</td>
-        <td>${r.nama_pekerja}</td>
-        <td>${r.nama_material}</td>
-        <td>${r.qty_keluar}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="5" class="muted">Belum ada transaksi.</td></tr>';
-
-  document.getElementById('low-stock-list').innerHTML =
-    (data.stok_rendah_list || []).map(r => `
-      <tr>
-        <td>${r.id_material}</td>
-        <td>${r.nama_material}</td>
-        <td class="status-low">${r.stok_saat_ini}</td>
-        <td>${r.minimum_stok}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="4" class="muted">Tidak ada stok rendah.</td></tr>';
+function renderMaterials() {
+  const el = document.getElementById('materials-list');
+  if (!materials.length) { el.innerHTML='<div class="empty">Belum ada material</div>'; return; }
+  el.innerHTML = materials.map(m=>{
+    const cls = m.stock<=0?'stock-empty':m.stock<=m.minStock?'stock-low':'stock-ok';
+    return `<div class="list-item">
+      <div class="info"><h4>${m.code} - ${m.name}</h4><p>${m.category} | Rak: ${m.location} | <span class="stock-badge ${cls}">${m.stock} ${m.unit}</span></p></div>
+      <div style="display:flex;gap:4px;">
+        <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="editMaterial('${m.id}')">✏️</button>
+        <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="deleteMaterial('${m.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-async function saveWorkerForm(e) {
-  e.preventDefault();
-  try {
-    const payload = {
-      id_pekerja: val('worker_id_pekerja'),
-      nama_pekerja: val('worker_nama_pekerja'),
-      no_id: val('worker_no_id'),
-      posisi: val('worker_posisi')
-    };
-    const res = await apiPost('saveWorker', payload);
-    showNotice(res.message);
-    resetWorkerForm();
-    syncAll();
-  } catch (err) {
-    showError(err);
-  }
-}
-
-function resetWorkerForm() {
-  ['worker_id_pekerja','worker_nama_pekerja','worker_no_id','worker_posisi'].forEach(id => document.getElementById(id).value = '');
-}
-
-function renderWorkers(list) {
-  document.getElementById('workers-table').innerHTML = (list || []).map(r => `
-    <tr>
-      <td>${r.id_pekerja}</td>
-      <td>${r.nama_pekerja}</td>
-      <td>${r.no_id}</td>
-      <td>${r.posisi}</td>
-      <td>${r.barcode_value}</td>
-      <td>
-        <div class="btn-row">
-          <button class="btn" onclick="editWorker('${r.id_pekerja}')">Edit</button>
-          <button class="btn" onclick="printWorkerBarcode('${r.id_pekerja}')">Print PDF</button>
-          <button class="btn btn-danger" onclick="deleteWorkerRow('${r.id_pekerja}')">Hapus</button>
-        </div>
-      </td>
-    </tr>
-  `).join('') || '<tr><td colspan="6" class="muted">Belum ada data pekerja.</td></tr>';
-}
+function deleteMaterial(id) { materials=materials.filter(m=>m.id!==id); saveLocal(); renderMaterials(); showToast('Dihapus','success'); }
 
 function editWorker(id) {
-  const r = (appState.workers || []).find(x => x.id_pekerja === id);
-  if (!r) return;
-
-  setVal('worker_id_pekerja', r.id_pekerja);
-  setVal('worker_nama_pekerja', r.nama_pekerja);
-  setVal('worker_no_id', r.no_id);
-  setVal('worker_posisi', r.posisi);
-  showPage('workers');
-
-  document.getElementById('workerActionBox').innerHTML = `
-    <div class="result-item"><strong>${r.nama_pekerja}</strong><span>${r.id_pekerja}</span></div>
-    <div class="result-item"><span>${r.no_id}</span><span>${r.posisi}</span></div>
-    <div class="btn-row"><button class="btn" onclick="printWorkerBarcode('${r.id_pekerja}')">Print Barcode PDF</button></div>
-  `;
-}
-
-async function deleteWorkerRow(id) {
-  if (!confirm('Nonaktifkan pekerja ini?')) return;
-  try {
-    const res = await apiPost('deleteWorker', { id });
-    showNotice(res.message);
-    syncAll();
-  } catch (err) {
-    showError(err);
-  }
-}
-
-async function printWorkerBarcode(id) {
-  try {
-    const res = await apiGet('generateBarcodePdf', { type: 'worker', id });
-    if (res.url) window.open(res.url, '_blank');
-    else showNotice(res.message || 'PDF barcode belum tersedia.', 'error');
-  } catch (err) {
-    showError(err);
-  }
-}
-
-async function saveMaterialForm(e) {
-  e.preventDefault();
-  try {
-    const payload = {
-      id_material: val('material_id_material'),
-      nama_material: val('material_nama_material'),
-      satuan: val('material_satuan'),
-      kategori: val('material_kategori'),
-      stok_awal: val('material_stok_awal'),
-      rak: val('material_rak'),
-      minimum_stok: val('material_minimum_stok')
-    };
-    const res = await apiPost('saveMaterial', payload);
-    showNotice(res.message);
-    resetMaterialForm();
-    syncAll();
-  } catch (err) {
-    showError(err);
-  }
-}
-
-function resetMaterialForm() {
-  ['material_id_material','material_nama_material','material_rak'].forEach(id => document.getElementById(id).value = '');
-  setVal('material_stok_awal', 0);
-  setVal('material_minimum_stok', 0);
-  setVal('material_satuan', 'pcs');
-  setVal('material_kategori', 'spare part');
-}
-
-function renderMaterials(list) {
-  document.getElementById('materials-table').innerHTML = (list || []).map(r => `
-    <tr>
-      <td>${r.id_material}</td>
-      <td>${r.nama_material}</td>
-      <td>${r.satuan}</td>
-      <td>${r.kategori}</td>
-      <td>${r.stok_saat_ini}</td>
-      <td>${r.rak || '-'}</td>
-      <td>${r.minimum_stok}</td>
-      <td>
-        <div class="btn-row">
-          <button class="btn" onclick="editMaterial('${r.id_material}')">Edit</button>
-          <button class="btn" onclick="printMaterialBarcode('${r.id_material}')">Print PDF</button>
-          <button class="btn btn-danger" onclick="deleteMaterialRow('${r.id_material}')">Hapus</button>
-        </div>
-      </td>
-    </tr>
-  `).join('') || '<tr><td colspan="8" class="muted">Belum ada data material.</td></tr>';
+  const w = workers.find(x=>x.id===id); if(!w) return;
+  const name = prompt('Nama:', w.name); if(name===null) return;
+  const dept = prompt('Departemen (Electrical/Mechanical/Store/Manajemen/HSE/HRD):', w.dept); if(dept===null) return;
+  const position = prompt('Jabatan:', w.position); if(position===null) return;
+  w.name=name||w.name; w.dept=dept||w.dept; w.position=position||w.position;
+  saveLocal(); renderWorkers(); showToast('Data pekerja diperbarui!','success');
 }
 
 function editMaterial(id) {
-  const r = (appState.materials || []).find(x => x.id_material === id);
-  if (!r) return;
-
-  setVal('material_id_material', r.id_material);
-  setVal('material_nama_material', r.nama_material);
-  setVal('material_satuan', r.satuan);
-  setVal('material_kategori', r.kategori);
-  setVal('material_stok_awal', r.stok_awal);
-  setVal('material_rak', r.rak);
-  setVal('material_minimum_stok', r.minimum_stok);
-  showPage('materials');
-
-  document.getElementById('materialActionBox').innerHTML = `
-    <div class="result-item"><strong>${r.nama_material}</strong><span>${r.id_material}</span></div>
-    <div class="result-item"><span>${r.satuan}</span><span>${r.kategori}</span></div>
-    <div class="btn-row"><button class="btn" onclick="printMaterialBarcode('${r.id_material}')">Print Barcode PDF</button></div>
-  `;
+  const m = materials.find(x=>x.id===id); if(!m) return;
+  const name = prompt('Nama Material:', m.name); if(name===null) return;
+  const stock = prompt('Stok:', m.stock); if(stock===null) return;
+  const location = prompt('Lokasi Rak:', m.location); if(location===null) return;
+  m.name=name||m.name; m.stock=parseInt(stock)||m.stock; m.location=location||m.location;
+  saveLocal(); renderMaterials(); showToast('Data material diperbarui!','success');
 }
 
-async function deleteMaterialRow(id) {
-  if (!confirm('Nonaktifkan material ini?')) return;
-  try {
-    const res = await apiPost('deleteMaterial', { id });
-    showNotice(res.message);
-    syncAll();
-  } catch (err) {
-    showError(err);
+// ===== SCAN / PENGAMBILAN =====
+let currentWorker = null, currentMaterial = null;
+
+function resetScan() {
+  currentWorker = null; currentMaterial = null;
+  if (activeScanner) { activeScanner.stop().catch(()=>{}); activeScanner = null; }
+  document.getElementById('scan-step-1').style.display='block';
+  document.getElementById('scan-step-2').style.display='none';
+  document.getElementById('scan-step-3').style.display='none';
+  document.getElementById('scan-step-4').style.display='none';
+  document.getElementById('res-worker').style.display='none';
+  document.getElementById('res-material').style.display='none';
+  document.getElementById('manual-worker').value='';
+  document.getElementById('manual-material').value='';
+  document.getElementById('take-qty').value='';
+  document.getElementById('take-note').value='';
+  updateSteps(1);
+  startWorkerScanner();
+}
+
+function updateSteps(current) {
+  for(let i=1;i<=4;i++){
+    const el=document.getElementById(`step-ind-${i}`);
+    el.className='step'+(i<current?' done':i===current?' active':'');
   }
 }
 
-async function printMaterialBarcode(id) {
-  try {
-    const res = await apiGet('generateBarcodePdf', { type: 'material', id });
-    if (res.url) window.open(res.url, '_blank');
-    else showNotice(res.message || 'PDF barcode belum tersedia.', 'error');
-  } catch (err) {
-    showError(err);
-  }
+function startWorkerScanner() {
+  const config = { fps:10, qrbox:{width:280,height:100}, formatsToSupport:[Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_39] };
+  const scanner = new Html5Qrcode('scanner-worker');
+  activeScanner = scanner;
+  scanner.start({ facingMode:'environment' }, config, (code)=>{
+    scanner.stop().then(()=>{ activeScanner=null; processWorkerScan(code); }).catch(()=>{});
+  }, ()=>{}).catch(err=>{
+    console.warn('Camera error:', err);
+    document.getElementById('scanner-worker').innerHTML='<p style="padding:20px;color:#666;text-align:center;">Kamera tidak tersedia.<br>Gunakan input manual di bawah.</p>';
+  });
 }
 
-async function lookupWorker() {
-  const barcode = val('trx_barcode_pekerja');
-  if (!barcode) return;
-  try {
-    const res = await apiGet('getWorkerByBarcode', { barcode });
-    appState.selectedWorker = res.data;
-    document.getElementById('summaryWorker').textContent =
-      `${res.data.nama_pekerja} | ${res.data.no_id} | ${res.data.posisi}`;
-  } catch (err) {
-    showError(err);
-  }
+function startMaterialScanner() {
+  const config = { fps:10, qrbox:{width:280,height:100}, formatsToSupport:[Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_39] };
+  const scanner = new Html5Qrcode('scanner-material');
+  activeScanner = scanner;
+  scanner.start({ facingMode:'environment' }, config, (code)=>{
+    scanner.stop().then(()=>{ activeScanner=null; processMaterialScan(code); }).catch(()=>{});
+  }, ()=>{}).catch(err=>{
+    console.warn('Camera error:', err);
+    document.getElementById('scanner-material').innerHTML='<p style="padding:20px;color:#666;text-align:center;">Kamera tidak tersedia.<br>Gunakan input manual di bawah.</p>';
+  });
 }
 
-async function lookupMaterial() {
-  const barcode = val('trx_barcode_material');
-  if (!barcode) return;
-  try {
-    const res = await apiGet('getMaterialByBarcode', { barcode });
-    appState.selectedMaterial = res.data;
-    document.getElementById('summaryMaterial').textContent =
-      `${res.data.nama_material} | ${res.data.satuan} | Rak ${res.data.rak || '-'}`;
-    document.getElementById('summaryStock').textContent =
-      `${res.data.stok_saat_ini} (min ${res.data.minimum_stok})`;
-  } catch (err) {
-    showError(err);
-  }
+function manualScanWorker() { const v=document.getElementById('manual-worker').value.trim(); if(v) processWorkerScan(v); }
+function manualScanMaterial() { const v=document.getElementById('manual-material').value.trim(); if(v) processMaterialScan(v); }
+
+function processWorkerScan(code) {
+  const w = workers.find(x=>x.nik===code);
+  if(!w) { showToast('Pekerja tidak ditemukan: '+code,'error'); if(!activeScanner) startWorkerScanner(); return; }
+  currentWorker = w;
+  document.getElementById('rs-w-nik').textContent=w.nik;
+  document.getElementById('rs-w-name').textContent=w.name;
+  document.getElementById('rs-w-dept').textContent=w.dept;
+  document.getElementById('rs-w-pos').textContent=w.position;
+  document.getElementById('res-worker').style.display='block';
+  showToast('Pekerja: '+w.name,'success');
 }
 
-async function saveTransactionForm(e) {
-  e.preventDefault();
-  try {
-    const payload = {
-      barcode_pekerja: val('trx_barcode_pekerja'),
-      barcode_material: val('trx_barcode_material'),
-      qty_keluar: val('trx_qty_keluar'),
-      tujuan_penggunaan: val('trx_tujuan_penggunaan'),
-      storeman: val('trx_storeman')
-    };
-    const res = await apiPost('saveTransaction', payload);
-    appState.lastTransaction = res.data;
-    renderTransactionResult(res.data);
-    showNotice(res.message);
-    resetTransactionForm();
-    syncAll();
-  } catch (err) {
-    showError(err);
-  }
+function processMaterialScan(code) {
+  const m = materials.find(x=>x.code===code);
+  if(!m) { showToast('Material tidak ditemukan: '+code,'error'); if(!activeScanner) startMaterialScanner(); return; }
+  currentMaterial = m;
+  document.getElementById('rs-m-code').textContent=m.code;
+  document.getElementById('rs-m-name').textContent=m.name;
+  document.getElementById('rs-m-cat').textContent=m.category;
+  const cls = m.stock<=0?'stock-empty':m.stock<=m.minStock?'stock-low':'stock-ok';
+  document.getElementById('rs-m-stock').innerHTML=`<span class="stock-badge ${cls}">${m.stock} ${m.unit}</span>`;
+  document.getElementById('rs-m-loc').textContent=m.location;
+  document.getElementById('res-material').style.display='block';
+  showToast('Material: '+m.name,'success');
 }
 
-function resetTransactionForm() {
-  ['trx_barcode_pekerja','trx_barcode_material','trx_qty_keluar','trx_tujuan_penggunaan','trx_storeman'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('summaryWorker').textContent = 'Belum discan';
-  document.getElementById('summaryMaterial').textContent = 'Belum discan';
-  document.getElementById('summaryStock').textContent = '-';
+function toStep2() {
+  if(activeScanner){activeScanner.stop().catch(()=>{});activeScanner=null;}
+  document.getElementById('scan-step-1').style.display='none';
+  document.getElementById('scan-step-2').style.display='block';
+  updateSteps(2);
+  startMaterialScanner();
 }
 
-function renderTransactionResult(r) {
-  document.getElementById('transactionResult').innerHTML = `
-    <div class="result-item"><strong>No Transaksi</strong><span>${r.no_transaksi}</span></div>
-    <div class="result-item"><strong>Pekerja</strong><span>${r.pekerja.nama_pekerja} - ${r.pekerja.no_id}</span></div>
-    <div class="result-item"><strong>Material</strong><span>${r.material.nama_material}</span></div>
-    <div class="result-item"><strong>Qty</strong><span>${r.qty_keluar} ${r.material.satuan}</span></div>
-    <div class="result-item"><strong>Tujuan</strong><span>${r.tujuan_penggunaan}</span></div>
-    <div class="result-item"><strong>Stok</strong><span>${r.stok_sebelum} → ${r.stok_sesudah}</span></div>
-  `;
+function toStep3() {
+  if(activeScanner){activeScanner.stop().catch(()=>{});activeScanner=null;}
+  document.getElementById('scan-step-2').style.display='none';
+  document.getElementById('scan-step-3').style.display='block';
+  updateSteps(3);
+  document.getElementById('take-qty').focus();
 }
 
-async function printTransactionPdf(no) {
-  try {
-    const res = await apiGet('generateTransactionPdf', { no_transaksi: no });
-    if (res.url) window.open(res.url, '_blank');
-    else showNotice(res.message || 'PDF belum tersedia.', 'error');
-  } catch (err) {
-    showError(err);
-  }
+function submitTrx() {
+  const qty = parseInt(document.getElementById('take-qty').value)||0;
+  const note = document.getElementById('take-note').value.trim();
+  if(qty<=0) { showToast('Jumlah harus > 0!','error'); return; }
+  if(qty>currentMaterial.stock) { showToast(`Stok tidak cukup! Tersedia: ${currentMaterial.stock}`,'error'); return; }
+
+  const mat = materials.find(m=>m.id===currentMaterial.id);
+  mat.stock -= qty;
+
+  const trx = {
+    id:'T'+Date.now(),
+    date: new Date().toLocaleString('id-ID'),
+    workerNik: currentWorker.nik,
+    workerName: currentWorker.name,
+    workerDept: currentWorker.dept,
+    materialCode: currentMaterial.code,
+    materialName: currentMaterial.name,
+    qty, unit: currentMaterial.unit,
+    stockAfter: mat.stock,
+    note
+  };
+  transactions.unshift(trx); saveLocal(); apiCall('addTransaction', trx);
+
+  document.getElementById('scan-step-3').style.display='none';
+  document.getElementById('scan-step-4').style.display='block';
+  updateSteps(4);
+
+  document.getElementById('trx-summary').innerHTML=`
+    <h3>✅ Transaksi Berhasil!</h3>
+    <div class="row"><span class="key">Tanggal</span><span class="val">${trx.date}</span></div>
+    <div class="row"><span class="key">Pekerja</span><span class="val">${trx.workerNik} - ${trx.workerName}</span></div>
+    <div class="row"><span class="key">Dept</span><span class="val">${trx.workerDept}</span></div>
+    <div class="row"><span class="key">Material</span><span class="val">${trx.materialCode} - ${trx.materialName}</span></div>
+    <div class="row"><span class="key">Jumlah</span><span class="val">${trx.qty} ${trx.unit}</span></div>
+    <div class="row"><span class="key">Sisa Stok</span><span class="val">${trx.stockAfter} ${trx.unit}</span></div>
+    ${trx.note?`<div class="row"><span class="key">Ket</span><span class="val">${trx.note}</span></div>`:''}`;
+  showToast('Transaksi berhasil!','success');
 }
 
-async function shareTransactionWhatsapp(no) {
-  try {
-    const res = await apiGet('getWhatsappShareLink', { text: `Bukti transaksi ${no}`, url: '' });
-    if (res.url) window.open(res.url, '_blank');
-  } catch (err) {
-    showError(err);
-  }
+// ===== PRINT PDF =====
+function printTrxPdf() {
+  const trx = transactions[0]; if(!trx) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14); doc.text('BUKTI PENGAMBILAN MATERIAL', 105, 20, {align:'center'});
+  doc.setFontSize(9); doc.text('Warehouse Management System', 105, 26, {align:'center'});
+  doc.line(20,30,190,30);
+  doc.setFontSize(11); let y=40;
+  [['Tanggal',trx.date],['NIK',trx.workerNik],['Nama Pekerja',trx.workerName],['Departemen',trx.workerDept],
+   ['Kode Material',trx.materialCode],['Nama Material',trx.materialName],
+   ['Jumlah Diambil',`${trx.qty} ${trx.unit}`],['Sisa Stok',`${trx.stockAfter} ${trx.unit}`],['Keterangan',trx.note||'-']
+  ].forEach(([k,v])=>{ doc.setFont(undefined,'bold'); doc.text(k,25,y); doc.setFont(undefined,'normal'); doc.text(`: ${v}`,75,y); y+=9; });
+  doc.line(20,y+5,190,y+5); y+=18;
+  doc.setFontSize(9);
+  doc.text('Pengambil,',50,y,{align:'center'}); doc.text('Petugas Gudang,',155,y,{align:'center'});
+  y+=20; doc.text('(_______________)',50,y,{align:'center'}); doc.text('(_______________)',155,y,{align:'center'});
+  doc.save(`pengambilan_${trx.materialCode}_${trx.workerNik}.pdf`);
+  showToast('PDF diunduh!','success');
 }
 
-async function shareTransactionEmail(no) {
-  const to = prompt('Masukkan email tujuan');
-  if (!to) return;
-  try {
-    const res = await apiPost('shareByEmail', {
-      to,
-      subject: 'Bukti Transaksi ' + no,
-      text: 'Berikut bukti transaksi ' + no
-    });
-    showNotice(res.message);
-  } catch (err) {
-    showError(err);
-  }
+// ===== SHARE =====
+function shareTrx() {
+  const trx = transactions[0]; if(!trx) return;
+  const text=`📤 PENGAMBILAN MATERIAL\n\n📅 ${trx.date}\n👷 ${trx.workerNik} - ${trx.workerName}\n🏢 ${trx.workerDept}\n📦 ${trx.materialCode} - ${trx.materialName}\n🔢 Jumlah: ${trx.qty} ${trx.unit}\n📊 Sisa: ${trx.stockAfter} ${trx.unit}\n📝 ${trx.note||'-'}`;
+  if(navigator.share) { navigator.share({title:'Bukti Pengambilan',text}).catch(()=>{}); }
+  else { navigator.clipboard.writeText(text).then(()=>showToast('Disalin ke clipboard!','success')); }
 }
 
-function printLastTransactionPdf() {
-  if (!appState.lastTransaction) return showNotice('Belum ada transaksi terakhir.', 'error');
-  printTransactionPdf(appState.lastTransaction.no_transaksi);
+// ===== HISTORY =====
+function renderHistory() {
+  const el=document.getElementById('history-list');
+  if(!transactions.length){el.innerHTML='<div class="empty">Belum ada riwayat</div>';return;}
+  el.innerHTML=transactions.slice(0,50).map(t=>`<div class="list-item">
+    <div class="info"><h4>${t.materialCode} - ${t.materialName}</h4><p>${t.date} | ${t.workerName} | ${t.qty} ${t.unit}</p></div>
+    <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="reprintTrx('${t.id}')">🖨️</button>
+  </div>`).join('');
 }
 
-function shareLastTransactionWhatsapp() {
-  if (!appState.lastTransaction) return showNotice('Belum ada transaksi terakhir.', 'error');
-  shareTransactionWhatsapp(appState.lastTransaction.no_transaksi);
+function reprintTrx(id) {
+  const trx=transactions.find(t=>t.id===id); if(!trx)return;
+  const orig=transactions[0]; transactions[0]=trx; printTrxPdf(); transactions[0]=orig;
 }
 
-function shareLastTransactionEmail() {
-  if (!appState.lastTransaction) return showNotice('Belum ada transaksi terakhir.', 'error');
-  shareTransactionEmail(appState.lastTransaction.no_transaksi);
+// ===== BARCODE UTILS =====
+function downloadBarcode(prefix) {
+  const svg=document.getElementById(`${prefix}-barcode`);
+  const canvas=document.createElement('canvas');const ctx=canvas.getContext('2d');
+  const data=new XMLSerializer().serializeToString(svg);const img=new Image();
+  img.onload=()=>{canvas.width=img.width*2;canvas.height=img.height*2;ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    const a=document.createElement('a');a.download=`barcode_${Date.now()}.png`;a.href=canvas.toDataURL('image/png');a.click();showToast('Barcode diunduh!','success');};
+  img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(data)));
 }
 
-async function loadHistory() {
-  try {
-    const filters = {
-      keyword_pekerja: val('filter_pekerja'),
-      keyword_material: val('filter_material'),
-      date_from: val('filter_date_from'),
-      date_to: val('filter_date_to')
-    };
-    const res = await apiGet('getTransactionHistory', filters);
-    renderHistory(res.data);
-  } catch (err) {
-    showError(err);
-  }
+function printBarcode(prefix) {
+  const svg=document.getElementById(`${prefix}-barcode`);
+  const label=document.getElementById(`${prefix}-barcode-label`).textContent;
+  const w=window.open('','_blank');
+  w.document.write(`<html><body style="text-align:center;padding:30px;font-family:sans-serif;">${svg.outerHTML}<br><p style="margin-top:8px;">${label}</p></body></html>`);
+  w.document.close(); w.print();
 }
 
-function renderHistory(list) {
-  appState.transactions = list || [];
-  document.getElementById('history-table').innerHTML = (list || []).map(r => `
-    <tr onclick="selectHistory('${r.no_transaksi}')" style="cursor:pointer">
-      <td>${r.no_transaksi}</td>
-      <td>${String(r.tanggal || '').slice(0, 10)}</td>
-      <td>${r.nama_pekerja}</td>
-      <td>${r.nama_material}</td>
-      <td>${r.qty_keluar}</td>
-      <td>${r.tujuan_penggunaan}</td>
-      <td>
-        <div class="btn-row">
-          <button type="button" class="btn" onclick="event.stopPropagation();printTransactionPdf('${r.no_transaksi}')">Print PDF</button>
-          <button type="button" class="btn" onclick="event.stopPropagation();shareTransactionWhatsapp('${r.no_transaksi}')">Share WA</button>
-          <button type="button" class="btn" onclick="event.stopPropagation();shareTransactionEmail('${r.no_transaksi}')">Share Email</button>
-        </div>
-      </td>
-    </tr>
-  `).join('') || '<tr><td colspan="7" class="muted">Belum ada history transaksi.</td></tr>';
-}
-function selectHistory(no) {
-  appState.selectedHistory = (appState.transactions || []).find(r => r.no_transaksi === no) || null;
-  showNotice('History terpilih: ' + no);
+// ===== DASHBOARD =====
+function renderDashboard() {
+  document.getElementById('dash-total-material').textContent = materials.length;
+  document.getElementById('dash-total-stok').textContent = materials.reduce((s,m)=>s+m.stock,0);
+  document.getElementById('dash-total-trx').textContent = transactions.length;
+  const lowItems = materials.filter(m=>m.stock<=m.minStock);
+  document.getElementById('dash-low-stok').textContent = lowItems.length;
+  const el = document.getElementById('dash-low-list');
+  if(!lowItems.length){ el.innerHTML='<div class="empty">Semua stok aman 👍</div>'; return; }
+  el.innerHTML = lowItems.map(m=>{
+    const cls = m.stock<=0?'stock-empty':'stock-low';
+    return `<div class="list-item"><div class="info"><h4>${m.code} - ${m.name}</h4><p>Stok: <span class="stock-badge ${cls}">${m.stock} ${m.unit}</span> | Min: ${m.minStock}</p></div></div>`;
+  }).join('');
 }
 
-function printSelectedHistoryPdf() {
-  if (!appState.selectedHistory) return showNotice('Pilih history transaksi terlebih dahulu.', 'error');
-  printTransactionPdf(appState.selectedHistory.no_transaksi);
+// ===== LAPORAN BULANAN =====
+function generateLaporan() {
+  const month = document.getElementById('lap-month').value;
+  if(!month) return;
+  const [y,m] = month.split('-');
+  const filtered = transactions.filter(t=>{
+    const d = new Date(t.date.split(',')[0].split('/').reverse().join('-'));
+    return d.getFullYear()==parseInt(y) && (d.getMonth()+1)==parseInt(m);
+  });
+  const el = document.getElementById('laporan-content');
+  if(!filtered.length){ el.innerHTML='<div class="empty">Tidak ada transaksi di bulan ini</div>'; return; }
+  const totalQty = filtered.reduce((s,t)=>s+t.qty,0);
+  el.innerHTML = `<div class="result-card"><h3>Ringkasan Bulan ${m}/${y}</h3>
+    <div class="row"><span class="key">Total Transaksi</span><span class="val">${filtered.length}</span></div>
+    <div class="row"><span class="key">Total Item Diambil</span><span class="val">${totalQty}</span></div></div>
+    <div style="margin-top:12px;">${filtered.map(t=>`<div class="list-item"><div class="info"><h4>${t.materialCode} - ${t.materialName}</h4><p>${t.date} | ${t.workerName} | ${t.qty} ${t.unit}</p></div></div>`).join('')}</div>`;
 }
 
-function shareSelectedHistoryWhatsapp() {
-  if (!appState.selectedHistory) return showNotice('Pilih history transaksi terlebih dahulu.', 'error');
-  shareTransactionWhatsapp(appState.selectedHistory.no_transaksi);
+function printLaporan() {
+  const month = document.getElementById('lap-month').value;
+  if(!month){ showToast('Pilih bulan dulu!','error'); return; }
+  const [y,m] = month.split('-');
+  const filtered = transactions.filter(t=>{
+    const d = new Date(t.date.split(',')[0].split('/').reverse().join('-'));
+    return d.getFullYear()==parseInt(y) && (d.getMonth()+1)==parseInt(m);
+  });
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14); doc.text(`LAPORAN BULANAN - ${m}/${y}`, 105, 20, {align:'center'});
+  doc.setFontSize(9); doc.text('Marissa Store', 105, 26, {align:'center'});
+  doc.line(20,30,190,30);
+  doc.setFontSize(10); let yy=40;
+  doc.text(`Total Transaksi: ${filtered.length}`, 25, yy); yy+=8;
+  doc.text(`Total Item Diambil: ${filtered.reduce((s,t)=>s+t.qty,0)}`, 25, yy); yy+=12;
+  doc.setFontSize(9);
+  filtered.forEach(t=>{
+    if(yy>270){doc.addPage();yy=20;}
+    doc.text(`${t.date} | ${t.workerName} | ${t.materialCode} - ${t.materialName} | ${t.qty} ${t.unit}`, 25, yy); yy+=7;
+  });
+  doc.save(`laporan_${y}_${m}.pdf`);
+  showToast('Laporan PDF diunduh!','success');
 }
 
-function shareSelectedHistoryEmail() {
-  if (!appState.selectedHistory) return showNotice('Pilih history transaksi terlebih dahulu.', 'error');
-  shareTransactionEmail(appState.selectedHistory.no_transaksi);
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded',()=>{ renderWorkers(); });
+// ===== CANCEL SCAN =====
+function cancelScan() {
+  if (activeScanner) { activeScanner.stop().catch(()=>{}); activeScanner = null; }
+  showSection('workers');
 }
 
-function resetHistoryFilter() {
-  ['filter_pekerja','filter_material','filter_date_from','filter_date_to'].forEach(id => document.getElementById(id).value = '');
-  loadHistory();
-}
-
-async function loadMonthlyReport() {
-  try {
-    const month = val('report_month');
-    const year = val('report_year');
-    const res = await apiGet('getMonthlyReport', { month, year });
-    const data = res.data;
-    appState.lastReport = { month, year, data };
-
-    document.getElementById('reportSummary').innerHTML = `
-      <div class="result-item"><strong>Periode</strong><span>${data.periode}</span></div>
-      <div class="result-item"><strong>Total Transaksi</strong><span>${data.total_transaksi}</span></div>
-      <div class="result-item"><strong>Total Qty Keluar</strong><span>${data.total_qty_keluar}</span></div>
-      <div class="result-item"><strong>Top Material</strong><span>${(data.top_material || []).slice(0,3).map(i => i.nama_material + ' (' + i.total_qty + ')').join(', ') || '-'}</span></div>
-    `;
-
-    document.getElementById('reportActions').innerHTML = `
-      <div class="result-item"><strong>Periode Aktif</strong><span>${data.periode}</span></div>
-      <div class="result-item"><strong>Detail</strong><span>${data.total_transaksi} transaksi</span></div>
-    `;
-
-    document.getElementById('report-table').innerHTML = (data.detail || []).map(r => `
-      <tr>
-        <td>${r.no_transaksi}</td>
-        <td>${String(r.tanggal || '').slice(0, 10)}</td>
-        <td>${r.nama_pekerja}</td>
-        <td>${r.nama_material}</td>
-        <td>${r.qty_keluar}</td>
-        <td>${r.tujuan_penggunaan}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="6" class="muted">Tidak ada data untuk periode ini.</td></tr>';
-  } catch (err) {
-    showError(err);
-  }
-}
-
-async function printMonthlyReportPdf(month, year) {
-  try {
-    const res = await apiGet('generateMonthlyReportPdf', { month, year });
-    if (res.url) window.open(res.url, '_blank');
-    else showNotice(res.message || 'PDF laporan belum tersedia.', 'error');
-  } catch (err) {
-    showError(err);
-  }
-}
-
-async function shareMonthlyReportWhatsapp(periode) {
-  try {
-    const res = await apiGet('getWhatsappShareLink', { text: `Laporan bulanan ${periode}`, url: '' });
-    if (res.url) window.open(res.url, '_blank');
-  } catch (err) {
-    showError(err);
-  }
-}
-
-async function shareMonthlyReportEmail(periode) {
-  const to = prompt('Masukkan email tujuan');
-  if (!to) return;
-  try {
-    const res = await apiPost('shareByEmail', {
-      to,
-      subject: 'Laporan Bulanan ' + periode,
-      text: 'Berikut laporan bulanan ' + periode
-    });
-    showNotice(res.message);
-  } catch (err) {
-    showError(err);
-  }
-}
-
-function printCurrentMonthlyReportPdf() {
-  if (!appState.lastReport) return showNotice('Belum ada laporan bulanan yang dimuat.', 'error');
-  printMonthlyReportPdf(appState.lastReport.month, appState.lastReport.year);
-}
-
-function shareCurrentMonthlyReportWhatsapp() {
-  if (!appState.lastReport) return showNotice('Belum ada laporan bulanan yang dimuat.', 'error');
-  shareMonthlyReportWhatsapp(appState.lastReport.data.periode);
-}
-
-function shareCurrentMonthlyReportEmail() {
-  if (!appState.lastReport) return showNotice('Belum ada laporan bulanan yang dimuat.', 'error');
-  shareMonthlyReportEmail(appState.lastReport.data.periode);
-}
-
-function val(id) {
-  return document.getElementById(id).value.trim();
-}
-
-function setVal(id, v) {
-  document.getElementById(id).value = v ?? '';
+// ===== AUTO GENERATE MATERIAL CODE =====
+function generateMaterialCode() {
+  const dept = document.getElementById('m-dept').value;
+  if (!dept) { document.getElementById('m-code').value = ''; return; }
+  const prefix = { Electrical:'ELC', Mechanical:'MEC', Store:'STR', Manajemen:'MNJ', HSE:'HSE', HRD:'HRD' };
+  const code = prefix[dept] || 'GEN';
+  const count = materials.filter(m => m.code.includes(code)).length + 1;
+  document.getElementById('m-code').value = `MTR-${code}-${String(count).padStart(3,'0')}`;
 }
 </script>
+
+<footer style="position:fixed;bottom:56px;left:0;right:0;text-align:center;padding:6px;background:#1a73e8;color:white;font-size:0.72rem;z-index:99;">Powered by Pausbiru7</footer>
 </body>
 </html>

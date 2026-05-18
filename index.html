@@ -78,7 +78,6 @@
 </head>
 <body>
   <nav class="navbar"><h1>🏪 Marissa Store</h1></nav>
-
   <div class="container">
     <!-- SECTION: INPUT PEKERJA -->
     <div class="section active" id="section-workers">
@@ -103,7 +102,6 @@
         <div id="workers-list"></div>
       </div>
     </div>
-
     <!-- SECTION: INPUT MATERIAL -->
     <div class="section" id="section-materials">
       <div class="card">
@@ -131,7 +129,6 @@
         <div id="materials-list"></div>
       </div>
     </div>
-
     <!-- SECTION: PENGAMBILAN (SCAN) -->
     <div class="section" id="section-scan">
       <div class="card">
@@ -142,7 +139,6 @@
           <div class="step" id="step-ind-3">3</div>
           <div class="step" id="step-ind-4">✓</div>
         </div>
-
         <!-- STEP 1: Scan Pekerja -->
         <div id="scan-step-1">
           <div class="scan-prompt">
@@ -164,7 +160,6 @@
             <button class="btn btn-success" style="margin-top:12px;" onclick="toStep2()">Lanjut Scan Material →</button>
           </div>
         </div>
-
         <!-- STEP 2: Scan Material -->
         <div id="scan-step-2" style="display:none;">
           <div class="scan-prompt">
@@ -187,7 +182,6 @@
             <button class="btn btn-success" style="margin-top:12px;" onclick="toStep3()">Lanjut Input Jumlah →</button>
           </div>
         </div>
-
         <!-- STEP 3: Input Qty -->
         <div id="scan-step-3" style="display:none;">
           <div class="scan-prompt" style="background:linear-gradient(135deg,#e3f2fd,#e8eaf6);border-color:#1a73e8;">
@@ -198,7 +192,6 @@
           <div class="form-group"><label>Keterangan (opsional)</label><input type="text" id="take-note" placeholder="Untuk keperluan..."></div>
           <button class="btn btn-success" onclick="submitTrx()">✅ Simpan Transaksi</button>
         </div>
-
         <!-- STEP 4: Done -->
         <div id="scan-step-4" style="display:none;">
           <div class="summary-box" id="trx-summary"></div>
@@ -210,7 +203,6 @@
         </div>
       </div>
     </div>
-
     <!-- SECTION: RIWAYAT -->
     <div class="section" id="section-history">
       <div class="card">
@@ -218,7 +210,6 @@
         <div id="history-list"></div>
       </div>
     </div>
-
     <!-- SECTION: DASHBOARD -->
     <div class="section" id="section-dashboard">
       <div class="card">
@@ -245,7 +236,6 @@
         <div id="dash-low-list"></div>
       </div>
     </div>
-
     <!-- SECTION: LAPORAN BULANAN -->
     <div class="section" id="section-laporan">
       <div class="card">
@@ -259,7 +249,6 @@
       </div>
     </div>
   </div>
-
   <!-- BOTTOM NAV -->
   <div class="bottom-nav">
     <button onclick="showSection('dashboard')" id="bnav-dashboard"><span class="icon">📊</span>Dashboard</button>
@@ -269,39 +258,29 @@
     <button onclick="showSection('history')" id="bnav-history"><span class="icon">📊</span>Riwayat</button>
     <button onclick="showSection('laporan')" id="bnav-laporan"><span class="icon">📅</span>Laporan</button>
   </div>
-
 <script>
 // ===== CONFIG =====
-const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
-
+const API_URL = 'https://script.google.com/macros/s/AKfycby0KLRSBE-ntAwvp4vMzvclHjKIevMmcLWl81uRv3nPvjPBzBd7SoiUXIEwbMy10svbYg/exec';
 // ===== DATA (localStorage) =====
 let workers = JSON.parse(localStorage.getItem('wh_workers') || '[]');
 let materials = JSON.parse(localStorage.getItem('wh_materials') || '[]');
 let transactions = JSON.parse(localStorage.getItem('wh_transactions') || '[]');
-function saveLocal() {
-  localStorage.setItem('wh_workers', JSON.stringify(workers));
-  localStorage.setItem('wh_materials', JSON.stringify(materials));
-  localStorage.setItem('wh_transactions', JSON.stringify(transactions));
-}
+function saveLocal() { localStorage.setItem('wh_workers', JSON.stringify(workers)); localStorage.setItem('wh_materials', JSON.stringify(materials)); localStorage.setItem('wh_transactions', JSON.stringify(transactions)); }
 
 // ===== API =====
-async function apiCall(action, params = {}) {
+async function apiCall(action, payload = {}) {
   try {
-    const res = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({action,...params}), redirect:'follow' });
-    return JSON.parse(await res.text());
+    const res = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action,payload}), redirect:'follow' });
+    return await res.json();
   } catch(e) { console.warn('API offline:', e.message); return null; }
 }
 
 // ===== TOAST =====
-function showToast(msg, type='info') {
-  const t = document.createElement('div'); t.className=`toast ${type}`; t.textContent=msg;
-  document.body.appendChild(t); setTimeout(()=>t.remove(), 3000);
-}
+function showToast(msg, type='info') { const t = document.createElement('div'); t.className=`toast ${type}`; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(), 3000); }
 
 // ===== NAV =====
 let activeScanner = null;
 function showSection(name) {
-  // Stop any active scanner when leaving scan section
   if (activeScanner) { activeScanner.stop().catch(()=>{}); activeScanner = null; }
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
@@ -314,373 +293,88 @@ function showSection(name) {
   if (name==='dashboard') renderDashboard();
 }
 
+// ===== INIT =====
+async function initApp() {
+  try {
+    const resp = await fetch(API_URL + '?action=syncAllData').then(r => r.json()).catch(()=>null);
+    if (resp && resp.success) {
+      workers = (resp.workers || []).map(w => ({ id: w.id_pekerja||'', nik: w.no_id||'', name: w.nama_pekerja||'', dept: w.departemen||w.posisi||'', position: w.posisi||'', barcode_value: w.barcode_value||'' }));
+      materials = (resp.materials || []).map(m => ({ id: m.id_material||'', code: m.kode_material||m.id_material||'', name: m.nama_material||'', category: m.kategori||'', unit: m.satuan||'', stock: Number(m.stok_saat_ini||m.stok_awal||0), minStock: Number(m.minimum_stok||0), location: m.rak||'', barcode_value: m.barcode_value||'' }));
+      transactions = (resp.transactions || []).map(t => ({ id: t.no_transaksi||'', date: t.tanggal||t.created_at||'', workerNik: t.no_id||'', workerName: t.nama_pekerja||'', workerDept: t.tujuan_penggunaan||'', materialCode: t.id_material||'', materialName: t.nama_material||'', qty: Number(t.qty_keluar||0), unit: t.satuan||'', note: t.tujuan_penggunaan||'' }));
+      saveLocal();
+    }
+  } catch (e) { console.warn('initApp error', e); }
+  renderWorkers(); renderMaterials(); renderDashboard(); renderHistory(); startWorkerScanner();
+}
+
+window.addEventListener('load', initApp);
+
 // ===== WORKERS =====
-function saveWorker() {
+async function saveWorker() {
   const nik = document.getElementById('w-nik').value.trim();
   const name = document.getElementById('w-name').value.trim();
   const dept = document.getElementById('w-dept').value;
   const position = document.getElementById('w-position').value.trim();
   if (!nik||!name) { showToast('NIK dan Nama wajib diisi!','error'); return; }
-  if (workers.find(w=>w.nik===nik)) { showToast('NIK sudah terdaftar!','error'); return; }
-  const w = { id:'W'+Date.now(), nik, name, dept, position };
-  workers.push(w); saveLocal(); apiCall('addWorker', w);
-
-  JsBarcode('#w-barcode', nik, { format:'CODE128', width:2, height:70, displayValue:true, text:`${nik}` });
-  document.getElementById('w-barcode-label').textContent = `${name} | ${dept}`;
-  document.getElementById('w-barcode-box').style.display = 'block';
-  showToast('Pekerja disimpan + barcode dibuat!','success');
-  ['w-nik','w-name','w-position'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('w-dept').value='';
-  renderWorkers();
+  const payload = { nama_pekerja: name, no_id: nik, posisi: position, departemen: dept };
+  const resp = await apiCall('saveWorker', payload);
+  if (!resp) { showToast('Gagal koneksi ke server','error'); return; }
+  if (!resp.success) { showToast(resp.message||'Gagal simpan pekerja','error'); return; }
+  const wk = resp.data || {};
+  const mapped = { id: wk.id_pekerja || ('W'+Date.now()), nik: wk.no_id || nik, name: wk.nama_pekerja || name, dept: wk.departemen || dept, position: wk.posisi || position, barcode_value: wk.barcode_value || ('WRK-'+(wk.id_pekerja||'')) };
+  const existingIndex = workers.findIndex(x => x.nik === mapped.nik || x.id === mapped.id);
+  if (existingIndex !== -1) workers[existingIndex]=mapped; else workers.push(mapped);
+  saveLocal(); renderWorkers(); JsBarcode('#w-barcode', mapped.barcode_value, { format:'CODE128', width:2, height:70, displayValue:true, text:mapped.barcode_value }); document.getElementById('w-barcode-label').textContent = `${mapped.name} | ${mapped.dept}`; document.getElementById('w-barcode-box').style.display='block'; showToast(resp.message||'Pekerja tersimpan','success'); ['w-nik','w-name','w-position'].forEach(id=>document.getElementById(id).value=''); document.getElementById('w-dept').value='';
 }
-
-function renderWorkers() {
-  const el = document.getElementById('workers-list');
-  if (!workers.length) { el.innerHTML='<div class="empty">Belum ada pekerja</div>'; return; }
-  el.innerHTML = workers.map(w=>`<div class="list-item">
-    <div class="info"><h4>${w.nik} - ${w.name}</h4><p>${w.dept} | ${w.position}</p></div>
-    <div style="display:flex;gap:4px;">
-      <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="editWorker('${w.id}')">✏️</button>
-      <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="deleteWorker('${w.id}')">🗑️</button>
-    </div>
-  </div>`).join('');
-}
-
+function renderWorkers() { const el = document.getElementById('workers-list'); if (!workers.length) { el.innerHTML='<div class="empty">Belum ada pekerja</div>'; return; } el.innerHTML = workers.map(w=>`<div class="list-item">\n    <div class="info"><h4>${w.nik} - ${w.name}</h4><p>${w.dept} | ${w.position}</p></div>\n    <div style="display:flex;gap:4px;">\n      <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="editWorker('${w.id}')">✏️</button>\n      <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="deleteWorker('${w.id}')">🗑️</button>\n    </div>\n  </div>`).join(''); }
 function deleteWorker(id) { workers=workers.filter(w=>w.id!==id); saveLocal(); renderWorkers(); showToast('Dihapus','success'); }
+function editWorker(id) { const w = workers.find(x=>x.id===id); if(!w) return; const name = prompt('Nama:', w.name); if(name===null) return; const dept = prompt('Departemen (Electrical/Mechanical/Store/Manajemen/HSE/HRD):', w.dept); if(dept===null) return; const position = prompt('Jabatan:', w.position); if(position===null) return; w.name=name||w.name; w.dept=dept||w.dept; w.position=position||w.position; saveLocal(); renderWorkers(); showToast('Data pekerja diperbarui!','success'); }
 
 // ===== MATERIALS =====
-function saveMaterial() {
-  const code = document.getElementById('m-code').value.trim();
-  const name = document.getElementById('m-name').value.trim();
-  const category = document.getElementById('m-category').value;
-  const unit = document.getElementById('m-unit').value.trim();
-  const stock = parseInt(document.getElementById('m-stock').value)||0;
-  const minStock = parseInt(document.getElementById('m-min').value)||0;
-  const location = document.getElementById('m-location').value.trim();
-  if (!code||!name) { showToast('Kode dan Nama wajib diisi!','error'); return; }
-  if (materials.find(m=>m.code===code)) { showToast('Kode sudah ada!','error'); return; }
-  const m = { id:'M'+Date.now(), code, name, category, unit, stock, minStock, location };
-  materials.push(m); saveLocal(); apiCall('addMaterial', m);
-
-  JsBarcode('#m-barcode', code, { format:'CODE128', width:2, height:70, displayValue:true, text:`${code}` });
-  document.getElementById('m-barcode-label').textContent = `${name} | Stok: ${stock} ${unit} | Rak: ${location}`;
-  document.getElementById('m-barcode-box').style.display = 'block';
-  showToast('Material disimpan + barcode dibuat!','success');
-  ['m-code','m-name','m-unit','m-stock','m-min','m-location'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('m-category').value='';
-  document.getElementById('m-dept').value='';
-  renderMaterials();
-}
-
-function renderMaterials() {
-  const el = document.getElementById('materials-list');
-  if (!materials.length) { el.innerHTML='<div class="empty">Belum ada material</div>'; return; }
-  el.innerHTML = materials.map(m=>{
-    const cls = m.stock<=0?'stock-empty':m.stock<=m.minStock?'stock-low':'stock-ok';
-    return `<div class="list-item">
-      <div class="info"><h4>${m.code} - ${m.name}</h4><p>${m.category} | Rak: ${m.location} | <span class="stock-badge ${cls}">${m.stock} ${m.unit}</span></p></div>
-      <div style="display:flex;gap:4px;">
-        <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="editMaterial('${m.id}')">✏️</button>
-        <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="deleteMaterial('${m.id}')">🗑️</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
+async function saveMaterial() { const code = document.getElementById('m-code').value.trim(); const name = document.getElementById('m-name').value.trim(); const category = document.getElementById('m-category').value; const unit = document.getElementById('m-unit').value.trim(); const stock = parseInt(document.getElementById('m-stock').value)||0; const minStock = parseInt(document.getElementById('m-min').value)||0; const location = document.getElementById('m-location').value.trim(); const dept = document.getElementById('m-dept').value||''; if(!code||!name){showToast('Kode dan Nama wajib diisi!','error');return;} const payload={ kode_material: code, nama_material: name, kategori: category, satuan: unit||'pcs', stok_awal: stock, stok_saat_ini: stock, minimum_stok: minStock, rak: location, departemen: dept }; const resp = await apiCall('saveMaterial', payload); if(!resp){showToast('Gagal koneksi ke server','error');return;} if(!resp.success){showToast(resp.message||'Gagal simpan material','error');return;} const matData=resp.data||{}; const mapped={ id: matData.id_material||('M'+Date.now()), code: matData.kode_material||code, name: matData.nama_material||name, category: matData.kategori||category, unit: matData.satuan||unit||'pcs', stock: Number(matData.stok_saat_ini||stock), minStock: Number(matData.minimum_stok||minStock), location: matData.rak||location, barcode_value: matData.barcode_value||('MAT-'+(matData.id_material||'')) }; const existingIndex=materials.findIndex(x=>x.code===mapped.code||x.id===mapped.id); if(existingIndex!==-1) materials[existingIndex]=mapped; else materials.push(mapped); saveLocal(); renderMaterials(); JsBarcode('#m-barcode', mapped.barcode_value, { format:'CODE128', width:2, height:70, displayValue:true, text:mapped.barcode_value }); document.getElementById('m-barcode-label').textContent = `${mapped.name} | Stok: ${mapped.stock} ${mapped.unit} | Rak: ${mapped.location}`; document.getElementById('m-barcode-box').style.display='block'; showToast(resp.message||'Material tersimpan','success'); ['m-code','m-name','m-unit','m-stock','m-min','m-location'].forEach(id=>document.getElementById(id).value=''); document.getElementById('m-category').value=''; document.getElementById('m-dept').value=''; }
+function renderMaterials() { const el = document.getElementById('materials-list'); if (!materials.length) { el.innerHTML='<div class="empty">Belum ada material</div>'; return; } el.innerHTML = materials.map(m=>{ const cls = m.stock<=0?'stock-empty':m.stock<=m.minStock?'stock-low':'stock-ok'; return `<div class="list-item">\n      <div class="info"><h4>${m.code} - ${m.name}</h4><p>${m.category} | Rak: ${m.location} | <span class="stock-badge ${cls}">${m.stock} ${m.unit}</span></p></div>\n      <div style="display:flex;gap:4px;">\n        <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="editMaterial('${m.id}')">✏️</button>\n        <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="deleteMaterial('${m.id}')">🗑️</button>\n      </div>\n    </div>`; }).join(''); }
 function deleteMaterial(id) { materials=materials.filter(m=>m.id!==id); saveLocal(); renderMaterials(); showToast('Dihapus','success'); }
-
-function editWorker(id) {
-  const w = workers.find(x=>x.id===id); if(!w) return;
-  const name = prompt('Nama:', w.name); if(name===null) return;
-  const dept = prompt('Departemen (Electrical/Mechanical/Store/Manajemen/HSE/HRD):', w.dept); if(dept===null) return;
-  const position = prompt('Jabatan:', w.position); if(position===null) return;
-  w.name=name||w.name; w.dept=dept||w.dept; w.position=position||w.position;
-  saveLocal(); renderWorkers(); showToast('Data pekerja diperbarui!','success');
-}
-
-function editMaterial(id) {
-  const m = materials.find(x=>x.id===id); if(!m) return;
-  const name = prompt('Nama Material:', m.name); if(name===null) return;
-  const stock = prompt('Stok:', m.stock); if(stock===null) return;
-  const location = prompt('Lokasi Rak:', m.location); if(location===null) return;
-  m.name=name||m.name; m.stock=parseInt(stock)||m.stock; m.location=location||m.location;
-  saveLocal(); renderMaterials(); showToast('Data material diperbarui!','success');
-}
+function editMaterial(id) { const m = materials.find(x=>x.id===id); if(!m) return; const name = prompt('Nama Material:', m.name); if(name===null) return; const stock = prompt('Stok:', m.stock); if(stock===null) return; const location = prompt('Lokasi Rak:', m.location); if(location===null) return; m.name=name||m.name; m.stock=parseInt(stock)||m.stock; m.location=location||m.location; saveLocal(); renderMaterials(); showToast('Data material diperbarui!','success'); }
 
 // ===== SCAN / PENGAMBILAN =====
-let currentWorker = null, currentMaterial = null;
+let currentWorker=null,currentMaterial=null;
+function resetScan(){ currentWorker=null; currentMaterial=null; if(activeScanner){activeScanner.stop().catch(()=>{});activeScanner=null;} document.getElementById('scan-step-1').style.display='block'; document.getElementById('scan-step-2').style.display='none'; document.getElementById('scan-step-3').style.display='none'; document.getElementById('scan-step-4').style.display='none'; document.getElementById('res-worker').style.display='none'; document.getElementById('res-material').style.display='none'; document.getElementById('manual-worker').value=''; document.getElementById('manual-material').value=''; document.getElementById('take-qty').value=''; document.getElementById('take-note').value=''; updateSteps(1); startWorkerScanner(); }
+function updateSteps(current){ for(let i=1;i<=4;i++){ const el=document.getElementById(`step-ind-${i}`); el.className='step'+(i<current?' done':i===current?' active':''); }}
+function startWorkerScanner(){ const config={fps:10,qrbox:{width:280,height:100},formatsToSupport:[Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.CODE_39]}; const scanner=new Html5Qrcode('scanner-worker'); activeScanner=scanner; scanner.start({facingMode:'environment'},config,(code)=>{ scanner.stop().then(()=>{activeScanner=null; processWorkerScan(code);}).catch(()=>{}); },()=>{}).catch(err=>{ console.warn('Camera error:',err); document.getElementById('scanner-worker').innerHTML='<p style="padding:20px;color:#666;text-align:center;">Kamera tidak tersedia.<br>Gunakan input manual di bawah.</p>'; }); }
+function startMaterialScanner(){ const config={fps:10,qrbox:{width:280,height:100},formatsToSupport:[Html5QrcodeSupportedFormats.CODE_128,Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.CODE_39]}; const scanner=new Html5Qrcode('scanner-material'); activeScanner=scanner; scanner.start({facingMode:'environment'},config,(code)=>{ scanner.stop().then(()=>{activeScanner=null; processMaterialScan(code);}).catch(()=>{}); },()=>{}).catch(err=>{ console.warn('Camera error:',err); document.getElementById('scanner-material').innerHTML='<p style="padding:20px;color:#666;text-align:center;">Kamera tidak tersedia.<br>Gunakan input manual di bawah.</p>'; }); }
+function manualScanWorker(){ const v=document.getElementById('manual-worker').value.trim(); if(v) processWorkerScan(v); }
+function manualScanMaterial(){ const v=document.getElementById('manual-material').value.trim(); if(v) processMaterialScan(v); }
+function processWorkerScan(code){ const w = workers.find(x=>x.barcode_value===code)||workers.find(x=>x.nik===code); if(!w){ showToast('Pekerja tidak ditemukan: '+code,'error'); if(!activeScanner) startWorkerScanner(); return;} currentWorker=w; document.getElementById('rs-w-nik').textContent=w.nik; document.getElementById('rs-w-name').textContent=w.name; document.getElementById('rs-w-dept').textContent=w.dept; document.getElementById('rs-w-pos').textContent=w.position; document.getElementById('res-worker').style.display='block'; showToast('Pekerja: '+w.name,'success'); }
+function processMaterialScan(code){ const m=materials.find(x=>x.barcode_value===code)||materials.find(x=>x.code===code); if(!m){ showToast('Material tidak ditemukan: '+code,'error'); if(!activeScanner) startMaterialScanner(); return;} currentMaterial=m; document.getElementById('rs-m-code').textContent=m.code; document.getElementById('rs-m-name').textContent=m.name; document.getElementById('rs-m-cat').textContent=m.category; const cls=m.stock<=0?'stock-empty':m.stock<=m.minStock?'stock-low':'stock-ok'; document.getElementById('rs-m-stock').innerHTML=`<span class="stock-badge ${cls}">${m.stock} ${m.unit}</span>`; document.getElementById('rs-m-loc').textContent=m.location; document.getElementById('res-material').style.display='block'; showToast('Material: '+m.name,'success'); }
+function toStep2(){ if(activeScanner){activeScanner.stop().catch(()=>{});activeScanner=null;} document.getElementById('scan-step-1').style.display='none'; document.getElementById('scan-step-2').style.display='block'; updateSteps(2); startMaterialScanner(); }
+function toStep3(){ if(activeScanner){activeScanner.stop().catch(()=>{});activeScanner=null;} document.getElementById('scan-step-2').style.display='none'; document.getElementById('scan-step-3').style.display='block'; updateSteps(3); document.getElementById('take-qty').focus(); }
 
-function resetScan() {
-  currentWorker = null; currentMaterial = null;
-  if (activeScanner) { activeScanner.stop().catch(()=>{}); activeScanner = null; }
-  document.getElementById('scan-step-1').style.display='block';
-  document.getElementById('scan-step-2').style.display='none';
-  document.getElementById('scan-step-3').style.display='none';
-  document.getElementById('scan-step-4').style.display='none';
-  document.getElementById('res-worker').style.display='none';
-  document.getElementById('res-material').style.display='none';
-  document.getElementById('manual-worker').value='';
-  document.getElementById('manual-material').value='';
-  document.getElementById('take-qty').value='';
-  document.getElementById('take-note').value='';
-  updateSteps(1);
-  startWorkerScanner();
-}
+// ===== TRANSAKSI =====
+async function submitTrx(){ if(!currentWorker||!currentMaterial){showToast('Pekerja dan material harus dipilih','error'); return;} const qty=parseInt(document.getElementById('take-qty').value)||0; if(qty<=0){showToast('Jumlah harus > 0','error');return;} const barcode_pekerja=currentWorker.barcode_value||currentWorker.nik; const barcode_material=currentMaterial.barcode_value||currentMaterial.code; const payload={ barcode_pekerja, barcode_material, qty_keluar:qty, tujuan_penggunaan:document.getElementById('take-note').value||'', storeman:'' }; const resp=await apiCall('saveTransaction',payload); if(!resp){showToast('Gagal koneksi ke server','error');return;} if(!resp.success){showToast(resp.message||'Gagal menyimpan transaksi','error');return;} if(resp.data&&resp.data.material){ const mat=resp.data.material; const idx=materials.findIndex(x=>x.id===mat.id_material||x.code===mat.kode_material); const newStock=Number(mat.stok_saat_ini||resp.data.stok_sesudah||0); if(idx!==-1) materials[idx].stock=newStock; else materials.push({ id:mat.id_material||'', code:mat.kode_material||'', name:mat.nama_material||'', unit:mat.satuan||currentMaterial.unit||'', stock:newStock, minStock:Number(mat.minimum_stok||0), location:mat.rak||'', barcode_value:mat.barcode_value||barcode_material }); } else { const idx=materials.findIndex(x=>x.id===currentMaterial.id||x.code===currentMaterial.code); if(idx!==-1) materials[idx].stock=Math.max(0,(materials[idx].stock||0)-qty); } const trxData=resp.data||{}; const trxLocal={ id:trxData.no_transaksi||('T'+Date.now()), date:trxData.tanggal||new Date().toLocaleString('id-ID'), workerNik:(trxData.pekerja&&trxData.pekerja.no_id)||currentWorker.nik, workerName:(trxData.pekerja&&trxData.pekerja.nama_pekerja)||currentWorker.name, workerDept:(trxData.pekerja&&trxData.pekerja.posisi)||currentWorker.dept, materialCode:(trxData.material&&(trxData.material.kode_material||trxData.material.id_material))||currentMaterial.code, materialName:(trxData.material&&trxData.material.nama_material)||currentMaterial.name, qty:qty, unit:(trxData.material&&trxData.material.satuan)||currentMaterial.unit||'', stockAfter:(trxData.material&&(trxData.material.stok_saat_ini||trxData.material.stok_sesudah))||((materials.find(m=>m.id===currentMaterial.id)||materials.find(m=>m.code===currentMaterial.code)||{}).stock||0), note:payload.tujuan_penggunaan||'' }; transactions.unshift(trxLocal); saveLocal(); renderMaterials(); renderHistory(); document.getElementById('trx-summary').innerHTML=`<h3>✅ Transaksi Berhasil!</h3><div class="row"><span class="key">No Transaksi</span><span class="val">${trxLocal.id}</span></div><div class="row"><span class="key">Tanggal</span><span class="val">${trxLocal.date}</span></div><div class="row"><span class="key">Pekerja</span><span class="val">${trxLocal.workerNik} - ${trxLocal.workerName}</span></div><div class="row"><span class="key">Material</span><span class="val">${trxLocal.materialCode} - ${trxLocal.materialName}</span></div><div class="row"><span class="key">Jumlah</span><span class="val">${trxLocal.qty} ${trxLocal.unit}</span></div><div class="row"><span class="key">Sisa Stok</span><span class="val">${trxLocal.stockAfter} ${trxLocal.unit}</span></div>${trxLocal.note?`<div class="row"><span class="key">Ket</span><span class="val">${trxLocal.note}</span></div>`:''}`; document.getElementById('scan-step-3').style.display='none'; document.getElementById('scan-step-4').style.display='block'; updateSteps(4); showToast(resp.message||'Transaksi berhasil','success'); }
 
-function updateSteps(current) {
-  for(let i=1;i<=4;i++){
-    const el=document.getElementById(`step-ind-${i}`);
-    el.className='step'+(i<current?' done':i===current?' active':'');
-  }
-}
+async function printTrxPdf(){ const trx=transactions[0]; if(!trx){showToast('Tidak ada transaksi untuk dicetak','error'); return;} const no=trx.id||trx.no_transaksi||''; if(no){ try{ const res=await fetch(API_URL+'?action=generateTransactionPdf&no_transaksi='+encodeURIComponent(no)); const j=await res.json().catch(()=>null); if(j&&j.success&&j.url){ window.open(j.url,'_blank'); return; } }catch(e){console.warn('generateTransactionPdf error',e);} } const { jsPDF }=window.jspdf; const doc=new jsPDF(); doc.setFontSize(14); doc.text('BUKTI PENGAMBILAN MATERIAL',105,20,{align:'center'}); doc.setFontSize(9); doc.text('Warehouse Management System',105,26,{align:'center'}); doc.line(20,30,190,30); doc.setFontSize(11); let y=40; [['Tanggal',trx.date],['NIK',trx.workerNik],['Nama Pekerja',trx.workerName],['Departemen',trx.workerDept], ['Kode Material',trx.materialCode],['Nama Material',trx.materialName], ['Jumlah Diambil',`${trx.qty} ${trx.unit}`],['Sisa Stok',`${trx.stockAfter} ${trx.unit}`],['Keterangan',trx.note||'-']].forEach(([k,v])=>{ doc.setFont(undefined,'bold'); doc.text(k,25,y); doc.setFont(undefined,'normal'); doc.text(`: ${v}`,75,y); y+=9; }); doc.line(20,y+5,190,y+5); y+=18; doc.setFontSize(9); doc.text('Pengambil,',50,y,{align:'center'}); doc.text('Petugas Gudang,',155,y,{align:'center'}); y+=20; doc.text('(_______________)',50,y,{align:'center'}); doc.text('(_______________)',155,y,{align:'center'}); doc.save(`pengambilan_${trx.materialCode}_${trx.workerNik}.pdf`); showToast('PDF diunduh!','success'); }
 
-function startWorkerScanner() {
-  const config = { fps:10, qrbox:{width:280,height:100}, formatsToSupport:[Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_39] };
-  const scanner = new Html5Qrcode('scanner-worker');
-  activeScanner = scanner;
-  scanner.start({ facingMode:'environment' }, config, (code)=>{
-    scanner.stop().then(()=>{ activeScanner=null; processWorkerScan(code); }).catch(()=>{});
-  }, ()=>{}).catch(err=>{
-    console.warn('Camera error:', err);
-    document.getElementById('scanner-worker').innerHTML='<p style="padding:20px;color:#666;text-align:center;">Kamera tidak tersedia.<br>Gunakan input manual di bawah.</p>';
-  });
-}
+function reprintTrx(id){ const trx=transactions.find(t=>t.id===id||t.no_transaksi===id); if(!trx)return; const no=trx.id||trx.no_transaksi||''; if(no){ fetch(API_URL+'?action=generateTransactionPdf&no_transaksi='+encodeURIComponent(no)).then(r=>r.json()).then(j=>{ if(j&&j.success&&j.url){ window.open(j.url,'_blank'); return; } const orig=transactions[0]; transactions[0]=trx; printTrxPdf(); transactions[0]=orig; }).catch(()=>{ const orig=transactions[0]; transactions[0]=trx; printTrxPdf(); transactions[0]=orig; }); }
 
-function startMaterialScanner() {
-  const config = { fps:10, qrbox:{width:280,height:100}, formatsToSupport:[Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.CODE_39] };
-  const scanner = new Html5Qrcode('scanner-material');
-  activeScanner = scanner;
-  scanner.start({ facingMode:'environment' }, config, (code)=>{
-    scanner.stop().then(()=>{ activeScanner=null; processMaterialScan(code); }).catch(()=>{});
-  }, ()=>{}).catch(err=>{
-    console.warn('Camera error:', err);
-    document.getElementById('scanner-material').innerHTML='<p style="padding:20px;color:#666;text-align:center;">Kamera tidak tersedia.<br>Gunakan input manual di bawah.</p>';
-  });
-}
-
-function manualScanWorker() { const v=document.getElementById('manual-worker').value.trim(); if(v) processWorkerScan(v); }
-function manualScanMaterial() { const v=document.getElementById('manual-material').value.trim(); if(v) processMaterialScan(v); }
-
-function processWorkerScan(code) {
-  const w = workers.find(x=>x.nik===code);
-  if(!w) { showToast('Pekerja tidak ditemukan: '+code,'error'); if(!activeScanner) startWorkerScanner(); return; }
-  currentWorker = w;
-  document.getElementById('rs-w-nik').textContent=w.nik;
-  document.getElementById('rs-w-name').textContent=w.name;
-  document.getElementById('rs-w-dept').textContent=w.dept;
-  document.getElementById('rs-w-pos').textContent=w.position;
-  document.getElementById('res-worker').style.display='block';
-  showToast('Pekerja: '+w.name,'success');
-}
-
-function processMaterialScan(code) {
-  const m = materials.find(x=>x.code===code);
-  if(!m) { showToast('Material tidak ditemukan: '+code,'error'); if(!activeScanner) startMaterialScanner(); return; }
-  currentMaterial = m;
-  document.getElementById('rs-m-code').textContent=m.code;
-  document.getElementById('rs-m-name').textContent=m.name;
-  document.getElementById('rs-m-cat').textContent=m.category;
-  const cls = m.stock<=0?'stock-empty':m.stock<=m.minStock?'stock-low':'stock-ok';
-  document.getElementById('rs-m-stock').innerHTML=`<span class="stock-badge ${cls}">${m.stock} ${m.unit}</span>`;
-  document.getElementById('rs-m-loc').textContent=m.location;
-  document.getElementById('res-material').style.display='block';
-  showToast('Material: '+m.name,'success');
-}
-
-function toStep2() {
-  if(activeScanner){activeScanner.stop().catch(()=>{});activeScanner=null;}
-  document.getElementById('scan-step-1').style.display='none';
-  document.getElementById('scan-step-2').style.display='block';
-  updateSteps(2);
-  startMaterialScanner();
-}
-
-function toStep3() {
-  if(activeScanner){activeScanner.stop().catch(()=>{});activeScanner=null;}
-  document.getElementById('scan-step-2').style.display='none';
-  document.getElementById('scan-step-3').style.display='block';
-  updateSteps(3);
-  document.getElementById('take-qty').focus();
-}
-
-function submitTrx() {
-  const qty = parseInt(document.getElementById('take-qty').value)||0;
-  const note = document.getElementById('take-note').value.trim();
-  if(qty<=0) { showToast('Jumlah harus > 0!','error'); return; }
-  if(qty>currentMaterial.stock) { showToast(`Stok tidak cukup! Tersedia: ${currentMaterial.stock}`,'error'); return; }
-
-  const mat = materials.find(m=>m.id===currentMaterial.id);
-  mat.stock -= qty;
-
-  const trx = {
-    id:'T'+Date.now(),
-    date: new Date().toLocaleString('id-ID'),
-    workerNik: currentWorker.nik,
-    workerName: currentWorker.name,
-    workerDept: currentWorker.dept,
-    materialCode: currentMaterial.code,
-    materialName: currentMaterial.name,
-    qty, unit: currentMaterial.unit,
-    stockAfter: mat.stock,
-    note
-  };
-  transactions.unshift(trx); saveLocal(); apiCall('addTransaction', trx);
-
-  document.getElementById('scan-step-3').style.display='none';
-  document.getElementById('scan-step-4').style.display='block';
-  updateSteps(4);
-
-  document.getElementById('trx-summary').innerHTML=`
-    <h3>✅ Transaksi Berhasil!</h3>
-    <div class="row"><span class="key">Tanggal</span><span class="val">${trx.date}</span></div>
-    <div class="row"><span class="key">Pekerja</span><span class="val">${trx.workerNik} - ${trx.workerName}</span></div>
-    <div class="row"><span class="key">Dept</span><span class="val">${trx.workerDept}</span></div>
-    <div class="row"><span class="key">Material</span><span class="val">${trx.materialCode} - ${trx.materialName}</span></div>
-    <div class="row"><span class="key">Jumlah</span><span class="val">${trx.qty} ${trx.unit}</span></div>
-    <div class="row"><span class="key">Sisa Stok</span><span class="val">${trx.stockAfter} ${trx.unit}</span></div>
-    ${trx.note?`<div class="row"><span class="key">Ket</span><span class="val">${trx.note}</span></div>`:''}`;
-  showToast('Transaksi berhasil!','success');
-}
-
-// ===== PRINT PDF =====
-function printTrxPdf() {
-  const trx = transactions[0]; if(!trx) return;
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(14); doc.text('BUKTI PENGAMBILAN MATERIAL', 105, 20, {align:'center'});
-  doc.setFontSize(9); doc.text('Warehouse Management System', 105, 26, {align:'center'});
-  doc.line(20,30,190,30);
-  doc.setFontSize(11); let y=40;
-  [['Tanggal',trx.date],['NIK',trx.workerNik],['Nama Pekerja',trx.workerName],['Departemen',trx.workerDept],
-   ['Kode Material',trx.materialCode],['Nama Material',trx.materialName],
-   ['Jumlah Diambil',`${trx.qty} ${trx.unit}`],['Sisa Stok',`${trx.stockAfter} ${trx.unit}`],['Keterangan',trx.note||'-']
-  ].forEach(([k,v])=>{ doc.setFont(undefined,'bold'); doc.text(k,25,y); doc.setFont(undefined,'normal'); doc.text(`: ${v}`,75,y); y+=9; });
-  doc.line(20,y+5,190,y+5); y+=18;
-  doc.setFontSize(9);
-  doc.text('Pengambil,',50,y,{align:'center'}); doc.text('Petugas Gudang,',155,y,{align:'center'});
-  y+=20; doc.text('(_______________)',50,y,{align:'center'}); doc.text('(_______________)',155,y,{align:'center'});
-  doc.save(`pengambilan_${trx.materialCode}_${trx.workerNik}.pdf`);
-  showToast('PDF diunduh!','success');
-}
-
-// ===== SHARE =====
-function shareTrx() {
-  const trx = transactions[0]; if(!trx) return;
-  const text=`📤 PENGAMBILAN MATERIAL\n\n📅 ${trx.date}\n👷 ${trx.workerNik} - ${trx.workerName}\n🏢 ${trx.workerDept}\n📦 ${trx.materialCode} - ${trx.materialName}\n🔢 Jumlah: ${trx.qty} ${trx.unit}\n📊 Sisa: ${trx.stockAfter} ${trx.unit}\n📝 ${trx.note||'-'}`;
-  if(navigator.share) { navigator.share({title:'Bukti Pengambilan',text}).catch(()=>{}); }
-  else { navigator.clipboard.writeText(text).then(()=>showToast('Disalin ke clipboard!','success')); }
-}
-
-// ===== HISTORY =====
-function renderHistory() {
-  const el=document.getElementById('history-list');
-  if(!transactions.length){el.innerHTML='<div class="empty">Belum ada riwayat</div>';return;}
-  el.innerHTML=transactions.slice(0,50).map(t=>`<div class="list-item">
-    <div class="info"><h4>${t.materialCode} - ${t.materialName}</h4><p>${t.date} | ${t.workerName} | ${t.qty} ${t.unit}</p></div>
-    <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="reprintTrx('${t.id}')">🖨️</button>
-  </div>`).join('');
-}
-
-function reprintTrx(id) {
-  const trx=transactions.find(t=>t.id===id); if(!trx)return;
-  const orig=transactions[0]; transactions[0]=trx; printTrxPdf(); transactions[0]=orig;
-}
+function renderHistory(){ const el=document.getElementById('history-list'); if(!transactions.length){el.innerHTML='<div class="empty">Belum ada riwayat</div>';return;} el.innerHTML=transactions.slice(0,50).map(t=>{ const id=t.id||t.no_transaksi||''; const date=t.date||t.tanggal||''; const worker=t.workerName||t.nama_pekerja||''; const material=t.materialName||t.nama_material||''; const qty=t.qty||t.qty_keluar||0; const unit=t.unit||t.satuan||''; return `<div class="list-item">\n    <div class="info"><h4>${t.materialCode||''} - ${material}</h4><p>${date} | ${worker} | ${qty} ${unit}</p></div>\n    <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="reprintTrx('${id}')">🖨️</button>\n  </div>`; }).join(''); }
 
 // ===== BARCODE UTILS =====
-function downloadBarcode(prefix) {
-  const svg=document.getElementById(`${prefix}-barcode`);
-  const canvas=document.createElement('canvas');const ctx=canvas.getContext('2d');
-  const data=new XMLSerializer().serializeToString(svg);const img=new Image();
-  img.onload=()=>{canvas.width=img.width*2;canvas.height=img.height*2;ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    const a=document.createElement('a');a.download=`barcode_${Date.now()}.png`;a.href=canvas.toDataURL('image/png');a.click();showToast('Barcode diunduh!','success');};
-  img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(data)));
-}
-
-function printBarcode(prefix) {
-  const svg=document.getElementById(`${prefix}-barcode`);
-  const label=document.getElementById(`${prefix}-barcode-label`).textContent;
-  const w=window.open('','_blank');
-  w.document.write(`<html><body style="text-align:center;padding:30px;font-family:sans-serif;">${svg.outerHTML}<br><p style="margin-top:8px;">${label}</p></body></html>`);
-  w.document.close(); w.print();
-}
+function downloadBarcode(prefix){ const svg=document.getElementById(`${prefix}-barcode`); const canvas=document.createElement('canvas');const ctx=canvas.getContext('2d'); const data=new XMLSerializer().serializeToString(svg);const img=new Image(); img.onload=()=>{canvas.width=img.width*2;canvas.height=img.height*2;ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height); const a=document.createElement('a');a.download=`barcode_${Date.now()}.png`;a.href=canvas.toDataURL('image/png');a.click();showToast('Barcode diunduh!','success');}; img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(data)));}
+function printBarcode(prefix){ const svg=document.getElementById(`${prefix}-barcode`); const label=document.getElementById(`${prefix}-barcode-label`).textContent; const w=window.open('','_blank'); w.document.write(`<html><body style="text-align:center;padding:30px;font-family:sans-serif;">${svg.outerHTML}<br><p style="margin-top:8px;">${label}</p></body></html>`); w.document.close(); w.print(); }
 
 // ===== DASHBOARD =====
-function renderDashboard() {
-  document.getElementById('dash-total-material').textContent = materials.length;
-  document.getElementById('dash-total-stok').textContent = materials.reduce((s,m)=>s+m.stock,0);
-  document.getElementById('dash-total-trx').textContent = transactions.length;
-  const lowItems = materials.filter(m=>m.stock<=m.minStock);
-  document.getElementById('dash-low-stok').textContent = lowItems.length;
-  const el = document.getElementById('dash-low-list');
-  if(!lowItems.length){ el.innerHTML='<div class="empty">Semua stok aman 👍</div>'; return; }
-  el.innerHTML = lowItems.map(m=>{
-    const cls = m.stock<=0?'stock-empty':'stock-low';
-    return `<div class="list-item"><div class="info"><h4>${m.code} - ${m.name}</h4><p>Stok: <span class="stock-badge ${cls}">${m.stock} ${m.unit}</span> | Min: ${m.minStock}</p></div></div>`;
-  }).join('');
-}
+function renderDashboard(){ document.getElementById('dash-total-material').textContent=materials.length; document.getElementById('dash-total-stok').textContent=materials.reduce((s,m)=>s+(Number(m.stock)||0),0); document.getElementById('dash-total-trx').textContent=transactions.length; const lowItems=materials.filter(m=>Number(m.stock)<=Number(m.minStock)); document.getElementById('dash-low-stok').textContent=lowItems.length; const el=document.getElementById('dash-low-list'); if(!lowItems.length){ el.innerHTML='<div class="empty">Semua stok aman 👍</div>'; return; } el.innerHTML=lowItems.map(m=>{ const cls=m.stock<=0?'stock-empty':'stock-low'; return `<div class="list-item"><div class="info"><h4>${m.code} - ${m.name}</h4><p>Stok: <span class="stock-badge ${cls}">${m.stock} ${m.unit}</span> | Min: ${m.minStock}</p></div></div>`; }).join(''); }
 
 // ===== LAPORAN BULANAN =====
-function generateLaporan() {
-  const month = document.getElementById('lap-month').value;
-  if(!month) return;
-  const [y,m] = month.split('-');
-  const filtered = transactions.filter(t=>{
-    const d = new Date(t.date.split(',')[0].split('/').reverse().join('-'));
-    return d.getFullYear()==parseInt(y) && (d.getMonth()+1)==parseInt(m);
-  });
-  const el = document.getElementById('laporan-content');
-  if(!filtered.length){ el.innerHTML='<div class="empty">Tidak ada transaksi di bulan ini</div>'; return; }
-  const totalQty = filtered.reduce((s,t)=>s+t.qty,0);
-  el.innerHTML = `<div class="result-card"><h3>Ringkasan Bulan ${m}/${y}</h3>
-    <div class="row"><span class="key">Total Transaksi</span><span class="val">${filtered.length}</span></div>
-    <div class="row"><span class="key">Total Item Diambil</span><span class="val">${totalQty}</span></div></div>
-    <div style="margin-top:12px;">${filtered.map(t=>`<div class="list-item"><div class="info"><h4>${t.materialCode} - ${t.materialName}</h4><p>${t.date} | ${t.workerName} | ${t.qty} ${t.unit}</p></div></div>`).join('')}</div>`;
-}
+async function generateLaporan(){ const month=document.getElementById('lap-month').value; if(!month) return; const [y,m]=month.split('-'); try{ const res=await fetch(API_URL+'?action=getMonthlyReport&month='+encodeURIComponent(m)+'&year='+encodeURIComponent(y)); const j=await res.json().catch(()=>null); if(!j||!j.success){ showToast('Gagal mengambil laporan dari server','error'); return; } const report=j.data; const el=document.getElementById('laporan-content'); if(!report||!report.detail||!report.detail.length){ el.innerHTML='<div class="empty">Tidak ada transaksi di bulan ini</div>'; return; } const totalQty=report.total_qty_keluar||report.total_qty||0; el.innerHTML=`<div class="result-card"><h3>Ringkasan Periode ${report.periode}</h3><div class="row"><span class="key">Total Transaksi</span><span class="val">${report.total_transaksi}</span></div><div class="row"><span class="key">Total Item Diambil</span><span class="val">${totalQty}</span></div></div><div style="margin-top:12px;">${(report.detail||[]).map(t=>`<div class="list-item"><div class="info"><h4>${t.id_material||t.nama_material||''} - ${t.nama_material||''}</h4><p>${String(t.tanggal).slice(0,10)} | ${t.nama_pekerja||''} | ${t.qty_keluar||0} ${t.satuan||''}</p></div></div>`).join('')}</div>`; }catch(e){ console.warn('generateLaporan error',e); showToast('Gagal mengambil laporan','error'); } }
 
-function printLaporan() {
-  const month = document.getElementById('lap-month').value;
-  if(!month){ showToast('Pilih bulan dulu!','error'); return; }
-  const [y,m] = month.split('-');
-  const filtered = transactions.filter(t=>{
-    const d = new Date(t.date.split(',')[0].split('/').reverse().join('-'));
-    return d.getFullYear()==parseInt(y) && (d.getMonth()+1)==parseInt(m);
-  });
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(14); doc.text(`LAPORAN BULANAN - ${m}/${y}`, 105, 20, {align:'center'});
-  doc.setFontSize(9); doc.text('Marissa Store', 105, 26, {align:'center'});
-  doc.line(20,30,190,30);
-  doc.setFontSize(10); let yy=40;
-  doc.text(`Total Transaksi: ${filtered.length}`, 25, yy); yy+=8;
-  doc.text(`Total Item Diambil: ${filtered.reduce((s,t)=>s+t.qty,0)}`, 25, yy); yy+=12;
-  doc.setFontSize(9);
-  filtered.forEach(t=>{
-    if(yy>270){doc.addPage();yy=20;}
-    doc.text(`${t.date} | ${t.workerName} | ${t.materialCode} - ${t.materialName} | ${t.qty} ${t.unit}`, 25, yy); yy+=7;
-  });
-  doc.save(`laporan_${y}_${m}.pdf`);
-  showToast('Laporan PDF diunduh!','success');
-}
+// ===== OTHER HELPERS =====
+function cancelScan(){ if(activeScanner){ activeScanner.stop().catch(()=>{}); activeScanner=null;} showSection('workers'); }
+function generateMaterialCode(){ const dept=document.getElementById('m-dept').value; if(!dept){document.getElementById('m-code').value='';return;} const prefix={ Electrical:'ELC', Mechanical:'MEC', Store:'STR', Manajemen:'MNJ', HSE:'HSE', HRD:'HRD' }; const code=prefix[dept]||'GEN'; const count=materials.filter(m=>m.code.includes(code)).length+1; document.getElementById('m-code').value=`MTR-${code}-${String(count).padStart(3,'0')}`; }
 
-// ===== INIT =====
+// ===== INIT RENDER =====
 document.addEventListener('DOMContentLoaded',()=>{ renderWorkers(); });
-// ===== CANCEL SCAN =====
-function cancelScan() {
-  if (activeScanner) { activeScanner.stop().catch(()=>{}); activeScanner = null; }
-  showSection('workers');
-}
-
-// ===== AUTO GENERATE MATERIAL CODE =====
-function generateMaterialCode() {
-  const dept = document.getElementById('m-dept').value;
-  if (!dept) { document.getElementById('m-code').value = ''; return; }
-  const prefix = { Electrical:'ELC', Mechanical:'MEC', Store:'STR', Manajemen:'MNJ', HSE:'HSE', HRD:'HRD' };
-  const code = prefix[dept] || 'GEN';
-  const count = materials.filter(m => m.code.includes(code)).length + 1;
-  document.getElementById('m-code').value = `MTR-${code}-${String(count).padStart(3,'0')}`;
-}
 </script>
-
 <footer style="position:fixed;bottom:56px;left:0;right:0;text-align:center;padding:6px;background:#1a73e8;color:white;font-size:0.72rem;z-index:99;">Powered by Pausbiru7</footer>
 </body>
 </html>

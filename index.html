@@ -320,21 +320,72 @@ function showSection(name) {
   if (name==='dashboard') renderDashboard();
 }
 // ===== WORKERS =====
-function saveWorker() {
+async function saveWorker() {
   const nik = document.getElementById('w-nik').value.trim();
   const name = document.getElementById('w-name').value.trim();
   const dept = document.getElementById('w-dept').value;
   const position = document.getElementById('w-position').value.trim();
-  if (!nik||!name) { showToast('NIK dan Nama wajib diisi!','error'); return; }
-  if (workers.find(w=>w.nik===nik)) { showToast('NIK sudah terdaftar!','error'); return; }
-  const w = { id:'W'+Date.now(), nik, name, dept, position };
-  workers.push(w); saveLocal(); apiCall('addWorker', w);
-  JsBarcode('#w-barcode', nik, { format:'CODE128', width:2, height:70, displayValue:true, text:`${nik}` });
+
+  if (!nik || !name) {
+    showToast('NIK dan Nama wajib diisi!', 'error');
+    return;
+  }
+
+  // Cek duplikat di local
+  if (workers.find(w => w.nik === nik)) {
+    showToast('NIK sudah terdaftar!', 'error');
+    return;
+  }
+
+  // Data yang akan dikirim ke GAS
+  const workerData = {
+    no_id: nik,
+    nama_pekerja: name,
+    departemen: dept,
+    posisi: position
+  };
+
+  // Kirim ke Google Apps Script
+  const result = await apiCall('saveWorker', workerData);
+
+  if (!result || !result.success) {
+    showToast('Gagal menyimpan ke server: ' + (result ? result.message : ''), 'error');
+    return;
+  }
+
+  // Jika berhasil, simpan juga ke localStorage
+  const w = {
+    id: result.data.id_pekerja || 'W' + Date.now(),
+    nik: nik,
+    name: name,
+    dept: dept,
+    position: position,
+    barcode: result.data.barcode_value || nik
+  };
+
+  workers.push(w);
+  saveLocal();
+
+  // Generate Barcode
+  JsBarcode('#w-barcode', nik, {
+    format: 'CODE128',
+    width: 2,
+    height: 70,
+    displayValue: true,
+    text: nik
+  });
+
   document.getElementById('w-barcode-label').textContent = `${name} | ${dept}`;
   document.getElementById('w-barcode-box').style.display = 'block';
-  showToast('Pekerja disimpan + barcode dibuat!','success');
-  ['w-nik','w-name','w-position'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('w-dept').value='';
+
+  showToast('Pekerja berhasil disimpan!', 'success');
+
+  // Reset form
+  ['w-nik', 'w-name', 'w-position'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('w-dept').value = '';
+
   renderWorkers();
 }
 function renderWorkers() {

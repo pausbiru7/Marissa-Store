@@ -345,36 +345,35 @@ async function saveWorker() {
     return;
   }
 
-  const workerData = {
-    no_id: nik,
-    nama_pekerja: name,
-    departemen: dept,
-    posisi: position
-  };
+ const workerData = {
+  nik: nik,
+  nama: name,
+  departemen: dept,
+  posisi: position
+};
 
-  const result = await apiCall('saveWorker', workerData);
+const result = await apiCall('saveWorker', workerData);
 
-  if (!result || !result.success) {
-    showToast('Gagal menyimpan ke server: ' + (result ? result.message : ''), 'error');
-    return;
-  }
-
-  const w = {
-    id: result.data.id_pekerja || 'W' + Date.now(),
-    nik: nik,
-    name: name,
-    dept: dept,
-    position: position,
-    barcode: result.data.barcode_value || nik
-  };
-
-  workers.push(w);
-  saveLocal();
-
-  showToast('Pekerja berhasil disimpan!', 'success');
-  clearWorkerForm();
-  renderWorkers();
+if (!result || !result.success) {
+  showToast('Gagal menyimpan ke server: ' + (result?.message || 'Unknown error'), 'error');
+  return;
 }
+
+// Ambil data dari response dengan fallback yang lebih aman
+const w = {
+  id: result.data?.id || result.data?.id_pekerja || 'W' + Date.now(),
+  nik: nik,
+  name: name,
+  dept: dept,
+  position: position,
+  barcode: result.data?.barcode || result.data?.barcode_value || nik
+};
+
+workers.push(w);
+saveLocal();
+showToast('Pekerja berhasil disimpan!', 'success');
+clearWorkerForm();
+renderWorkers();
 
 // ==================== EDIT & UPDATE PEKERJA ====================
 function editWorker(id) {

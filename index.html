@@ -282,13 +282,17 @@ async function apiCall(action, data = {}) {
       action: action,
       ...data
     };
+    console.log('Sending:', body);
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(body),
       redirect: 'follow'
     });
-    return await res.json();
+    console.log('Response status:', res.status);
+    const text = await res.text();
+    console.log('Response body:', text);
+    return JSON.parse(text);
   } catch (e) {
     console.error('API Error:', e.message);
     return { success: false, message: 'Gagal menghubungi server' };

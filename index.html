@@ -374,7 +374,7 @@ saveLocal();
 showToast('Pekerja berhasil disimpan!', 'success');
 clearWorkerForm();
 renderWorkers();
-
+}
 // ==================== EDIT & UPDATE PEKERJA ====================
 function editWorker(id) {
   const worker = workers.find(w => w.id === id);
@@ -409,6 +409,12 @@ async function updateWorker(id) {
   workers[index].dept = dept;
   workers[index].position = position;
 
+  const result = await apiCall('updateWorker', workers[index]);
+  if (!result || !result.success) {
+    showToast('Gagal update ke server: ' + (result?.message || 'Unknown error'), 'error');
+    return;
+  }
+
   saveLocal();
   showToast('Data pekerja berhasil diupdate!', 'success');
 
@@ -419,7 +425,6 @@ async function updateWorker(id) {
   clearWorkerForm();
   renderWorkers();
 }
-
 // ==================== CLEAR FORM ====================
 function clearWorkerForm() {
   ['w-nik', 'w-name', 'w-position'].forEach(id => document.getElementById(id).value = '');
@@ -492,14 +497,6 @@ function renderMaterials() {
   }).join('');
 }
 function deleteMaterial(id) { materials=materials.filter(m=>m.id!==id); saveLocal(); renderMaterials(); showToast('Dihapus','success'); }
-function editWorker(id) {
-  const w = workers.find(x=>x.id===id); if(!w) return;
-  const name = prompt('Nama:', w.name); if(name===null) return;
-  const dept = prompt('Departemen (Electrical/Mechanical/Store/Manajemen/HSE/HRD):', w.dept); if(dept===null) return;
-  const position = prompt('Jabatan:', w.position); if(position===null) return;
-  w.name=name||w.name; w.dept=dept||w.dept; w.position=position||w.position;
-  saveLocal(); renderWorkers(); showToast('Data pekerja diperbarui!','success');
-}
 function editMaterial(id) {
   const m = materials.find(x=>x.id===id); if(!m) return;
   const name = prompt('Nama Material:', m.name); if(name===null) return;

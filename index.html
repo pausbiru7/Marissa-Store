@@ -354,7 +354,7 @@ async function saveWorker() {
   posisi: position
 };
 
-const result = await apiCall('saveWorker', workerData);
+const result = await apiCall('saveWorker', { payload: workerData });
 
 if (!result || !result.success) {
   showToast('Gagal menyimpan ke server: ' + (result?.message || 'Unknown error'), 'error');

@@ -278,7 +278,7 @@ function saveLocal() {
 async function apiCall(action, data = {}) {
   try {
     const body = {
-      api_key: API_KEY,
+      apiKey: API_KEY,
       action: action,
       ...data
     };

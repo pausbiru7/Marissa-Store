@@ -378,6 +378,7 @@ showToast('Pekerja berhasil disimpan!', 'success');
 clearWorkerForm();
 renderWorkers();
   // Generate Barcode
+  try {
 document.getElementById('w-barcode-box').style.display = 'block';
 JsBarcode('#w-barcode', w.barcode, {
   format: 'CODE128',
@@ -387,6 +388,9 @@ JsBarcode('#w-barcode', w.barcode, {
   fontSize: 14
 });
 document.getElementById('w-barcode-label').textContent = w.name;
+} catch(e) {
+  console.error('Barcode error:', e);
+}
 }
 // ==================== EDIT & UPDATE PEKERJA ====================
 function editWorker(id) {

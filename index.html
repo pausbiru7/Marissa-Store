@@ -374,6 +374,19 @@ const w = {
 workers.push(w);
 saveLocal();
 showToast('Pekerja berhasil disimpan!', 'success');
+
+// Generate Barcode
+document.getElementById('w-barcode-box').style.display = 'block';
+JsBarcode('#w-barcode', w.barcode, {
+  format: 'CODE128',
+  width: 2,
+  height: 80,
+  displayValue: true,
+  fontSize: 14
+});
+document.getElementById('w-barcode-label').textContent = w.name;
+
+  
 clearWorkerForm();
 renderWorkers();
 }
@@ -754,7 +767,8 @@ function generateMaterialCode() {
   const count = materials.filter(m => m.code.includes(code)).length + 1;
   document.getElementById('m-code').value = `MTR-${code}-${String(count).padStart(3,'0')}`;
 }
-</script>
-<footer style="position:fixed;bottom:56px;left:0;right:0;text-align:center;padding:6px;background:#1a73e8;color:white;font-size:0.72rem;z-index:99;">Powered by Pausbiru7</footer>
+<!-- Letakkan di sini -->
+ <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <footer style="position:fixed;bottom:56px;left:0;right:0;text-align:center;padding:6px;background:#1a73e8;color:white;font-size:0.72rem;z-index:99;">Powered by Pausbiru7</footer>
 </body>
 </html>

@@ -418,24 +418,26 @@ async function updateWorker(id) {
     return;
   }
 
-  const index = workers.findIndex(w => w.id === id);
-  if (index === -1) return;
-
-  workers[index].nik = nik;
-  workers[index].name = name;
-  workers[index].dept = dept;
-  workers[index].position = position;
-
   const result = await apiCall('saveWorker', {
-  id: id,
-  nik: nik,
-  nama: name,
-  departemen: dept,
-  posisi: position
-});
+    id: id,
+    nik: nik,
+    nama: name,
+    departemen: dept,
+    posisi: position
+  });
+
   if (!result || !result.success) {
     showToast('Gagal update ke server: ' + (result?.message || 'Unknown error'), 'error');
     return;
+  }
+
+  // Update local data
+  const index = workers.findIndex(w => w.id === id);
+  if (index !== -1) {
+    workers[index].nik = nik;
+    workers[index].name = name;
+    workers[index].dept = dept;
+    workers[index].position = position;
   }
 
   saveLocal();

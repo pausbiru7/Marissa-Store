@@ -282,14 +282,12 @@ async function apiCall(action, data = {}) {
       action: action,
       ...data
     };
-
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(body),
       redirect: 'follow'
     });
-
     return await res.json();
   } catch (e) {
     console.error('API Error:', e.message);

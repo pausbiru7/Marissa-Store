@@ -374,8 +374,10 @@ const w = {
 workers.push(w);
 saveLocal();
 showToast('Pekerja berhasil disimpan!', 'success');
-
-// Generate Barcode
+  
+clearWorkerForm();
+renderWorkers();
+  // Generate Barcode
 document.getElementById('w-barcode-box').style.display = 'block';
 JsBarcode('#w-barcode', w.barcode, {
   format: 'CODE128',
@@ -385,10 +387,6 @@ JsBarcode('#w-barcode', w.barcode, {
   fontSize: 14
 });
 document.getElementById('w-barcode-label').textContent = w.name;
-
-  
-clearWorkerForm();
-renderWorkers();
 }
 // ==================== EDIT & UPDATE PEKERJA ====================
 function editWorker(id) {

@@ -278,10 +278,10 @@ function saveLocal() {
 async function apiCall(action, data = {}) {
   try {
     const body = {
-      apiKey: API_KEY,
-      action: action,
-      ...data
-    };
+  apiKey: API_KEY,
+  action: action,
+  payload: data
+};
     console.log('Sending:', body);
     const res = await fetch(API_URL, {
       method: 'POST',

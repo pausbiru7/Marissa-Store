@@ -482,7 +482,57 @@ function deleteWorker(id) {
   renderWorkers();
   showToast('Pekerja dihapus', 'success');
 }
-
+// ===== MATERIALS =====
+async function saveMaterial() {
+  var code = document.getElementById('m-code').value.trim();
+  var name = document.getElementById('m-name').value.trim();
+  var category = document.getElementById('m-category').value;
+  var unit = document.getElementById('m-unit').value.trim();
+  var stock = parseInt(document.getElementById('m-stock').value) || 0;
+  var minStock = parseInt(document.getElementById('m-min').value) || 0;
+  var location = document.getElementById('m-location').value.trim();
+  if (!code || !name) { showToast('Kode dan Nama wajib diisi!', 'error'); return; }
+  if (materials.find(function(m) { return m.code === code; })) { showToast('Kode sudah ada!', 'error'); return; }
+  var result = await apiCall('saveMaterial', { name: name, unit: unit, stock: stock, minStock: minStock, category: category, location: location, code: code });
+  if (!result || !result.success) { showToast('Gagal: ' + (result ? result.message : 'Error'), 'error'); return; }
+  var m = { id: (result.data && result.data.id) || 'M' + Date.now(), code: code, name: name, category: category, unit: unit, stock: stock, minStock: minStock, location: location };
+  materials.push(m);
+  saveLocal();
+  JsBarcode('#m-barcode', code, { format: 'CODE128', width: 2, height: 70, displayValue: true, text: code });
+  document.getElementById('m-barcode-label').textContent = name + ' | Stok: ' + stock + ' ' + unit + ' | Rak: ' + location;
+  document.getElementById('m-barcode-box').style.display = 'block';
+  showToast('Material disimpan!', 'success');
+  var ids = ['m-code', 'm-name', 'm-unit', 'm-stock', 'm-min', 'm-location'];
+  for (var i = 0; i < ids.length; i++) { document.getElementById(ids[i]).value = ''; }
+  document.getElementById('m-category').value = '';
+  document.getElementById('m-dept').value = '';
+  renderMaterials();
+}
+function renderMaterials() {
+  var el = document.getElementById('materials-list');
+  if (!materials.length) { el.innerHTML = '<div class="empty">Belum ada material</div>'; return; }
+  el.innerHTML = materials.map(function(m) {
+    var cls = m.stock <= 0 ? 'stock-empty' : m.stock <= m.minStock ? 'stock-low' : 'stock-ok';
+    return '<div class="list-item"><div class="info"><h4>' + m.code + ' - ' + m.name + '</h4><p>' + m.category + ' | Rak: ' + m.location + ' | <span class="stock-badge ' + cls + '">' + m.stock + ' ' + m.unit + '</span></p></div><div style="display:flex;gap:4px;"><button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="editMaterial(\'' + m.id + '\')">✏️</button><button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="deleteMaterial(\'' + m.id + '\')">🗑️</button></div></div>';
+  }).join('');
+}
+function deleteMaterial(id) { materials = materials.filter(function(m) { return m.id !== id; }); saveLocal(); renderMaterials(); showToast('Dihapus', 'success'); }
+function editMaterial(id) {
+  var m = materials.find(function(x) { return x.id === id; });
+  if (!m) return;
+  var name = prompt('Nama Material:', m.name);
+  if (name === null) return;
+  var stock = prompt('Stok:', m.stock);
+  if (stock === null) return;
+  var location = prompt('Lokasi Rak:', m.location);
+  if (location === null) return;
+  m.name = name || m.name;
+  m.stock = parseInt(stock) || m.stock;
+  m.location = location || m.location;
+  saveLocal();
+  renderMaterials();
+  showToast('Data material diperbarui!', 'success');
+}
 
 // ===== SCAN / PENGAMBILAN =====
 let currentWorker = null, currentMaterial = null;

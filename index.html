@@ -492,10 +492,33 @@ function saveMaterial() {
   const stock = parseInt(document.getElementById('m-stock').value)||0;
   const minStock = parseInt(document.getElementById('m-min').value)||0;
   const location = document.getElementById('m-location').value.trim();
+  
   if (!code||!name) { showToast('Kode dan Nama wajib diisi!','error'); return; }
   if (materials.find(m=>m.code===code)) { showToast('Kode sudah ada!','error'); return; }
-  const m = { id:'M'+Date.now(), code, name, category, unit, stock, minStock, location };
-  materials.push(m); saveLocal(); apiCall('addMaterial', m);
+  
+  // Kirim ke server dulu dengan action yang benar
+  const result = await apiCall('saveMaterial', {
+    name: name,
+    unit: unit,
+    stock: stock,
+    minStock: minStock,
+    category: category,
+    location: location
+  });
+  
+  if (!result || !result.success) {
+    showToast('Gagal simpan ke server: ' + (result?.message || 'Error'), 'error');
+    return;
+  }
+  
+  // Kalau berhasil, simpan ke local
+  const m = { 
+    id: result.data?.id || 'M'+Date.now(), 
+    code, name, category, unit, stock, minStock, location 
+  };
+  materials.push(m); 
+  saveLocal();
+  
   JsBarcode('#m-barcode', code, { format:'CODE128', width:2, height:70, displayValue:true, text:`${code}` });
   document.getElementById('m-barcode-label').textContent = `${name} | Stok: ${stock} ${unit} | Rak: ${location}`;
   document.getElementById('m-barcode-box').style.display = 'block';

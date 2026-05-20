@@ -483,75 +483,7 @@ function deleteWorker(id) {
   showToast('Pekerja dihapus', 'success');
 }
 
-  // ===== MATERIALS =====
 
-async function saveMaterial() {
-  const code = document.getElementById('m-code').value.trim();
-  const name = document.getElementById('m-name').value.trim();
-  const category = document.getElementById('m-category').value;
-  const unit = document.getElementById('m-unit').value.trim();
-  const stock = parseInt(document.getElementById('m-stock').value)||0;
-  const minStock = parseInt(document.getElementById('m-min').value)||0;
-  const location = document.getElementById('m-location').value.trim();
-  
-  if (!code||!name) { showToast('Kode dan Nama wajib diisi!','error'); return; }
-  if (materials.find(m=>m.code===code)) { showToast('Kode sudah ada!','error'); return; }
-  
-  // Kirim ke server dulu dengan action yang benar
-  const result = await apiCall('saveMaterial', {
-    name: name,
-    unit: unit,
-    stock: stock,
-    minStock: minStock,
-    category: category,
-    location: location
-  });
-  
-  if (!result || !result.success) {
-    showToast('Gagal simpan ke server: ' + (result?.message || 'Error'), 'error');
-    return;
-  }
-  
-  // Kalau berhasil, simpan ke local
-  const m = { 
-    id: result.data?.id || 'M'+Date.now(), 
-    code, name, category, unit, stock, minStock, location 
-  };
-  materials.push(m); 
-  saveLocal();
-  
-  JsBarcode('#m-barcode', code, { format:'CODE128', width:2, height:70, displayValue:true, text:`${code}` });
-  document.getElementById('m-barcode-label').textContent = `${name} | Stok: ${stock} ${unit} | Rak: ${location}`;
-  document.getElementById('m-barcode-box').style.display = 'block';
-  showToast('Material disimpan + barcode dibuat!','success');
-  ['m-code','m-name','m-unit','m-stock','m-min','m-location'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('m-category').value='';
-  document.getElementById('m-dept').value='';
-  renderMaterials();
-}
-function renderMaterials() {
-  const el = document.getElementById('materials-list');
-  if (!materials.length) { el.innerHTML='<div class="empty">Belum ada material</div>'; return; }
-  el.innerHTML = materials.map(m=>{
-    const cls = m.stock<=0?'stock-empty':m.stock<=m.minStock?'stock-low':'stock-ok';
-    return `<div class="list-item">
-      <div class="info"><h4>${m.code} - ${m.name}</h4><p>${m.category} | Rak: ${m.location} | <span class="stock-badge ${cls}">${m.stock} ${m.unit}</span></p></div>
-      <div style="display:flex;gap:4px;">
-        <button class="btn btn-outline" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="editMaterial('${m.id}')">✏️</button>
-        <button class="btn btn-danger" style="width:auto;padding:6px 10px;font-size:0.7rem;" onclick="deleteMaterial('${m.id}')">🗑️</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-function deleteMaterial(id) { materials=materials.filter(m=>m.id!==id); saveLocal(); renderMaterials(); showToast('Dihapus','success'); }
-function editMaterial(id) {
-  const m = materials.find(x=>x.id===id); if(!m) return;
-  const name = prompt('Nama Material:', m.name); if(name===null) return;
-  const stock = prompt('Stok:', m.stock); if(stock===null) return;
-  const location = prompt('Lokasi Rak:', m.location); if(location===null) return;
-  m.name=name||m.name; m.stock=parseInt(stock)||m.stock; m.location=location||m.location;
-  saveLocal(); renderMaterials(); showToast('Data material diperbarui!','success');
-}
 // ===== SCAN / PENGAMBILAN =====
 let currentWorker = null, currentMaterial = null;
 function resetScan() {

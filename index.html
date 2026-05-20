@@ -508,6 +508,7 @@ async function saveMaterial() {
   document.getElementById('m-dept').value = '';
   renderMaterials();
 }
+
 function renderMaterials() {
   var el = document.getElementById('materials-list');
   if (!materials.length) { el.innerHTML = '<div class="empty">Belum ada material</div>'; return; }

@@ -412,19 +412,17 @@ async function updateWorker(id) {
   const name = document.getElementById('w-name').value.trim();
   const dept = document.getElementById('w-dept').value;
   const position = document.getElementById('w-position').value.trim();
-
   if (!nik || !name) {
     showToast('NIK dan Nama wajib diisi!', 'error');
     return;
   }
-
   const result = await apiCall('saveWorker', {
-    id: id,
     nik: nik,
     nama: name,
     departemen: dept,
     posisi: position
   });
+  
 
   if (!result || !result.success) {
     showToast('Gagal update ke server: ' + (result?.message || 'Unknown error'), 'error');

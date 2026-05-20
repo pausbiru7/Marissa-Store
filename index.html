@@ -518,7 +518,7 @@ function renderMaterials() {
   }).join('');
 }
 function deleteMaterial(id) { materials = materials.filter(function(m) { return m.id !== id; }); saveLocal(); renderMaterials(); showToast('Dihapus', 'success'); }
-function editMaterial(id) {
+async function editMaterial(id) {
   var m = materials.find(function(x) { return x.id === id; });
   if (!m) return;
   var name = prompt('Nama Material:', m.name);
@@ -527,6 +527,22 @@ function editMaterial(id) {
   if (stock === null) return;
   var location = prompt('Lokasi Rak:', m.location);
   if (location === null) return;
+  
+  var result = await apiCall('saveMaterial', {
+    code: m.code,
+    name: name || m.name,
+    stock: parseInt(stock) || m.stock,
+    location: location || m.location,
+    unit: m.unit,
+    minStock: m.minStock,
+    category: m.category
+  });
+  
+  if (!result || !result.success) {
+    showToast('Gagal update di server: ' + (result ? result.message : 'Error'), 'error');
+    return;
+  }
+  
   m.name = name || m.name;
   m.stock = parseInt(stock) || m.stock;
   m.location = location || m.location;

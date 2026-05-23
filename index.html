@@ -16,8 +16,8 @@
     .bottom-nav button { flex:1; padding:10px 4px; border:none; background:none; cursor:pointer; font-size:0.7rem; color:#666; display:flex; flex-direction:column; align-items:center; gap:3px; transition:color 0.2s; }
     .bottom-nav button.active { color:#1a73e8; }
     .bottom-nav button .icon { font-size:1.3rem; }
-    .container { max-width:600px; margin:0 auto; padding:16px; }
-    .card { background:white; border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+    .container { max-width:100%; margin:0; padding:10px; }
+    .card { background:white; border-radius:10px; padding:14px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
     .card h2 { font-size:1rem; color:#1a73e8; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
     .form-group { margin-bottom:12px; }
     .form-group label { display:block; font-size:0.8rem; color:#555; font-weight:600; margin-bottom:4px; }
@@ -74,6 +74,32 @@
     .tab-bar { display:flex; gap:6px; margin-bottom:14px; }
     .tab-bar button { flex:1; padding:8px; border:1.5px solid #e0e0e0; border-radius:8px; background:white; font-size:0.82rem; cursor:pointer; font-weight:500; }
     .tab-bar button.active { border-color:#1a73e8; background:#e8f0fe; color:#1a73e8; }
+    /* ===== MOBILE RESPONSIVE ===== */
+    @media (max-width: 480px) {
+      body { font-size: 14px; }
+      .navbar h1 { font-size: 1rem; }
+      .container { padding: 8px; }
+      .card { padding: 12px; border-radius: 10px; }
+      .card h2 { font-size: 0.9rem; }
+      .form-group input, .form-group select { padding: 9px 12px; font-size: 0.9rem; }
+      .btn { padding: 11px 16px; font-size: 0.85rem; }
+      .bottom-nav button { font-size: 0.62rem; padding: 8px 2px; }
+      .bottom-nav button .icon { font-size: 1.1rem; }
+      .result-card .row { font-size: 0.82rem; }
+      .list-item .info h4 { font-size: 0.85rem; }
+      .list-item .info p { font-size: 0.72rem; }
+      .summary-box { padding: 14px; }
+      .steps .step { width: 28px; height: 28px; font-size: 0.75rem; }
+      .scan-prompt p { font-size: 0.9rem; }
+      .scan-prompt .sub { font-size: 0.78rem; }
+      .tab-bar button { font-size: 0.75rem; padding: 7px; }
+      .barcode-box { padding: 14px; }
+      [style*="grid-template-columns:1fr 1fr"] { 
+        display: grid !important; 
+        grid-template-columns: 1fr 1fr !important; 
+        gap: 8px !important; 
+      }
+    }
   </style>
 </head>
 <body>

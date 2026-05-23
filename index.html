@@ -579,6 +579,32 @@
       padding: 40px 0;
     }
   </style>
+      // ==================== SERVICE WORKER REGISTRATION ====================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then((registration) => {
+        console.log('[App] Service Worker registered:', registration.scope);
+        
+        // Handle updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // New content available
+              if (confirm('Ada pembaruan baru. Muat ulang?')) {
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                window.location.reload();
+              }
+            }
+          });
+        });
+      })
+      .catch((err) => {
+        console.error('[App] Service Worker registration failed:', err);
+      });
+  });
+}
 // ==================== KONFIGURASI ====================
 const API_URL = 'https://script.google.com/macros/s/AKfycbwc9NepUT6hR7crUtihUo8Wles3plKwxIX2u-0HEwP2ReQ_VX8DVvV3YTGvM3wnewe0-A/exec';
 const API_KEY = 'marissa-warehouse-2025-xyz';

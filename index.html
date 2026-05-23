@@ -21,6 +21,37 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   
   <style>
+     /* ==================== CSS VARIABLES ==================== */
+  :root {
+    --primary: #2563eb;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+    --text-muted: #64748b;
+    --bg: #f8fafc;
+    --text-primary: #1e293b;
+  }
+    /* ==================== ALERT BOX ==================== */
+.alert-box {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+.alert-box.success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+.alert-box.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.alert-box.info {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
   /* ==================== LOGIN ==================== */
 #login-screen {
   position: fixed; inset: 0; z-index: 9999;
@@ -335,6 +366,7 @@
           <div class="step" id="step-ind-4">✓</div>
         </div>
         <!-- STEP 1: Scan Pekerja -->
+        <div id="scan-worker-result" style="margin-top:14px;"></div>
         <div id="scan-step-1">
           <div class="scan-prompt">
             <p>Step 1: Scan Barcode Pekerja</p>
@@ -357,6 +389,7 @@
         </div>
 
         <!-- STEP 2: Scan Material -->
+        <div id="scan-material-result" style="margin-top:14px;"></div>
         <div id="scan-step-2" style="display:none;">
           <div class="scan-prompt">
             <p>Step 2: Scan Barcode Material</p>
@@ -381,26 +414,30 @@
 
         <!-- STEP 3: Input Qty -->
         <div id="scan-step-3" style="display:none;">
-          <div class="scan-prompt" style="background:linear-gradient(135deg,#e3f2fd,#e8eaf6);border-color:#1a73e8;">
-            <p style="color:#1a73e8;">Step 3: Jumlah Pengambilan</p>
-            <p class="sub">Masukkan jumlah material yang diambil</p>
-          </div>
-          <div class="form-group" style="margin-top:14px;"><label>Jumlah</label><input type="number" id="take-qty" min="1" placeholder="0" style="font-size:1.3rem;text-align:center;"></div>
-          <div class="form-group"><label>Keterangan (opsional)</label><input type="text" id="take-note" placeholder="Untuk keperluan..."></div>
-          <button class="btn btn-success" onclick="submitTrx()">✅ Simpan Transaksi</button>
-        </div>
-
-        <!-- STEP 4: Done -->
-        <div id="scan-step-4" style="display:none;">
-          <div class="summary-box" id="trx-summary"></div>
-          <div class="btn-row" style="margin-top:14px;">
-            <button class="btn btn-primary" onclick="printTrxPdf()">🖨️ Print PDF</button>
-            <button class="btn btn-share" onclick="shareTrx()">📤 Share</button>
-          </div>
-          <button class="btn btn-outline" style="margin-top:10px;" onclick="resetScan()">🔄 Transaksi Baru</button>
-        </div>
-      </div>
+  <div id="scan-qty-box" style="display:none;">
+    <div class="scan-prompt" style="background:linear-gradient(135deg,#e3f2fd,#e8eaf6);border-color:#1a73e8;">
+      <p style="color:#1a73e8;">Step 3: Jumlah Pengambilan</p>
+      <p class="sub">Masukkan jumlah material yang diambil</p>
     </div>
+    <div class="form-group" style="margin-top:14px;">
+      <label>Jumlah</label>
+      <input type="number" id="scan-qty" min="1" placeholder="0" style="font-size:1.3rem;text-align:center;">
+    </div>
+    <div class="form-group"><label>Keterangan (opsional)</label><input type="text" id="take-note" placeholder="Untuk keperluan..."></div>
+    <button class="btn btn-success" onclick="submitTrx()">✅ Simpan Transaksi</button>
+  </div>
+</div>
+
+      <!-- STEP 4: Done -->
+<div id="scan-step-4" style="display:none;">
+  <div id="scan-summary-box"></div>  <!-- ← Tambahkan ini di sini -->
+  <div class="summary-box" id="trx-summary"></div>
+  <div class="btn-row" style="margin-top:14px;">
+    <button class="btn btn-primary" onclick="printTrxPdf()">🖨️ Print PDF</button>
+    <button class="btn btn-share" onclick="shareTrx()">📤 Share</button>
+  </div>
+  <button class="btn btn-outline" style="margin-top:10px;" onclick="resetScan()">🔄 Transaksi Baru</button>
+</div>
 
     <!-- SECTION: RIWAYAT -->
     <div class="section" id="section-history">
@@ -472,22 +509,24 @@
           <label>Pilih Bulan</label>
           <input type="month" id="lap-month" onchange="generateLaporan()">
         </div>
+        <div class="form-group">
+          <label>Filter Departemen (Opsional)</label>
+          <select id="lap-dept" onchange="generateLaporan()">
+            <option value="">Semua Departemen</option>
+            <option>Electrical</option>
+            <option>Mechanical</option>
+            <option>Store</option>
+            <option>Manajemen</option>
+            <option>HSE</option>
+            <option>HRD</option>
+          </select>
+        </div>
         <div id="laporan-content"></div>
         <button class="btn btn-primary" style="margin-top:12px;" onclick="printLaporan()">🖨️ Print Laporan PDF</button>
       </div>
     </div>
   </div>
-  <!-- BOTTOM NAV -->
-  <div class="bottom-nav">
-    <button onclick="showSection('dashboard')" id="bnav-dashboard"><span class="icon">📊</span>Dashboard</button>
-    <button onclick="showSection('workers')" id="bnav-workers" class="active"><span class="icon">👷</span>Pekerja</button>
-    <button onclick="showSection('materials')" id="bnav-materials"><span class="icon">📦</span>Material</button>
-    <button onclick="showSection('scan')" id="bnav-scan"><span class="icon">📷</span>Ambil</button>
-    <button onclick="showSection('history')" id="bnav-history"><span class="icon">📊</span>Riwayat</button>
-    <button onclick="showSection('laporan')" id="bnav-laporan"><span class="icon">📅</span>Laporan</button>
-  </div>
-  <script>
- <style>
+ 
     <!-- BOTTOM NAV -->
   <div class="bottom-nav">
     <button onclick="showSection('dashboard')" id="bnav-dashboard"><span class="icon">📊</span>Dashboard</button>
@@ -496,50 +535,50 @@
     <button onclick="showSection('scan')" id="bnav-scan"><span class="icon">📷</span>Ambil</button>
     <button onclick="showSection('history')" id="bnav-history"><span class="icon">📊</span>Riwayat</button>
     <button onclick="showSection('laporan')" id="bnav-laporan"><span class="icon">📅</span>Laporan</button>
-  </div>
-<style>
-  /* ==================== CHARTS ==================== */
-.chart-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-  margin-top: 14px;
-}
-@media (min-width: 640px) {
-  .chart-grid { grid-template-columns: 1fr 1fr; }
-}
-.chart-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
-}
-.chart-card h4 {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.chart-card.full { grid-column: 1 / -1; }
-.chart-wrap {
-  position: relative;
-  height: 200px;
-  width: 100%;
-}
-.chart-wrap-tall {
-  position: relative;
-  height: 260px;
-  width: 100%;
-}
-.chart-empty {
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.82rem;
-  padding: 40px 0;
-}
-</style>
+ </div>
+  <style>
+    /* ==================== CHARTS CSS ==================== */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    @media (min-width: 640px) {
+      .chart-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .chart-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .chart-card h4 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .chart-card.full { grid-column: 1 / -1; }
+    .chart-wrap {
+      position: relative;
+      height: 200px;
+      width: 100%;
+    }
+    .chart-wrap-tall {
+      position: relative;
+      height: 260px;
+      width: 100%;
+    }
+    .chart-empty {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      padding: 40px 0;
+    }
+  </style>
 // ==================== KONFIGURASI ====================
 const API_URL = 'https://script.google.com/macros/s/AKfycbwc9NepUT6hR7crUtihUo8Wles3plKwxIX2u-0HEwP2ReQ_VX8DVvV3YTGvM3wnewe0-A/exec';
 const API_KEY = 'marissa-warehouse-2025-xyz';
@@ -897,8 +936,7 @@ function printBarcode(type) {
   renderWorkers(); renderMaterials();
   setSyncStatus(isOnline() ? '🟢 Online' : '🔴 Offline');
   await initialSync(false);
-  renderDashboard(); 
-  initCharts();      
+   
 })();
   // ==================== AUTH CONFIG ====================
 const AUTH_KEY      = 'marissa_auth';
@@ -1117,7 +1155,7 @@ setInterval(() => {
 
 // ==================== END OF LOGIN JS ====================
 // ==================== END OF STEP 1 ====================
-  
+
   // ==================== SCAN STATE ====================
 let scanState = {
   workerScanned: null,
@@ -1143,7 +1181,7 @@ function resetScan() {
 function setStep(n) {
   scanState.step = n;
   [1,2,3].forEach(i => {
-    const el = document.getElementById(`step-${i}`);
+   const el = document.getElementById(`step-ind-${i}`);
     if (!el) return;
     el.classList.remove('active','done');
     if (i < n) el.classList.add('done');
@@ -1193,7 +1231,7 @@ function startScan(target) {
 
 // ==================== MANUAL SCAN WORKER ====================
 function manualScanWorker() {
-  const input = document.getElementById('manual-worker-input');
+  const input = document.getElementById('manual-worker');
   const val   = input ? input.value.trim() : '';
   if (!val) { showToast('Masukkan NIK atau scan barcode pekerja!', 'error'); return; }
 
@@ -1225,7 +1263,7 @@ function manualScanMaterial() {
   if (!scanState.workerScanned) {
     showToast('Scan pekerja terlebih dahulu!', 'error'); return;
   }
-  const input = document.getElementById('manual-material-input');
+  const input = document.getElementById('manual-material');
   const val   = input ? input.value.trim() : '';
   if (!val) { showToast('Masukkan kode atau scan barcode material!', 'error'); return; }
 
@@ -1266,12 +1304,115 @@ function manualScanMaterial() {
   setStep(3);
   showToast(`Material "${material.name}" terdeteksi!`, 'success');
 }
-
+// ==================== TO STEP 2 ====================
+function toStep2() {
+  if (!scanState.workerScanned) {
+    showToast('Scan pekerja terlebih dahulu!', 'error');
+    return;
+  }
+  // Sembunyikan step 1, tampilkan step 2
+  document.getElementById('scan-step-1').style.display = 'none';
+  document.getElementById('scan-step-2').style.display = 'block';
+  
+  // Update step indicator
+  setStep(2);
+  
+  // Update result card worker (jika ingin tampilkan)
+  const resWorker = document.getElementById('res-worker');
+  if (resWorker) resWorker.style.display = 'block';
+  
+  // Focus ke input material
+  setTimeout(() => {
+    const input = document.getElementById('manual-material');
+    if (input) input.focus();
+  }, 300);
+  
+  showToast('Silakan scan material!', 'info');
+}
+    // ==================== TO STEP 3 ====================
+function toStep3() {
+  if (!scanState.materialScanned) {
+    showToast('Scan material terlebih dahulu!', 'error');
+    return;
+  }
+  // Sembunyikan step 2, tampilkan step 3
+  document.getElementById('scan-step-2').style.display = 'none';
+  document.getElementById('scan-step-3').style.display = 'block';
+  
+  // Update step indicator
+  setStep(3);
+  
+  // Update result card material
+  const resMaterial = document.getElementById('res-material');
+  if (resMaterial) resMaterial.style.display = 'block';
+  
+  // Tampilkan qty box dan focus ke input qty
+  const qtyBox = document.getElementById('scan-qty-box');
+  if (qtyBox) qtyBox.style.display = 'block';
+  
+  setTimeout(() => {
+    const qtyInput = document.getElementById('scan-qty');
+    if (qtyInput) {
+      qtyInput.focus();
+      qtyInput.max = scanState.materialScanned.stock;
+    }
+  }, 300);
+  
+  showToast('Masukkan jumlah pengambilan!', 'info');
+}
+    // ==================== CANCEL SCAN ====================
+function cancelScan() {
+  if (!confirm('Batal scan dan reset transaksi?')) return;
+  
+  // Reset scan state
+  scanState = {
+    workerScanned: null,
+    materialScanned: null,
+    step: 1
+  };
+  
+  // Reset semua step
+  document.getElementById('scan-step-1').style.display = 'block';
+  document.getElementById('scan-step-2').style.display = 'none';
+  document.getElementById('scan-step-3').style.display = 'none';
+  document.getElementById('scan-step-4').style.display = 'none';
+  
+  // Reset result cards
+  const resWorker = document.getElementById('res-worker');
+  const resMaterial = document.getElementById('res-material');
+  const qtyBox = document.getElementById('scan-qty-box');
+  const summaryBox = document.getElementById('scan-summary-box');
+  
+  if (resWorker) resWorker.style.display = 'none';
+  if (resMaterial) resMaterial.style.display = 'none';
+  if (qtyBox) qtyBox.style.display = 'none';
+  if (summaryBox) summaryBox.style.display = 'none';
+  
+  // Reset inputs
+  const workerInput = document.getElementById('manual-worker');
+  const materialInput = document.getElementById('manual-material');
+  const qtyInput = document.getElementById('scan-qty');
+  
+  if (workerInput) workerInput.value = '';
+  if (materialInput) materialInput.value = '';
+  if (qtyInput) qtyInput.value = '';
+  
+  // Reset scan result boxes
+  const workerResult = document.getElementById('scan-worker-result');
+  const materialResult = document.getElementById('scan-material-result');
+  if (workerResult) workerResult.innerHTML = '';
+  if (materialResult) materialResult.innerHTML = '';
+  
+  // Reset step indicator
+  setStep(1);
+  
+  showToast('Scan direset', 'info');
+}
 // ==================== SUBMIT TRANSAKSI ====================
 async function submitTrx() {
   const worker   = scanState.workerScanned;
   const material = scanState.materialScanned;
-  const qty      = parseInt(document.getElementById('scan-qty').value) || 0;
+  const qty = parseInt(document.getElementById('scan-qty').value) || 0;
 
   if (!worker)   { showToast('Scan pekerja terlebih dahulu!', 'error');   return; }
   if (!material) { showToast('Scan material terlebih dahulu!', 'error');  return; }
@@ -1431,7 +1572,7 @@ function renderDashboard() {
   }
 
   // Low stock alerts
-   const alertList = document.getElementById('dash-low-stock-list');
+   const alertList = document.getElementById('dash-low-list');
   if (alertList) {
     const alerts = materials.filter(m => m.stock <= m.minStock);
     if (!alerts.length) {
@@ -1520,7 +1661,7 @@ let laporanData = [];
 
 // ==================== GENERATE LAPORAN ====================
 function generateLaporan() {
-  const bulan = document.getElementById('lap-bulan')?.value; // format: "2025-01"
+ const bulan = document.getElementById('lap-month')?.value; // format: "2025-01"
   const dept  = document.getElementById('lap-dept')?.value || '';
 
   if (!bulan) { showToast('Pilih bulan terlebih dahulu!', 'error'); return; }

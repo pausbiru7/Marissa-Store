@@ -654,7 +654,8 @@ function submitTrx() {
     materialName: currentMaterial.name,
     qty, unit: currentMaterial.unit,
     stockAfter: mat.stock,
-    note
+    note,
+    type: 'out'
   };
   transactions.unshift(trx); saveLocal(); apiCall('addTransaction', trx);
   document.getElementById('scan-step-3').style.display='none';

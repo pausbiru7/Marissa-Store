@@ -850,78 +850,70 @@ ${trx.note ? '📝 Tujuan: ' + trx.note + '\n' : ''}📅 ${trx.dateStr} ${trx.ti
   try { await navigator.clipboard.writeText(text); showToast('Teks disalin!', 'success'); } 
   catch (e) { showToast('Gagal menyalin', 'error'); }
 }
-// ===== INIT SCANNER =====
-function loadScannerLib() {
-  if (!document.getElementById('quagga-script')) {
-    const script = document.createElement('script');
-    script.id = 'quagga-script';
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js';
-    script.onload = () => {
-      console.log('✅ Scanner library loaded');
-      initWorkerScanner();
-    };
-    document.head.appendChild(script);
-  } else {
-    initWorkerScanner();
-  }
+// ===== INIT SCANNER (Html5Qrcode) =====
+let workerScanner = null;
+let materialScanner = null;
+
+function stopAllScanners() {
+  if (workerScanner) { workerScanner.stop().catch(() => {}); workerScanner = null; }
+  if (materialScanner) { materialScanner.stop().catch(() => {}); materialScanner = null; }
 }
 
 function initWorkerScanner() {
   const scannerEl = document.getElementById('scanner-worker');
   if (!scannerEl) return;
-  if (typeof Quagga === 'undefined') return;
-  
-  Quagga.init({
-    inputStream: { name: "Live", type: "LiveStream", target: scannerEl, constraints: { facingMode: "environment", width: { ideal: 350 }, height: { ideal: 200 } } },
-    decoder: { readers: ["code_128_reader", "ean_reader", "upc_reader"] },
-    locator: { patchSize: "medium", halfSample: true }
-  }, function(err) {
-    if (err) { console.error('Scanner error:', err); return; }
-    Quagga.start();
-    // Store scanner instance
-    window.workerScanner = { stop: () => Quagga.stop() };
-  });
-  
-  Quagga.onDetected(function(result) {
-    if (result.codeResult.code) {
+  if (workerScanner) { workerScanner.stop().catch(() => {}); workerScanner = null; }
+
+  workerScanner = new Html5Qrcode('scanner-worker');
+  workerScanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 250, height: 150 } },
+    (decodedText) => {
       const input = document.getElementById('manual-worker');
-      if (input) { input.value = result.codeResult.code; manualScanWorker(); }
-    }
+      if (input) {
+        input.value = decodedText;
+        workerScanner.stop().catch(() => {});
+        workerScanner = null;
+        manualScanWorker();
+      }
+    },
+    () => {}
+  ).catch(err => {
+    console.error('Worker scanner error:', err);
+    scannerEl.innerHTML = `<div style="padding:16px;text-align:center;color:#dc3545;background:#f8d7da;border-radius:8px;">❌ Gagal akses kamera<br><small>${err}</small><br><br><button class="btn btn-outline" onclick="initWorkerScanner()">🔄 Coba Lagi</button></div>`;
   });
 }
 
 function initMaterialScanner() {
   const scannerEl = document.getElementById('scanner-material');
   if (!scannerEl) return;
-  if (typeof Quagga === 'undefined') return;
-  
-  Quagga.init({
-    inputStream: { name: "Live", type: "LiveStream", target: scannerEl, constraints: { facingMode: "environment", width: { ideal: 350 }, height: { ideal: 200 } } },
-    decoder: { readers: ["code_128_reader", "ean_reader", "upc_reader", "code_39_reader"] },
-    locator: { patchSize: "medium", halfSample: true }
-  }, function(err) {
-    if (err) { console.error('Scanner error:', err); return; }
-    Quagga.start();
-    window.materialScanner = { stop: () => Quagga.stop() };
-  });
-  
-  Quagga.onDetected(function(result) {
-    if (result.codeResult.code) {
+  if (materialScanner) { materialScanner.stop().catch(() => {}); materialScanner = null; }
+
+  materialScanner = new Html5Qrcode('scanner-material');
+  materialScanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 250, height: 150 } },
+    (decodedText) => {
       const input = document.getElementById('manual-material');
-      if (input) { input.value = result.codeResult.code; manualScanMaterial(); }
-    }
+      if (input) {
+        input.value = decodedText;
+        materialScanner.stop().catch(() => {});
+        materialScanner = null;
+        manualScanMaterial();
+      }
+    },
+    () => {}
+  ).catch(err => {
+    console.error('Material scanner error:', err);
+    scannerEl.innerHTML = `<div style="padding:16px;text-align:center;color:#dc3545;background:#f8d7da;border-radius:8px;">❌ Gagal akses kamera<br><small>${err}</small><br><br><button class="btn btn-outline" onclick="initMaterialScanner()">🔄 Coba Lagi</button></div>`;
   });
 }
 
-// Modifikasi manualScanWorker untuk inisialisasi scanner material
-const _oldManualScanWorker = manualScanWorker;
-manualScanWorker = function() {
-  _oldManualScanWorker();
-  setTimeout(initMaterialScanner, 500);
-};
-
 // Init saat halaman siap
-document.addEventListener('DOMContentLoaded', loadScannerLib);
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => initWorkerScanner(), 500);
+});
+
 // ==================== HISTORY ====================
 function renderHistory() {
   const list = document.getElementById('history-list'); if (!list) return;

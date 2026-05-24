@@ -766,10 +766,162 @@ async function submitTrx() {
 }
 
 function showTrxSummary(trx) {
-  const box = document.getElementById('scan-summary-box'); if (!box) return;
-  box.innerHTML = `<div class="summary-card"><h3>📋 Ringkasan Pengambilan</h3><table class="summary-table"><tr><td>👷 Pekerja</td><td><strong>${trx.workerName}</strong> (${trx.workerNik})</td></tr><tr><td>🏭 Departemen</td><td>${trx.workerDept}</td></tr><tr><td>📦 Material</td><td><strong>${trx.materialName}</strong></td></tr><tr><td>🏷️ Kode</td><td>${trx.materialCode}</td></tr><tr><td>📊 Jumlah</td><td><strong>${trx.qty} ${trx.unit}</strong></td></tr><tr><td>📅 Tanggal</td><td>${trx.dateStr} ${trx.timeStr}</td></tr></table><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;"><button class="btn btn-outline" style="width:auto;padding:8px 14px;" onclick="printTrxPdf('${trx.id}')">🖨️ Print</button><button class="btn btn-share" style="width:auto;padding:8px 14px;" onclick="shareTrx('${trx.id}')">📤 Share</button><button class="btn btn-primary" style="width:auto;padding:8px 14px;" onclick="resetScan()">🔄 Scan Baru</button></div></div>`;
+  const box = document.getElementById('scan-summary-box'); 
+  if (!box) return;
+  
+  // Tambah trx.note untuk tujuan pengambilan
+  const tujuan = trx.note ? trx.note : '-';
+  
+  box.innerHTML = `<div class="summary-card">
+    <h3>📋 Ringkasan Pengambilan</h3>
+    <table class="summary-table">
+      <tr><td>👷 Pekerja</td><td><strong>${trx.workerName}</strong> (${trx.workerNik})</td></tr>
+      <tr><td>🏭 Departemen</td><td>${trx.workerDept}</td></tr>
+      <tr><td>📦 Material</td><td><strong>${trx.materialName}</strong></td></tr>
+      <tr><td>🏷️ Kode</td><td>${trx.materialCode}</td></tr>
+      <tr><td>📊 Jumlah</td><td><strong>${trx.qty} ${trx.unit}</strong></td></tr>
+      <tr><td>📝 Tujuan Pengambilan</td><td>${tujuan}</td></tr>  <!-- TAMBAH INI -->
+      <tr><td>📅 Tanggal</td><td>${trx.dateStr} ${trx.timeStr}</td></tr>
+    </table>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+      <button class="btn btn-outline" style="width:auto;padding:8px 14px;" onclick="printTrxPdf('${trx.id}')">🖨️ Print</button>
+      <button class="btn btn-share" style="width:auto;padding:8px 14px;" onclick="shareTrx('${trx.id}')">📤 Share</button>
+      <button class="btn btn-primary" style="width:auto;padding:8px 14px;" onclick="resetScan()">🔄 Scan Baru</button>
+    </div>
+  </div>`;
+}
+  function printTrxPdf(trxId) {
+  const trx = transactions.find(t => t.id === trxId);
+  if (!trx) { showToast('Transaksi tidak ditemukan!', 'error'); return; }
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) { showToast('Izinkan popup untuk print!', 'error'); return; }
+  
+  printWindow.document.write(`<!DOCTYPE html>
+  <html><head><title>Cetak - ${trx.id}</title>
+  <style>body{font-family:sans-serif;padding:15px;max-width:320px;margin:0 auto}
+  h2{text-align:center;border-bottom:2px dashed #333;padding-bottom:10px}
+  table{width:100%;border-collapse:collapse;margin:10px 0}
+  td{padding:6px 0;border-bottom:1px solid #eee;font-size:12px}
+  td:first-child{color:#666;width:35%}
+  .total{background:#222;color:#fff;padding:12px;border-radius:6px;text-align:center;margin-top:15px}
+  .tujuan{background:#fff8e1;padding:8px;border-radius:4px;margin-top:10px;font-size:11px}</style>
+  </head><body>
+  <h2>📦 Bukti Pengambilan</h2>
+  <div style="background:#eee;padding:6px;text-align:center;font-family:monospace;font-size:11px">${trx.id}</div>
+  <table>
+    <tr><td>Pekerja</td><td><strong>${trx.workerName}</strong></td></tr>
+    <tr><td>NIK</td><td>${trx.workerNik}</td></tr>
+    <tr><td>Dept</td><td>${trx.workerDept}</td></tr>
+    <tr><td>Material</td><td>${trx.materialName}</td></tr>
+    <tr><td>Kode</td><td>${trx.materialCode}</td></tr>
+    <tr><td>Tanggal</td><td>${trx.dateStr}</td></tr>
+  </table>
+  ${trx.note ? '<div class="tujuan"><strong>Tujuan:</strong> ' + trx.note + '</div>' : ''}
+  <div class="total"><div style="font-size:10px;opacity:0.8">JUMLAH</div>
+  <div style="font-size:18px;font-weight:bold">${trx.qty} ${trx.unit}</div></div>
+  <div style="display:flex;justify-content:space-between;margin-top:20px;font-size:10px">
+    <div><div style="border-bottom:1px solid #333;width:60px;margin-bottom:4px"></div>Penerima</div>
+    <div><div style="border-bottom:1px solid #333;width:60px;margin-bottom:4px"></div>Petugas</div>
+  </div>
+  </body></html>`);
+  printWindow.document.close();
+  printWindow.onload = () => { printWindow.print(); printWindow.close(); };
 }
 
+async function shareTrx(trxId) {
+  const trx = transactions.find(t => t.id === trxId);
+  if (!trx) { showToast('Transaksi tidak ditemukan!', 'error'); return; }
+  
+  const text = `📦 Bukti Pengambilan
+
+ID: ${trx.id}
+👷 ${trx.workerName} (${trx.workerNik})
+🏭 ${trx.workerDept}
+📦 ${trx.materialName} (${trx.materialCode})
+📊 ${trx.qty} ${trx.unit}
+${trx.note ? '📝 Tujuan: ' + trx.note + '\n' : ''}📅 ${trx.dateStr} ${trx.timeStr}`;
+  
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Bukti Pengambilan', text: text }); return; } 
+    catch (e) { if (e.name !== 'AbortError') console.error(e); }
+  }
+  
+  try { await navigator.clipboard.writeText(text); showToast('Teks disalin!', 'success'); } 
+  catch (e) { showToast('Gagal menyalin', 'error'); }
+}
+// ===== INIT SCANNER =====
+function loadScannerLib() {
+  if (!document.getElementById('quagga-script')) {
+    const script = document.createElement('script');
+    script.id = 'quagga-script';
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js';
+    script.onload = () => {
+      console.log('✅ Scanner library loaded');
+      initWorkerScanner();
+    };
+    document.head.appendChild(script);
+  } else {
+    initWorkerScanner();
+  }
+}
+
+function initWorkerScanner() {
+  const scannerEl = document.getElementById('scanner-worker');
+  if (!scannerEl) return;
+  if (typeof Quagga === 'undefined') return;
+  
+  Quagga.init({
+    inputStream: { name: "Live", type: "LiveStream", target: scannerEl, constraints: { facingMode: "environment", width: { ideal: 350 }, height: { ideal: 200 } } },
+    decoder: { readers: ["code_128_reader", "ean_reader", "upc_reader"] },
+    locator: { patchSize: "medium", halfSample: true }
+  }, function(err) {
+    if (err) { console.error('Scanner error:', err); return; }
+    Quagga.start();
+    // Store scanner instance
+    window.workerScanner = { stop: () => Quagga.stop() };
+  });
+  
+  Quagga.onDetected(function(result) {
+    if (result.codeResult.code) {
+      const input = document.getElementById('manual-worker');
+      if (input) { input.value = result.codeResult.code; manualScanWorker(); }
+    }
+  });
+}
+
+function initMaterialScanner() {
+  const scannerEl = document.getElementById('scanner-material');
+  if (!scannerEl) return;
+  if (typeof Quagga === 'undefined') return;
+  
+  Quagga.init({
+    inputStream: { name: "Live", type: "LiveStream", target: scannerEl, constraints: { facingMode: "environment", width: { ideal: 350 }, height: { ideal: 200 } } },
+    decoder: { readers: ["code_128_reader", "ean_reader", "upc_reader", "code_39_reader"] },
+    locator: { patchSize: "medium", halfSample: true }
+  }, function(err) {
+    if (err) { console.error('Scanner error:', err); return; }
+    Quagga.start();
+    window.materialScanner = { stop: () => Quagga.stop() };
+  });
+  
+  Quagga.onDetected(function(result) {
+    if (result.codeResult.code) {
+      const input = document.getElementById('manual-material');
+      if (input) { input.value = result.codeResult.code; manualScanMaterial(); }
+    }
+  });
+}
+
+// Modifikasi manualScanWorker untuk inisialisasi scanner material
+const _oldManualScanWorker = manualScanWorker;
+manualScanWorker = function() {
+  _oldManualScanWorker();
+  setTimeout(initMaterialScanner, 500);
+};
+
+// Init saat halaman siap
+document.addEventListener('DOMContentLoaded', loadScannerLib);
 // ==================== HISTORY ====================
 function renderHistory() {
   const list = document.getElementById('history-list'); if (!list) return;

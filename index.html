@@ -574,7 +574,7 @@ function showSection(name) {
   if (name === 'workers')   renderWorkers();
   if (name === 'materials') renderMaterials();
   if (name === 'history')   renderHistory();
-  if (name === 'scan')      resetScan();
+  if (name === 'scan') { stopAllScanners(); resetScan(); setTimeout(() => initWorkerScanner(), 500); }
   if (name === 'dashboard') renderDashboard();
 }
 </script>
@@ -656,6 +656,7 @@ function setStep(n) {
 }
 
 function resetScan() {
+  stopAllScanners();
   scanState = { workerScanned:null, materialScanned:null, step:1 };
   ['scan-step-2','scan-step-3','scan-step-4'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
   document.getElementById('scan-step-1').style.display = 'block';

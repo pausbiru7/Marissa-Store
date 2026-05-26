@@ -760,54 +760,85 @@ async function submitTrx() {
   if (!material) { showToast('Scan material terlebih dahulu!','error'); return; }
   if (qty <= 0)  { showToast('Jumlah harus lebih dari 0!','error'); return; }
   if (qty > material.stock) { showToast(`Melebihi stok (${material.stock} ${material.unit})!`,'error'); return; }
-  const now = new Date(), localId = 'TRX'+Date.now();
+
+  const now = new Date();
+  const localId = 'TRX'+Date.now();
   const trx = {
-    id: localId, workerId: worker.id, workerName: worker.name, workerNik: worker.nik, workerDept: worker.dept||'-',
-    materialId: material.id, materialCode: material.code, materialName: material.name, unit: material.unit, qty,
-    date: now.toISOString(), note,
+    id: localId,
+    localId: localId,           // tetap simpan localId untuk referensi tombol
+    workerId: worker.id,
+    workerName: worker.name,
+    workerNik: worker.nik,
+    workerDept: worker.dept||'-',
+    materialId: material.id,
+    materialCode: material.code,
+    materialName: material.name,
+    unit: material.unit,
+    qty,
+    date: now.toISOString(),
+    note,
     dateStr: now.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}),
-    timeStr: now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}), synced: false
+    timeStr: now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),
+    synced: false
   };
+
+  // update stok lokal & simpan trx lokal
   const mIdx = materials.findIndex(m => m.id === material.id);
   if (mIdx !== -1) materials[mIdx].stock = Math.max(0, materials[mIdx].stock - qty);
-  transactions.unshift(trx); saveLocal(); renderMaterials(); renderHistory(); renderDashboard();
 
-  // FIX M5: sembunyikan step-3, tampilkan step-4
+  transactions.unshift(trx);
+  saveLocal();
+  renderMaterials();
+  renderHistory();
+  renderDashboard();
+
+  // UI: tampilkan ringkasan (step 4) segera
   document.getElementById('scan-step-3').style.display = 'none';
   document.getElementById('scan-step-4').style.display = 'block';
   setStep(4);
   showTrxSummary(trx);
 
-  // FIX M1: action 'saveTransaction' bukan 'submitTrx'
+  // Kirim ke server (tetap queue jika offline)
   const result = await apiCallWithQueue('saveTransaction', {
-    materialCode: material.code, materialKode: material.code,
-    workerNik: worker.nik, workerName: worker.name, workerDept: worker.dept||'-',
-    workerId: worker.id, qty, note, type:'out', date: now.toISOString()
+    materialCode: material.code,
+    workerNik: worker.nik,
+    workerName: worker.name,
+    workerDept: worker.dept||'-',
+    workerId: worker.id,
+    qty, note, type:'out', date: now.toISOString()
   });
+
   if (result?.success) {
-    const tIdx = transactions.findIndex(t => t.id === localId);
-    if (tIdx !== -1) { transactions[tIdx].id = result.id || result.data?.id || localId; transactions[tIdx].synced = true; }
-    saveLocal(); showToast('Transaksi berhasil disimpan!','success');
+    // temukan trx lokal dan tandai synced; simpan server id tapi pertahankan localId
+    const tIdx = transactions.findIndex(t => t.localId === localId || t.id === localId);
+    if (tIdx !== -1) {
+      transactions[tIdx].id = result.data?.id || result.id || transactions[tIdx].id;
+      transactions[tIdx].synced = true;
+      transactions[tIdx].localId = localId;
+    }
+    saveLocal();
+    showToast('Transaksi berhasil disimpan!','success');
   } else if (result?.queued) {
     showToast('Disimpan lokal, akan sync ketika online','info');
   } else {
+    // rollback stok & trx
     if (mIdx !== -1) materials[mIdx].stock += qty;
-    transactions.splice(transactions.findIndex(t=>t.id===localId),1);
-    saveLocal(); renderMaterials(); renderHistory(); renderDashboard();
+    const removeIdx = transactions.findIndex(t => t.localId === localId || t.id === localId);
+    if (removeIdx !== -1) transactions.splice(removeIdx,1);
+    saveLocal();
+    renderMaterials(); renderHistory(); renderDashboard();
+    // kembali ke step 3 agar user bisa coba lagi
     document.getElementById('scan-step-4').style.display = 'none';
     document.getElementById('scan-step-3').style.display = 'block';
     setStep(3);
     showToast('Gagal: '+(result?.message||'Unknown'),'error');
   }
 }
-
 function showTrxSummary(trx) {
   const box = document.getElementById('scan-summary-box'); 
   if (!box) return;
-  
-  // Tambah trx.note untuk tujuan pengambilan
   const tujuan = trx.note ? trx.note : '-';
-  
+  const refId = trx.localId || trx.id || '';
   box.innerHTML = `<div class="summary-card">
     <h3>📋 Ringkasan Pengambilan</h3>
     <table class="summary-table">
@@ -816,23 +847,21 @@ function showTrxSummary(trx) {
       <tr><td>📦 Material</td><td><strong>${trx.materialName}</strong></td></tr>
       <tr><td>🏷️ Kode</td><td>${trx.materialCode}</td></tr>
       <tr><td>📊 Jumlah</td><td><strong>${trx.qty} ${trx.unit}</strong></td></tr>
-      <tr><td>📝 Tujuan Pengambilan</td><td>${tujuan}</td></tr>  <!-- TAMBAH INI -->
+      <tr><td>📝 Tujuan Pengambilan</td><td>${tujuan}</td></tr>
       <tr><td>📅 Tanggal</td><td>${trx.dateStr} ${trx.timeStr}</td></tr>
     </table>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-      <button class="btn btn-outline" style="width:auto;padding:8px 14px;" onclick="printTrxPdf('${trx.id}')">🖨️ Print</button>
-      <button class="btn btn-share" style="width:auto;padding:8px 14px;" onclick="shareTrx('${trx.id}')">📤 Share</button>
+      <button class="btn btn-outline" style="width:auto;padding:8px 14px;" onclick="printTrxPdf('${refId}')">🖨️ Print</button>
+      <button class="btn btn-share" style="width:auto;padding:8px 14px;" onclick="shareTrx('${refId}')">📤 Share</button>
       <button class="btn btn-primary" style="width:auto;padding:8px 14px;" onclick="resetScan()">🔄 Scan Baru</button>
     </div>
   </div>`;
 }
-  function printTrxPdf(trxId) {
-  const trx = transactions.find(t => t.id === trxId);
+ function printTrxPdf(trxId) {
+  const trx = transactions.find(t => t.id === trxId || t.localId === trxId);
   if (!trx) { showToast('Transaksi tidak ditemukan!', 'error'); return; }
-  
   const printWindow = window.open('', '_blank');
   if (!printWindow) { showToast('Izinkan popup untuk print!', 'error'); return; }
-  
   printWindow.document.write(`<!DOCTYPE html>
   <html><head><title>Cetak - ${trx.id}</title>
   <style>body{font-family:sans-serif;padding:15px;max-width:320px;margin:0 auto}
@@ -866,25 +895,22 @@ function showTrxSummary(trx) {
 }
 
 async function shareTrx(trxId) {
-  const trx = transactions.find(t => t.id === trxId);
+  const trx = transactions.find(t => t.id === trxId || t.localId === trxId);
   if (!trx) { showToast('Transaksi tidak ditemukan!', 'error'); return; }
-  
   const text = `📦 Bukti Pengambilan
-
 ID: ${trx.id}
 👷 ${trx.workerName} (${trx.workerNik})
 🏭 ${trx.workerDept}
 📦 ${trx.materialName} (${trx.materialCode})
 📊 ${trx.qty} ${trx.unit}
 ${trx.note ? '📝 Tujuan: ' + trx.note + '\n' : ''}📅 ${trx.dateStr} ${trx.timeStr}`;
-  
   if (navigator.share) {
     try { await navigator.share({ title: 'Bukti Pengambilan', text: text }); return; } 
     catch (e) { if (e.name !== 'AbortError') console.error(e); }
   }
-  
   try { await navigator.clipboard.writeText(text); showToast('Teks disalin!', 'success'); } 
   catch (e) { showToast('Gagal menyalin', 'error'); }
+}
 }
 // ===== INIT SCANNER (Html5Qrcode) =====
 let workerScanner = null;

@@ -297,35 +297,42 @@
         <button class="btn btn-success" style="margin-top:10px;" onclick="manualScanWorker()">🔍 Cari Pekerja</button>
       </div>
 
-      <!-- STEP 2 -->
-      <div id="scan-step-2" style="display:none;">
-        <div class="scan-prompt"><p>Step 2: Scan / Cari Material</p><p class="sub">Arahkan kamera atau ketik kode material</p></div>
-        <div id="scan-material-summary" style="margin-top:10px;"></div>
-        <div id="scan-material-result" style="margin-top:10px;"></div>
-        <div class="scan-container"><div id="scanner-material"></div></div>
-        <div class="manual-input">
-          <input type="text" id="manual-material" placeholder="Ketik kode material..." onkeydown="if(event.key==='Enter') manualScanMaterial()">
-        </div>
-        <button class="btn btn-success" style="margin-top:10px;" onclick="manualScanMaterial()">🔍 Cari Material</button>
-        <button class="btn btn-danger"  style="margin-top:8px;"  onclick="cancelScan()">❌ Batal</button>
-      </div>
+          <!-- STEP 2 -->
+<div id="scan-step-2" style="display:none;">
+  <div class="scan-prompt"><p>Step 2: Scan / Cari Material</p><p class="sub">Arahkan kamera atau ketik kode material</p></div>
 
-      <!-- STEP 3 -->
-      <div id="scan-step-3" style="display:none;">
-        <div class="scan-prompt" style="background:linear-gradient(135deg,#e3f2fd,#e8eaf6);border-color:#1a73e8;">
-          <p style="color:#1a73e8;">Step 3: Jumlah Pengambilan</p>
-          <p class="sub">Masukkan jumlah material yang diambil</p>
-        </div>
-        <div id="scan-qty-box">
-          <div class="form-group" style="margin-top:14px;">
-            <label>Jumlah</label>
-            <input type="number" id="scan-qty" min="1" placeholder="0" style="font-size:1.3rem;text-align:center;">
-          </div>
-          <div class="form-group"><label>Keterangan (opsional)</label><input type="text" id="take-note" placeholder="Untuk keperluan..."></div>
-          <button class="btn btn-success" onclick="submitTrx()">✅ Simpan Transaksi</button>
-          <button class="btn btn-danger" style="margin-top:8px;" onclick="cancelScan()">❌ Batal</button>
-        </div>
-      </div>
+  <!-- RINGKASAN PEKERJA (tampil di step-2) -->
+  <div id="scan-worker-summary" style="margin-top:8px;"></div>
+
+  <div id="scan-material-result" style="margin-top:10px;"></div>
+  <div class="scan-container"><div id="scanner-material"></div></div>
+  <div class="manual-input">
+    <input type="text" id="manual-material" placeholder="Ketik kode material..." onkeydown="if(event.key==='Enter') manualScanMaterial()">
+  </div>
+  <button class="btn btn-success" style="margin-top:10px;" onclick="manualScanMaterial()">🔍 Cari Material</button>
+  <button class="btn btn-danger"  style="margin-top:8px;"  onclick="cancelScan()">❌ Batal</button>
+</div>
+
+     <!-- STEP 3 -->
+<div id="scan-step-3" style="display:none;">
+  <div class="scan-prompt" style="background:linear-gradient(135deg,#e3f2fd,#e8eaf6);border-color:#1a73e8;">
+    <p style="color:#1a73e8;">Step 3: Jumlah Pengambilan</p>
+    <p class="sub">Masukkan jumlah material yang diambil</p>
+  </div>
+
+  <!-- RINGKASAN MATERIAL (tampil di step-3) -->
+  <div id="scan-material-summary" style="margin-top:10px;"></div>
+
+  <div id="scan-qty-box">
+    <div class="form-group" style="margin-top:14px;">
+      <label>Jumlah</label>
+      <input type="number" id="scan-qty" min="1" placeholder="0" style="font-size:1.3rem;text-align:center;">
+    </div>
+    <div class="form-group"><label>Keterangan (opsional)</label><input type="text" id="take-note" placeholder="Untuk keperluan..."></div>
+    <button class="btn btn-success" onclick="submitTrx()">✅ Simpan Transaksi</button>
+    <button class="btn btn-danger" style="margin-top:8px;" onclick="cancelScan()">❌ Batal</button>
+  </div>
+</div>
 
       <!-- STEP 4 -->
       <div id="scan-step-4" style="display:none;">
@@ -703,10 +710,11 @@ function manualScanWorker() {
   document.getElementById('scan-step-2').style.display = 'block';
   setStep(2);
 
-  // Inisialisasi scanner material agar kamera material langsung aktif
+  // Hentikan workerScanner (jika masih aktif), lalu mulai scanner material
+  if (workerScanner) { workerScanner.stop().catch(()=>{}); workerScanner = null; }
   setTimeout(() => {
     initMaterialScanner();
-    const mm=document.getElementById('manual-material'); if(mm) mm.focus();
+    const mm = document.getElementById('manual-material'); if (mm) mm.focus();
   }, 300);
 
   showToast(`Pekerja "${worker.name}" ditemukan!`,'success');
@@ -731,6 +739,9 @@ function manualScanMaterial() {
     msum.innerHTML = `<div class="alert-box info">📦 <strong>${material.name}</strong> — Kode: ${material.code} | Stok: ${material.stock} ${material.unit}</div>`;
   }
 
+  // Hentikan materialScanner agar kamera tidak terus menyala
+  if (materialScanner) { materialScanner.stop().catch(()=>{}); materialScanner = null; }
+
   // Sembunyikan step-2, tampilkan step-3
   document.getElementById('scan-step-2').style.display = 'none';
   document.getElementById('scan-step-3').style.display = 'block';
@@ -739,7 +750,6 @@ function manualScanMaterial() {
   if (qtyInput) { qtyInput.value=''; qtyInput.max=material.stock; setTimeout(()=>qtyInput.focus(),300); }
   showToast(`Material "${material.name}" ditemukan!`,'success');
 }
-
 // FIX M1 + M5: action 'submitTrx' → 'saveTransaction', dan tampilkan step-4
 async function submitTrx() {
   const worker   = scanState.workerScanned;

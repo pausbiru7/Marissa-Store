@@ -287,9 +287,7 @@
       <!-- STEP 1 -->
       <div id="scan-step-1">
         <div class="scan-prompt"><p>Step 1: Scan / Cari Pekerja</p><p class="sub">Arahkan kamera atau ketik NIK pekerja</p></div>
-        <div id="scan-worker-summary" style="margin-top:8px;"></div>
         <div id="scan-worker-result" style="margin-top:10px;"></div>
-        <div id="scan-worker-summary" style="margin-top:8px;"></div>
         <div class="scan-container"><div id="scanner-worker"></div></div>
         <div class="manual-input">
           <input type="text" id="manual-worker" placeholder="Ketik NIK pekerja..." onkeydown="if(event.key==='Enter') manualScanWorker()">
@@ -297,42 +295,34 @@
         <button class="btn btn-success" style="margin-top:10px;" onclick="manualScanWorker()">🔍 Cari Pekerja</button>
       </div>
 
-          <!-- STEP 2 -->
-<div id="scan-step-2" style="display:none;">
-  <div class="scan-prompt"><p>Step 2: Scan / Cari Material</p><p class="sub">Arahkan kamera atau ketik kode material</p></div>
+      <!-- STEP 2 -->
+      <div id="scan-step-2" style="display:none;">
+        <div class="scan-prompt"><p>Step 2: Scan / Cari Material</p><p class="sub">Arahkan kamera atau ketik kode material</p></div>
+        <div id="scan-material-result" style="margin-top:10px;"></div>
+        <div class="scan-container"><div id="scanner-material"></div></div>
+        <div class="manual-input">
+          <input type="text" id="manual-material" placeholder="Ketik kode material..." onkeydown="if(event.key==='Enter') manualScanMaterial()">
+        </div>
+        <button class="btn btn-success" style="margin-top:10px;" onclick="manualScanMaterial()">🔍 Cari Material</button>
+        <button class="btn btn-danger"  style="margin-top:8px;"  onclick="cancelScan()">❌ Batal</button>
+      </div>
 
-  <!-- RINGKASAN PEKERJA (tampil di step-2) -->
-  <div id="scan-worker-summary" style="margin-top:8px;"></div>
-
-  <div id="scan-material-result" style="margin-top:10px;"></div>
-  <div class="scan-container"><div id="scanner-material"></div></div>
-  <div class="manual-input">
-    <input type="text" id="manual-material" placeholder="Ketik kode material..." onkeydown="if(event.key==='Enter') manualScanMaterial()">
-  </div>
-  <button class="btn btn-success" style="margin-top:10px;" onclick="manualScanMaterial()">🔍 Cari Material</button>
-  <button class="btn btn-danger"  style="margin-top:8px;"  onclick="cancelScan()">❌ Batal</button>
-</div>
-
-     <!-- STEP 3 -->
-<div id="scan-step-3" style="display:none;">
-  <div class="scan-prompt" style="background:linear-gradient(135deg,#e3f2fd,#e8eaf6);border-color:#1a73e8;">
-    <p style="color:#1a73e8;">Step 3: Jumlah Pengambilan</p>
-    <p class="sub">Masukkan jumlah material yang diambil</p>
-  </div>
-
-  <!-- RINGKASAN MATERIAL (tampil di step-3) -->
-  <div id="scan-material-summary" style="margin-top:10px;"></div>
-
-  <div id="scan-qty-box">
-    <div class="form-group" style="margin-top:14px;">
-      <label>Jumlah</label>
-      <input type="number" id="scan-qty" min="1" placeholder="0" style="font-size:1.3rem;text-align:center;">
-    </div>
-    <div class="form-group"><label>Keterangan (opsional)</label><input type="text" id="take-note" placeholder="Untuk keperluan..."></div>
-    <button class="btn btn-success" onclick="submitTrx()">✅ Simpan Transaksi</button>
-    <button class="btn btn-danger" style="margin-top:8px;" onclick="cancelScan()">❌ Batal</button>
-  </div>
-</div>
+      <!-- STEP 3 -->
+      <div id="scan-step-3" style="display:none;">
+        <div class="scan-prompt" style="background:linear-gradient(135deg,#e3f2fd,#e8eaf6);border-color:#1a73e8;">
+          <p style="color:#1a73e8;">Step 3: Jumlah Pengambilan</p>
+          <p class="sub">Masukkan jumlah material yang diambil</p>
+        </div>
+        <div id="scan-qty-box">
+          <div class="form-group" style="margin-top:14px;">
+            <label>Jumlah</label>
+            <input type="number" id="scan-qty" min="1" placeholder="0" style="font-size:1.3rem;text-align:center;">
+          </div>
+          <div class="form-group"><label>Keterangan (opsional)</label><input type="text" id="take-note" placeholder="Untuk keperluan..."></div>
+          <button class="btn btn-success" onclick="submitTrx()">✅ Simpan Transaksi</button>
+          <button class="btn btn-danger" style="margin-top:8px;" onclick="cancelScan()">❌ Batal</button>
+        </div>
+      </div>
 
       <!-- STEP 4 -->
       <div id="scan-step-4" style="display:none;">
@@ -673,8 +663,6 @@ function resetScan() {
   document.getElementById('scan-worker-result').innerHTML   = '';
   document.getElementById('scan-material-result').innerHTML = '';
   document.getElementById('scan-summary-box').innerHTML     = '';
-  const sw = document.getElementById('scan-worker-summary'); if(sw) sw.innerHTML = '';
-  const sm = document.getElementById('scan-material-summary'); if(sm) sm.innerHTML = '';
   const qty=document.getElementById('scan-qty'); if(qty) qty.value='';
   const mw=document.getElementById('manual-worker'); if(mw) mw.value='';
   const mm=document.getElementById('manual-material'); if(mm) mm.value='';
@@ -698,25 +686,11 @@ function manualScanWorker() {
   scanState.workerScanned = worker;
   box.innerHTML = `<div class="alert-box success">✅ <strong>${worker.name}</strong><br>NIK: ${worker.nik} | ${worker.dept||'-'} | ${worker.position||'-'}</div>`;
   if (input) input.value = '';
-
-  // Salin ringkasan pekerja ke step-2 supaya tetap terlihat saat step-1 disembunyikan
-  const wsum = document.getElementById('scan-worker-summary');
-  if (wsum) {
-    wsum.innerHTML = `<div class="alert-box info">👷 <strong>${worker.name}</strong> — NIK: ${worker.nik} | ${worker.dept||'-'}</div>`;
-  }
-
-  // Sembunyikan step-1, tampilkan step-2
+  // FIX N4: sembunyikan step-1, tampilkan step-2
   document.getElementById('scan-step-1').style.display = 'none';
   document.getElementById('scan-step-2').style.display = 'block';
   setStep(2);
-
-  // Hentikan workerScanner (jika masih aktif), lalu mulai scanner material
-  if (workerScanner) { workerScanner.stop().catch(()=>{}); workerScanner = null; }
-  setTimeout(() => {
-    initMaterialScanner();
-    const mm = document.getElementById('manual-material'); if (mm) mm.focus();
-  }, 300);
-
+  setTimeout(() => { const mm=document.getElementById('manual-material'); if(mm) mm.focus(); }, 300);
   showToast(`Pekerja "${worker.name}" ditemukan!`,'success');
 }
 
@@ -732,16 +706,6 @@ function manualScanMaterial() {
   scanState.materialScanned = material;
   box.innerHTML = `<div class="alert-box success">✅ <strong>${material.name}</strong><br>Kode: ${material.code} | Stok: <strong>${material.stock}</strong> ${material.unit}</div>`;
   if (input) input.value = '';
-
-  // Salin ringkasan material ke step-3 supaya tetap terlihat saat step-2 disembunyikan
-  const msum = document.getElementById('scan-material-summary');
-  if (msum) {
-    msum.innerHTML = `<div class="alert-box info">📦 <strong>${material.name}</strong> — Kode: ${material.code} | Stok: ${material.stock} ${material.unit}</div>`;
-  }
-
-  // Hentikan materialScanner agar kamera tidak terus menyala
-  if (materialScanner) { materialScanner.stop().catch(()=>{}); materialScanner = null; }
-
   // Sembunyikan step-2, tampilkan step-3
   document.getElementById('scan-step-2').style.display = 'none';
   document.getElementById('scan-step-3').style.display = 'block';
@@ -750,6 +714,7 @@ function manualScanMaterial() {
   if (qtyInput) { qtyInput.value=''; qtyInput.max=material.stock; setTimeout(()=>qtyInput.focus(),300); }
   showToast(`Material "${material.name}" ditemukan!`,'success');
 }
+
 // FIX M1 + M5: action 'submitTrx' → 'saveTransaction', dan tampilkan step-4
 async function submitTrx() {
   const worker   = scanState.workerScanned;
@@ -760,85 +725,54 @@ async function submitTrx() {
   if (!material) { showToast('Scan material terlebih dahulu!','error'); return; }
   if (qty <= 0)  { showToast('Jumlah harus lebih dari 0!','error'); return; }
   if (qty > material.stock) { showToast(`Melebihi stok (${material.stock} ${material.unit})!`,'error'); return; }
-
-  const now = new Date();
-  const localId = 'TRX'+Date.now();
+  const now = new Date(), localId = 'TRX'+Date.now();
   const trx = {
-    id: localId,
-    localId: localId,           // tetap simpan localId untuk referensi tombol
-    workerId: worker.id,
-    workerName: worker.name,
-    workerNik: worker.nik,
-    workerDept: worker.dept||'-',
-    materialId: material.id,
-    materialCode: material.code,
-    materialName: material.name,
-    unit: material.unit,
-    qty,
-    date: now.toISOString(),
-    note,
+    id: localId, workerId: worker.id, workerName: worker.name, workerNik: worker.nik, workerDept: worker.dept||'-',
+    materialId: material.id, materialCode: material.code, materialName: material.name, unit: material.unit, qty,
+    date: now.toISOString(), note,
     dateStr: now.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}),
-    timeStr: now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),
-    synced: false
+    timeStr: now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}), synced: false
   };
-
-  // update stok lokal & simpan trx lokal
   const mIdx = materials.findIndex(m => m.id === material.id);
   if (mIdx !== -1) materials[mIdx].stock = Math.max(0, materials[mIdx].stock - qty);
+  transactions.unshift(trx); saveLocal(); renderMaterials(); renderHistory(); renderDashboard();
 
-  transactions.unshift(trx);
-  saveLocal();
-  renderMaterials();
-  renderHistory();
-  renderDashboard();
-
-  // UI: tampilkan ringkasan (step 4) segera
+  // FIX M5: sembunyikan step-3, tampilkan step-4
   document.getElementById('scan-step-3').style.display = 'none';
   document.getElementById('scan-step-4').style.display = 'block';
   setStep(4);
   showTrxSummary(trx);
 
-  // Kirim ke server (tetap queue jika offline)
+  // FIX M1: action 'saveTransaction' bukan 'submitTrx'
   const result = await apiCallWithQueue('saveTransaction', {
-    materialCode: material.code,
-    workerNik: worker.nik,
-    workerName: worker.name,
-    workerDept: worker.dept||'-',
-    workerId: worker.id,
-    qty, note, type:'out', date: now.toISOString()
+    materialCode: material.code, materialKode: material.code,
+    workerNik: worker.nik, workerName: worker.name, workerDept: worker.dept||'-',
+    workerId: worker.id, qty, note, type:'out', date: now.toISOString()
   });
-
   if (result?.success) {
-    // temukan trx lokal dan tandai synced; simpan server id tapi pertahankan localId
-    const tIdx = transactions.findIndex(t => t.localId === localId || t.id === localId);
-    if (tIdx !== -1) {
-      transactions[tIdx].id = result.data?.id || result.id || transactions[tIdx].id;
-      transactions[tIdx].synced = true;
-      transactions[tIdx].localId = localId;
-    }
-    saveLocal();
-    showToast('Transaksi berhasil disimpan!','success');
+    const tIdx = transactions.findIndex(t => t.id === localId);
+    if (tIdx !== -1) { transactions[tIdx].id = result.id || result.data?.id || localId; transactions[tIdx].synced = true; }
+    saveLocal(); showToast('Transaksi berhasil disimpan!','success');
   } else if (result?.queued) {
     showToast('Disimpan lokal, akan sync ketika online','info');
   } else {
-    // rollback stok & trx
     if (mIdx !== -1) materials[mIdx].stock += qty;
-    const removeIdx = transactions.findIndex(t => t.localId === localId || t.id === localId);
-    if (removeIdx !== -1) transactions.splice(removeIdx,1);
-    saveLocal();
-    renderMaterials(); renderHistory(); renderDashboard();
-    // kembali ke step 3 agar user bisa coba lagi
+    transactions.splice(transactions.findIndex(t=>t.id===localId),1);
+    saveLocal(); renderMaterials(); renderHistory(); renderDashboard();
     document.getElementById('scan-step-4').style.display = 'none';
     document.getElementById('scan-step-3').style.display = 'block';
     setStep(3);
     showToast('Gagal: '+(result?.message||'Unknown'),'error');
   }
 }
+
 function showTrxSummary(trx) {
   const box = document.getElementById('scan-summary-box'); 
   if (!box) return;
+  
+  // Tambah trx.note untuk tujuan pengambilan
   const tujuan = trx.note ? trx.note : '-';
-  const refId = trx.localId || trx.id || '';
+  
   box.innerHTML = `<div class="summary-card">
     <h3>📋 Ringkasan Pengambilan</h3>
     <table class="summary-table">
@@ -847,21 +781,23 @@ function showTrxSummary(trx) {
       <tr><td>📦 Material</td><td><strong>${trx.materialName}</strong></td></tr>
       <tr><td>🏷️ Kode</td><td>${trx.materialCode}</td></tr>
       <tr><td>📊 Jumlah</td><td><strong>${trx.qty} ${trx.unit}</strong></td></tr>
-      <tr><td>📝 Tujuan Pengambilan</td><td>${tujuan}</td></tr>
+      <tr><td>📝 Tujuan Pengambilan</td><td>${tujuan}</td></tr>  <!-- TAMBAH INI -->
       <tr><td>📅 Tanggal</td><td>${trx.dateStr} ${trx.timeStr}</td></tr>
     </table>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-      <button class="btn btn-outline" style="width:auto;padding:8px 14px;" onclick="printTrxPdf('${refId}')">🖨️ Print</button>
-      <button class="btn btn-share" style="width:auto;padding:8px 14px;" onclick="shareTrx('${refId}')">📤 Share</button>
+      <button class="btn btn-outline" style="width:auto;padding:8px 14px;" onclick="printTrxPdf('${trx.id}')">🖨️ Print</button>
+      <button class="btn btn-share" style="width:auto;padding:8px 14px;" onclick="shareTrx('${trx.id}')">📤 Share</button>
       <button class="btn btn-primary" style="width:auto;padding:8px 14px;" onclick="resetScan()">🔄 Scan Baru</button>
     </div>
   </div>`;
 }
- function printTrxPdf(trxId) {
-  const trx = transactions.find(t => t.id === trxId || t.localId === trxId);
+  function printTrxPdf(trxId) {
+  const trx = transactions.find(t => t.id === trxId);
   if (!trx) { showToast('Transaksi tidak ditemukan!', 'error'); return; }
+  
   const printWindow = window.open('', '_blank');
   if (!printWindow) { showToast('Izinkan popup untuk print!', 'error'); return; }
+  
   printWindow.document.write(`<!DOCTYPE html>
   <html><head><title>Cetak - ${trx.id}</title>
   <style>body{font-family:sans-serif;padding:15px;max-width:320px;margin:0 auto}
@@ -895,22 +831,25 @@ function showTrxSummary(trx) {
 }
 
 async function shareTrx(trxId) {
-  const trx = transactions.find(t => t.id === trxId || t.localId === trxId);
+  const trx = transactions.find(t => t.id === trxId);
   if (!trx) { showToast('Transaksi tidak ditemukan!', 'error'); return; }
+  
   const text = `📦 Bukti Pengambilan
+
 ID: ${trx.id}
 👷 ${trx.workerName} (${trx.workerNik})
 🏭 ${trx.workerDept}
 📦 ${trx.materialName} (${trx.materialCode})
 📊 ${trx.qty} ${trx.unit}
 ${trx.note ? '📝 Tujuan: ' + trx.note + '\n' : ''}📅 ${trx.dateStr} ${trx.timeStr}`;
+  
   if (navigator.share) {
     try { await navigator.share({ title: 'Bukti Pengambilan', text: text }); return; } 
     catch (e) { if (e.name !== 'AbortError') console.error(e); }
   }
+  
   try { await navigator.clipboard.writeText(text); showToast('Teks disalin!', 'success'); } 
   catch (e) { showToast('Gagal menyalin', 'error'); }
-}
 }
 // ===== INIT SCANNER (Html5Qrcode) =====
 let workerScanner = null;

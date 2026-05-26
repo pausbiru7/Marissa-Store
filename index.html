@@ -298,6 +298,7 @@
       <!-- STEP 2 -->
       <div id="scan-step-2" style="display:none;">
         <div class="scan-prompt"><p>Step 2: Scan / Cari Material</p><p class="sub">Arahkan kamera atau ketik kode material</p></div>
+        <div id="scan-worker-summary" style="margin-top:8px;"></div>
         <div id="scan-material-result" style="margin-top:10px;"></div>
         <div class="scan-container"><div id="scanner-material"></div></div>
         <div class="manual-input">
@@ -310,6 +311,7 @@
       <!-- STEP 3 -->
       <div id="scan-step-3" style="display:none;">
         <div class="scan-prompt" style="background:linear-gradient(135deg,#e3f2fd,#e8eaf6);border-color:#1a73e8;">
+         <div id="scan-material-summary" style="margin-top:10px;"></div>
           <p style="color:#1a73e8;">Step 3: Jumlah Pengambilan</p>
           <p class="sub">Masukkan jumlah material yang diambil</p>
         </div>
@@ -663,6 +665,9 @@ function resetScan() {
   document.getElementById('scan-worker-result').innerHTML   = '';
   document.getElementById('scan-material-result').innerHTML = '';
   document.getElementById('scan-summary-box').innerHTML     = '';
+  // Kosongkan ringkasan tambahan yang kita tambahkan
+  const sw = document.getElementById('scan-worker-summary'); if(sw) sw.innerHTML = '';
+  const sm = document.getElementById('scan-material-summary'); if(sm) sm.innerHTML = '';
   const qty=document.getElementById('scan-qty'); if(qty) qty.value='';
   const mw=document.getElementById('manual-worker'); if(mw) mw.value='';
   const mm=document.getElementById('manual-material'); if(mm) mm.value='';
@@ -686,11 +691,25 @@ function manualScanWorker() {
   scanState.workerScanned = worker;
   box.innerHTML = `<div class="alert-box success">✅ <strong>${worker.name}</strong><br>NIK: ${worker.nik} | ${worker.dept||'-'} | ${worker.position||'-'}</div>`;
   if (input) input.value = '';
-  // FIX N4: sembunyikan step-1, tampilkan step-2
+
+  // Salin ringkasan pekerja ke step-2 supaya tetap terlihat saat step-1 disembunyikan
+  const wsum = document.getElementById('scan-worker-summary');
+  if (wsum) {
+    wsum.innerHTML = `<div class="alert-box info">👷 <strong>${worker.name}</strong> — NIK: ${worker.nik} | ${worker.dept||'-'}</div>`;
+  }
+
+  // Sembunyikan step-1, tampilkan step-2
   document.getElementById('scan-step-1').style.display = 'none';
   document.getElementById('scan-step-2').style.display = 'block';
   setStep(2);
-  setTimeout(() => { const mm=document.getElementById('manual-material'); if(mm) mm.focus(); }, 300);
+
+  // Hentikan workerScanner (jika masih aktif), lalu mulai scanner material
+  if (workerScanner) { workerScanner.stop().catch(()=>{}); workerScanner = null; }
+  setTimeout(() => {
+    initMaterialScanner();
+    const mm = document.getElementById('manual-material'); if (mm) mm.focus();
+  }, 300);
+
   showToast(`Pekerja "${worker.name}" ditemukan!`,'success');
 }
 
@@ -706,6 +725,16 @@ function manualScanMaterial() {
   scanState.materialScanned = material;
   box.innerHTML = `<div class="alert-box success">✅ <strong>${material.name}</strong><br>Kode: ${material.code} | Stok: <strong>${material.stock}</strong> ${material.unit}</div>`;
   if (input) input.value = '';
+
+  // Salin ringkasan material ke step-3 supaya tetap terlihat saat step-2 disembunyikan
+  const msum = document.getElementById('scan-material-summary');
+  if (msum) {
+    msum.innerHTML = `<div class="alert-box info">📦 <strong>${material.name}</strong> — Kode: ${material.code} | Stok: ${material.stock} ${material.unit}</div>`;
+  }
+
+  // Hentikan materialScanner agar kamera tidak terus menyala
+  if (materialScanner) { materialScanner.stop().catch(()=>{}); materialScanner = null; }
+
   // Sembunyikan step-2, tampilkan step-3
   document.getElementById('scan-step-2').style.display = 'none';
   document.getElementById('scan-step-3').style.display = 'block';

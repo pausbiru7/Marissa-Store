@@ -44,12 +44,65 @@
     .login-footer { text-align:center;margin-top:20px;font-size:0.72rem;color:#94a3b8; }
 
     /* ==================== NAVBAR ==================== */
-    .navbar { background:linear-gradient(135deg,#1a73e8,#0d47a1);color:white;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.2); }
-    .navbar h1 { font-size:1.2rem; }
-    .topbar-actions { display:flex;align-items:center;gap:8px; }
-    #sync-status { font-size:0.85rem;opacity:0.95; }
-    .user-badge { display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text-muted);padding:4px 10px;background:var(--bg);border-radius:20px;border:1px solid var(--border);cursor:pointer;transition:background 0.2s; }
-    .user-badge:hover { background:var(--border); }
+.navbar {
+  background: linear-gradient(135deg,#1a73e8,#0d47a1);
+  color: white;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+
+.navbar-title {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.navbar h1 {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.navbar-subtitle {
+  font-size: 0.72rem;
+  opacity: 0.9;
+  margin-top: 3px;
+  font-weight: 400;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#sync-status {
+  font-size: 0.85rem;
+  opacity: 0.95;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 4px 10px;
+  background: var(--bg);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.user-badge:hover {
+  background: var(--border);
+}
 
     /* ==================== BOTTOM NAV ==================== */
     .bottom-nav { position:fixed;bottom:0;left:0;right:0;background:white;display:flex;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:100; }
@@ -81,6 +134,50 @@
     .btn-row { display:flex;gap:10px;margin-top:12px; }
     .btn-row .btn { flex:1; }
 
+/* ==================== PRINT DASHBOARD ==================== */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #section-dashboard,
+  #section-dashboard * {
+    visibility: visible;
+  }
+
+  .navbar,
+  .bottom-nav {
+    display: none !important;
+  }
+
+  #section-dashboard {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    background: white;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .btn,
+  button {
+    display: none !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+}
     /* ==================== COMPONENTS ==================== */
     .toast { position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:10px;color:white;font-size:0.88rem;z-index:9999;animation:fadeIn 0.3s;max-width:90%;text-align:center; }
     .toast.success { background:#28a745; }
@@ -208,7 +305,11 @@
 
 <!-- ==================== NAVBAR ==================== -->
 <nav class="navbar">
-  <h1>🏪 Marissa Store</h1>
+  <div class="navbar-title">
+    <h1>🏪 Marissa Store</h1>
+    <div class="navbar-subtitle">Powered by Pausbiru7</div>
+  </div>
+
   <div class="topbar-actions">
     <span id="sync-status"></span>
     <div class="user-badge" onclick="confirmLogout()" id="user-badge" style="display:none;">
@@ -995,47 +1096,30 @@ function buildChartTopMaterial(){ chartTopMaterial=destroyChart(chartTopMaterial
 function buildChartStockCategory(){ chartStockCat=destroyChart(chartStockCat); const canvas=document.getElementById('chart-stock-category'); if(!canvas) return; if(!materials.length){canvas.parentElement.innerHTML='<div class="chart-empty">📭 Belum ada material</div>';return;} const map={}; materials.forEach(m=>{const c=m.category||m.dept||'Lainnya';if(!map[c])map[c]=0;map[c]+=m.stock||0;}); const labels=Object.keys(map),data=Object.values(map); if(data.every(d=>d===0)){canvas.parentElement.innerHTML='<div class="chart-empty">📭 Semua stok kosong</div>';return;} chartStockCat=new Chart(canvas,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:CHART_COLORS.slice(0,labels.length).map(c=>c+'dd'),borderColor:CHART_COLORS.slice(0,labels.length),borderWidth:2,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12,usePointStyle:true}}},cutout:'60%'}}); }
 // ==================== DASHBOARD PRINT & SHARE ====================
 function printDashboardPdf() {
-  const totalMaterial = materials.length;
-  const totalStok = materials.reduce((a, m) => a + (m.stock || 0), 0);
-  const totalTrx = transactions.length;
-  const lowStok = materials.filter(m => m.stock <= 0 || m.stock <= m.minStock);
-  const recent = transactions.slice(0, 10);
-  const now = new Date().toLocaleString('id-ID');
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html>
-  <html><head><title>Dashboard - Marissa Store</title>
-  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;padding:30px;color:#333;}h2{text-align:center;margin-bottom:6px;}.subtitle{text-align:center;font-size:12px;color:#666;margin-bottom:20px;}.stats{display:flex;gap:12px;margin-bottom:20px;}.stat-box{flex:1;border:1px solid #ddd;border-radius:8px;padding:12px;text-align:center;}.stat-num{font-size:1.5rem;font-weight:700;color:#1a73e8;}.stat-lbl{font-size:11px;color:#666;}h3{margin:16px 0 8px;font-size:14px;border-bottom:1px solid #eee;padding-bottom:6px;}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;}th{background:#f1f5f9;padding:8px 6px;text-align:left;border:1px solid #ddd;}td{padding:7px 6px;border:1px solid #eee;}.footer{text-align:center;margin-top:30px;font-size:11px;color:#999;border-top:1px solid #eee;padding-top:10px;}.alert{color:#c62828;font-weight:600;}</style></head><body>
-  <h2>📊 Dashboard Marissa Store</h2>
-  <div class="subtitle">Dicetak: ${now}</div>
-  <div class="stats">
-    <div class="stat-box"><div class="stat-num">${totalMaterial}</div><div class="stat-lbl">Total Material</div></div>
-    <div class="stat-box"><div class="stat-num">${totalStok}</div><div class="stat-lbl">Total Stok</div></div>
-    <div class="stat-box"><div class="stat-num">${totalTrx}</div><div class="stat-lbl">Total Transaksi</div></div>
-    <div class="stat-box"><div class="stat-num ${lowStok.length>0?'alert':''}">${lowStok.length}</div><div class="stat-lbl">Stok Rendah</div></div>
-  </div>
-  <h3>🕐 10 Transaksi Terakhir</h3>
-  <table><thead><tr><th>No</th><th>Material</th><th>Pekerja</th><th>Dept</th><th>Qty</th><th>Tanggal</th></tr></thead>
-  <tbody>${recent.length?recent.map((t,i)=>`<tr><td>${i+1}</td><td>${t.materialName||'-'}</td><td>${t.workerName||'-'}</td><td>${t.workerDept||'-'}</td><td>${t.qty} ${t.unit||''}</td><td>${t.dateStr||''} ${t.timeStr||''}</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;">Belum ada transaksi</td></tr>'}</tbody></table>
-  ${lowStok.length?`<h3>⚠️ Material Stok Rendah</h3><table><thead><tr><th>No</th><th>Kode</th><th>Nama</th><th>Stok</th><th>Min</th><th>Satuan</th></tr></thead><tbody>${lowStok.map((m,i)=>`<tr><td>${i+1}</td><td>${m.code}</td><td>${m.name}</td><td class="alert">${m.stock}</td><td>${m.minStock}</td><td>${m.unit}</td></tr>`).join('')}</tbody></table>`:''}
-  <div class="footer">Marissa Store — Sistem Manajemen Inventori © ${new Date().getFullYear()}</div>
-  </body></html>`);
-  win.document.close();
-  setTimeout(() => { win.print(); win.close(); }, 400);
+  showSection('dashboard');
+  setTimeout(() => {
+    window.print();
+  }, 300);
 }
+
 function shareDashboard() {
   const totalMaterial = materials.length;
   const totalStok = materials.reduce((a, m) => a + (m.stock || 0), 0);
   const totalTrx = transactions.length;
   const lowStok = materials.filter(m => m.stock <= 0 || m.stock <= m.minStock).length;
   const now = new Date().toLocaleString('id-ID');
+
   let text = `📊 *Dashboard Marissa Store*\n📅 ${now}\n\n📦 Total Material: ${totalMaterial}\n🏷️ Total Stok: ${totalStok}\n📋 Total Transaksi: ${totalTrx}\n⚠️ Stok Rendah: ${lowStok}\n\n`;
+
   if (transactions.length) {
     text += `🕐 *5 Transaksi Terakhir:*\n`;
     transactions.slice(0, 5).forEach((t, i) => {
-      text += `${i+1}. ${t.materialName} — ${t.qty} ${t.unit} (${t.workerName}) ${t.dateStr}\n`;
+      text += `${i + 1}. ${t.materialName} — ${t.qty} ${t.unit} (${t.workerName}) ${t.dateStr}\n`;
     });
   }
-  text += `\n— Marissa Store`;
+
+  text += `\n— Powered by Pausbiru7 —`;
+
   if (navigator.share) {
     navigator.share({ title: 'Dashboard Marissa Store', text }).catch(() => {});
   } else {

@@ -311,13 +311,24 @@
   </div>
 
   <div class="topbar-actions">
-    <span id="sync-status"></span>
-    <div class="user-badge" onclick="confirmLogout()" id="user-badge" style="display:none;">
+  <span id="sync-status"></span>
+
+  <div style="position:relative;">
+    <div class="user-badge" onclick="toggleUserMenu(event)" id="user-badge" style="display:none;">
       <span id="user-badge-name">👤 User</span>
-      <span>⎋</span>
+      <span>▾</span>
+    </div>
+
+    <div id="user-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:220px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.12);padding:8px;z-index:999;">
+      <button onclick="openChangePasswordModal()" style="width:100%;text-align:left;padding:10px 12px;border:none;background:none;border-radius:8px;cursor:pointer;font-size:0.9rem;">
+        🔐 Ganti Password
+      </button>
+      <button onclick="confirmLogout()" style="width:100%;text-align:left;padding:10px 12px;border:none;background:none;border-radius:8px;cursor:pointer;font-size:0.9rem;color:#b91c1c;">
+        ⎋ Logout
+      </button>
     </div>
   </div>
-</nav>
+</div>
 
 <!-- ==================== MAIN CONTAINER ==================== -->
 <div class="container">
@@ -506,7 +517,36 @@
   </div>
 
 </div><!-- end .container -->
+<div id="change-password-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:10000;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:420px;background:#fff;border-radius:18px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="margin:0;font-size:1.1rem;color:#0f172a;">🔐 Ganti Password</h3>
+      <button onclick="closeChangePasswordModal()" style="border:none;background:none;font-size:1.2rem;cursor:pointer;">✕</button>
+    </div>
 
+    <div style="margin-bottom:12px;">
+      <label for="old-password" style="display:block;font-size:0.82rem;font-weight:600;margin-bottom:6px;">Password Lama</label>
+      <input type="password" id="old-password" style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid #dbe2ea;" placeholder="Masukkan password lama">
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label for="new-password" style="display:block;font-size:0.82rem;font-weight:600;margin-bottom:6px;">Password Baru</label>
+      <input type="password" id="new-password" style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid #dbe2ea;" placeholder="Masukkan password baru">
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label for="confirm-new-password" style="display:block;font-size:0.82rem;font-weight:600;margin-bottom:6px;">Konfirmasi Password Baru</label>
+      <input type="password" id="confirm-new-password" style="width:100%;padding:12px 14px;border-radius:10px;border:1px solid #dbe2ea;" placeholder="Ulangi password baru">
+    </div>
+
+    <div id="change-password-error" style="display:none;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;font-size:0.82rem;margin-bottom:14px;"></div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeChangePasswordModal()" class="btn btn-outline" style="width:auto;padding:10px 16px;">Batal</button>
+      <button onclick="submitChangePassword()" id="change-password-btn" class="btn btn-primary" style="width:auto;padding:10px 16px;">Simpan</button>
+    </div>
+  </div>
+</div>
 <!-- ==================== BOTTOM NAV ==================== -->
 <div class="bottom-nav">
   <button onclick="showSection('dashboard')"  id="bnav-dashboard"><span class="icon">📊</span>Dashboard</button>
@@ -1585,10 +1625,121 @@ async function doLogin() {
 function saveOfflineCred(username,password,authData){ const creds=JSON.parse(localStorage.getItem('marissa_creds')||'{}'); creds[username]={hash:simpleHash(username+':'+password),nama:authData.nama,role:authData.role}; localStorage.setItem('marissa_creds',JSON.stringify(creds)); }
 function checkOfflineCred(username,password){ const creds=JSON.parse(localStorage.getItem('marissa_creds')||'{}'),stored=creds[username]; if(!stored) return null; if(simpleHash(username+':'+password)!==stored.hash) return null; return{username,nama:stored.nama,role:stored.role,token:''}; }
 function simpleHash(str){ let h=0; for(let i=0;i<str.length;i++){h=((h<<5)-h)+str.charCodeAt(i);h|=0;} return String(Math.abs(h)); }
+
+function toggleUserMenu(event){
+  if(event) event.stopPropagation();
+  const menu = document.getElementById('user-menu');
+  if(!menu) return;
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+function closeUserMenu(){
+  const menu = document.getElementById('user-menu');
+  if(menu) menu.style.display = 'none';
+}
+
+function openChangePasswordModal(){
+  closeUserMenu();
+  const modal = document.getElementById('change-password-modal');
+  const err = document.getElementById('change-password-error');
+  if(err){
+    err.style.display = 'none';
+    err.textContent = '';
+  }
+  ['old-password','new-password','confirm-new-password'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  if(modal) modal.style.display = 'flex';
+}
+
+function closeChangePasswordModal(){
+  const modal = document.getElementById('change-password-modal');
+  if(modal) modal.style.display = 'none';
+}
+
+function showChangePasswordError(msg){
+  const el = document.getElementById('change-password-error');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function submitChangePassword(){
+  const auth = getAuth();
+  if(!auth?.username){
+    showChangePasswordError('Sesi login tidak ditemukan. Silakan login ulang.');
+    return;
+  }
+
+  const oldPassword = document.getElementById('old-password').value;
+  const newPassword = document.getElementById('new-password').value;
+  const confirmPassword = document.getElementById('confirm-new-password').value;
+  const btn = document.getElementById('change-password-btn');
+
+  if(!oldPassword || !newPassword || !confirmPassword){
+    showChangePasswordError('Semua field password wajib diisi.');
+    return;
+  }
+
+  if(newPassword.length < 6){
+    showChangePasswordError('Password baru minimal 6 karakter.');
+    return;
+  }
+
+  if(newPassword !== confirmPassword){
+    showChangePasswordError('Konfirmasi password baru tidak cocok.');
+    return;
+  }
+
+  if(oldPassword === newPassword){
+    showChangePasswordError('Password baru harus berbeda dari password lama.');
+    return;
+  }
+
+  if(!navigator.onLine){
+    showChangePasswordError('Ganti password hanya bisa dilakukan saat online.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Menyimpan...';
+
+  try{
+    const res = await apiCall('changePassword', {
+      username: auth.username,
+      oldPassword,
+      newPassword
+    });
+
+    if(res && res.success){
+      const authData = getAuth() || auth;
+      saveOfflineCred(auth.username, newPassword, authData);
+      closeChangePasswordModal();
+      showToast('Password berhasil diganti. Gunakan password baru saat login berikutnya.','success');
+    } else {
+      showChangePasswordError(res?.message || 'Gagal mengganti password.');
+    }
+  } catch(err){
+    showChangePasswordError('Tidak dapat terhubung ke server.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Simpan';
+  }
+}
+
+document.addEventListener('click', function(e){
+  const badge = document.getElementById('user-badge');
+  const menu = document.getElementById('user-menu');
+  if(!badge || !menu) return;
+  if(!menu.contains(e.target) && !badge.contains(e.target)){
+    menu.style.display = 'none';
+  }
+});
+
 function confirmLogout(){ if(confirm('Keluar dari aplikasi?')) doLogout(); }
 function doLogout(){ clearAuth(); showLoginScreen(); document.getElementById('login-username').value=''; document.getElementById('login-password').value=''; hideLoginError(); showToast('Berhasil logout 👋','info'); }
 setInterval(()=>{ const auth=getAuth(); if(auth&&isSessionExpired(auth)){doLogout();showToast('Sesi berakhir, silakan login kembali','error');} },60000);
-
 // ==================== SERVICE WORKER ====================
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

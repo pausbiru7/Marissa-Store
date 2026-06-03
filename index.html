@@ -928,27 +928,30 @@ function clearMaterialForm(hideBarcode = true){
   const codeEl = document.getElementById('m-code');
   if (!deptEl || !codeEl) return;
 
-  const dept = deptEl.value;
+  const dept = String(deptEl.value || '').trim();
   if (!dept || dept === 'Pilih Departemen') {
     codeEl.value = '';
     return;
   }
 
-  let prefix = 'GEN';
+  let basePrefix = 'GEN';
   switch (dept) {
-    case 'Electrical': prefix = 'ELC'; break;
-    case 'Mechanical': prefix = 'MEC'; break;
-    case 'Store': prefix = 'STR'; break;
-    case 'Manajemen': prefix = 'MNG'; break;
-    case 'HSE': prefix = 'HSE'; break;
-    case 'HRD': prefix = 'HRD'; break;
+    case 'Electrical': basePrefix = 'ELC'; break;
+    case 'Mechanical': basePrefix = 'MEC'; break;
+    case 'Store': basePrefix = 'STR'; break;
+    case 'Manajemen': basePrefix = 'MNG'; break;
+    case 'HSE': basePrefix = 'HSE'; break;
+    case 'HRD': basePrefix = 'HRD'; break;
   }
-const prefix = `${basePrefix}-MTR`;
-    
-  // materials sudah dideklarasikan global di script Anda
+
+  const prefix = `${basePrefix}-MTR`;
+
   const existing = (materials || [])
-    .filter(m => m.dept === dept && m.code && m.code.startsWith(prefix + '-'))
-    .map(m => parseInt((m.code.split('-')[1] || '0'), 10))
+    .filter(m => String(m.dept || '').trim() === dept && String(m.code || '').startsWith(prefix + '-'))
+    .map(m => {
+      const parts = String(m.code || '').split('-');
+      return parseInt(parts[parts.length - 1] || '0', 10);
+    })
     .filter(n => !isNaN(n));
 
   const nextNumber = existing.length ? Math.max(...existing) + 1 : 1;

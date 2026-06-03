@@ -943,7 +943,8 @@ function clearMaterialForm(hideBarcode = true){
     case 'HSE': prefix = 'HSE'; break;
     case 'HRD': prefix = 'HRD'; break;
   }
-
+const prefix = `${basePrefix}-MTR`;
+    
   // materials sudah dideklarasikan global di script Anda
   const existing = (materials || [])
     .filter(m => m.dept === dept && m.code && m.code.startsWith(prefix + '-'))

@@ -923,7 +923,7 @@ function clearMaterialForm(hideBarcode = true){
   if(hideBarcode) document.getElementById('m-barcode-box').style.display='none';
 }
 
-  function generateMaterialCode() {
+ function generateMaterialCode() {
   const deptEl = document.getElementById('m-dept');
   const codeEl = document.getElementById('m-code');
   if (!deptEl || !codeEl) return;
@@ -944,20 +944,22 @@ function clearMaterialForm(hideBarcode = true){
     case 'HRD': basePrefix = 'HRD'; break;
   }
 
-  const prefix = `${basePrefix}-MTR`;
+  const prefix = `${basePrefix}-MTR-`;
 
   const existing = (materials || [])
-    .filter(m => String(m.dept || '').trim() === dept && String(m.code || '').startsWith(prefix + '-'))
+    .map(m => ({
+      dept: String(m.dept || '').trim(),
+      code: String(m.code || '').trim()
+    }))
+    .filter(m => m.dept === dept && m.code.startsWith(prefix))
     .map(m => {
-      const parts = String(m.code || '').split('-');
-      return parseInt(parts[parts.length - 1] || '0', 10);
+      const num = parseInt(m.code.slice(prefix.length), 10);
+      return isNaN(num) ? 0 : num;
     })
-    .filter(n => !isNaN(n));
+    .filter(num => num > 0);
 
   const nextNumber = existing.length ? Math.max(...existing) + 1 : 1;
-  const numStr = String(nextNumber).padStart(3, '0');
-
-  codeEl.value = `${prefix}-${numStr}`;
+  codeEl.value = `${prefix}${String(nextNumber).padStart(3, '0')}`;
 }
 async function saveMaterial(){
   const dept=document.getElementById('m-dept').value;

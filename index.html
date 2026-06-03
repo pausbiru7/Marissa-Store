@@ -923,6 +923,38 @@ function clearMaterialForm(hideBarcode = true){
   if(hideBarcode) document.getElementById('m-barcode-box').style.display='none';
 }
 
+  function generateMaterialCode() {
+  const deptEl = document.getElementById('m-dept');
+  const codeEl = document.getElementById('m-code');
+  if (!deptEl || !codeEl) return;
+
+  const dept = deptEl.value;
+  if (!dept || dept === 'Pilih Departemen') {
+    codeEl.value = '';
+    return;
+  }
+
+  let prefix = 'GEN';
+  switch (dept) {
+    case 'Electrical': prefix = 'ELC'; break;
+    case 'Mechanical': prefix = 'MEC'; break;
+    case 'Store': prefix = 'STR'; break;
+    case 'Manajemen': prefix = 'MNG'; break;
+    case 'HSE': prefix = 'HSE'; break;
+    case 'HRD': prefix = 'HRD'; break;
+  }
+
+  // materials sudah dideklarasikan global di script Anda
+  const existing = (materials || [])
+    .filter(m => m.dept === dept && m.code && m.code.startsWith(prefix + '-'))
+    .map(m => parseInt((m.code.split('-')[1] || '0'), 10))
+    .filter(n => !isNaN(n));
+
+  const nextNumber = existing.length ? Math.max(...existing) + 1 : 1;
+  const numStr = String(nextNumber).padStart(3, '0');
+
+  codeEl.value = `${prefix}-${numStr}`;
+}
 async function saveMaterial(){
   const dept=document.getElementById('m-dept').value;
   const code=document.getElementById('m-code').value.trim();

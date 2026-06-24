@@ -1576,6 +1576,48 @@ function exportCSV(){
 </script>
 
 <script>
+  // ==================== PENDING ====================
+  const PENDING_KEY = 'pendingTransactions';
+  let isSyncingPending = false;
+  function getPendingTransactions() {
+    try {
+      return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]');
+    } catch (err) {
+      console.error('Gagal membaca pending queue:', err);
+      return [];
+    }
+  }
+  function savePendingTransactions(items) {
+    localStorage.setItem(PENDING_KEY, JSON.stringify(items));
+    updatePendingBadge(items.length);
+  }
+  function addPendingTransaction(item) {
+    const pending = getPendingTransactions();
+    const exists = pending.some(row => row.id === item.id);
+    if (exists) return;
+    pending.push({
+      ...item,
+      queuedAt: new Date().toISOString()
+    });
+    savePendingTransactions(pending);
+    console.warn('Transaksi disimpan ke pending queue:', item.id);
+  }
+  function removePendingTransaction(id) {
+    const pending = getPendingTransactions();
+    const filtered = pending.filter(item => item.id !== id);
+    savePendingTransactions(filtered);
+  }
+  function updatePendingBadge(count) {
+    const el = document.getElementById('pendingCount');
+    if (el) {
+      el.textContent = String(count);
+    }
+  }
+  function refreshPendingIndicator() {
+    updatePendingBadge(getPendingTransactions().length);
+  }
+</script>
+<script>
 // ==================== AUTH — FIX C1 + N6 ====================
 function checkAuth(){ const auth=getAuth(); if(auth&&!isSessionExpired(auth)){showApp(auth);}else{clearAuth();showLoginScreen();} updateLoginBadge(); }
 function getAuth(){ try{return JSON.parse(localStorage.getItem(AUTH_KEY));}catch{return null;} }

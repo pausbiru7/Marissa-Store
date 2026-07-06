@@ -908,22 +908,24 @@ function renderWorkers(){
   `).join('');
 }
 // ==================== MATERIALS ====================
-function clearMaterialForm(hideBarcode = true){
-  ['m-dept','m-code','m-name','m-category','m-unit','m-stock','m-min','m-location'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.value='';
+function clearMaterialForm(hideBarcode = true) {
+  ['m-dept','m-code','m-name','m-category','m-unit','m-stock','m-min','m-location'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
   });
 
-  const btn=document.querySelector('#section-materials .btn-primary');
-  if(btn){
-    btn.textContent='💾 Simpan & Generate Barcode';
-    btn.onclick=saveMaterial;
+  const btn = document.querySelector('#section-materials .btn-primary');
+  if (btn) {
+    btn.textContent = '💾 Simpan & Generate Barcode';
+    btn.onclick = saveMaterial;
   }
 
-  if(hideBarcode) document.getElementById('m-barcode-box').style.display='none';
+  if (hideBarcode) {
+    document.getElementById('m-barcode-box').style.display = 'none';
+  }
 }
 
- function generateMaterialCode() {
+function generateMaterialCode() {
   const deptEl = document.getElementById('m-dept');
   const codeEl = document.getElementById('m-code');
   if (!deptEl || !codeEl) return;
@@ -944,188 +946,231 @@ function clearMaterialForm(hideBarcode = true){
     case 'HRD': basePrefix = 'HRD'; break;
   }
 
-  const prefix = `${basePrefix}-MTR-`;
-
-  const existing = (materials || [])
-    .map(m => ({
-      dept: String(m.dept || '').trim(),
-      code: String(m.code || '').trim()
-    }))
-    .filter(m => m.dept === dept && m.code.startsWith(prefix))
-    .map(m => {
-      const num = parseInt(m.code.slice(prefix.length), 10);
-      return isNaN(num) ? 0 : num;
-    })
-    .filter(num => num > 0);
-
-  const nextNumber = existing.length ? Math.max(...existing) + 1 : 1;
-  codeEl.value = `${prefix}${String(nextNumber).padStart(3, '0')}`;
+  codeEl.value = `${basePrefix}-MTR-...`;
 }
-async function saveMaterial(){
-  const dept=document.getElementById('m-dept').value;
-  const code=document.getElementById('m-code').value.trim();
-  const name=document.getElementById('m-name').value.trim();
-  const category=document.getElementById('m-category').value;
-  const unit=document.getElementById('m-unit').value.trim();
-  const stock=parseInt(document.getElementById('m-stock').value)||0;
-  const minStock=parseInt(document.getElementById('m-min').value)||0;
-  const location=document.getElementById('m-location').value.trim();
 
-  if(!code||!name||!unit){
-    showToast('Kode, Nama, dan Satuan wajib diisi!','error');
+async function saveMaterial() {
+  const dept = document.getElementById('m-dept').value.trim();
+  const name = document.getElementById('m-name').value.trim();
+  const category = document.getElementById('m-category').value;
+  const unit = document.getElementById('m-unit').value.trim();
+  const stock = parseInt(document.getElementById('m-stock').value) || 0;
+  const minStock = parseInt(document.getElementById('m-min').value) || 0;
+  const location = document.getElementById('m-location').value.trim();
+
+  if (!dept || !name || !unit) {
+    showToast('Departemen, Nama, dan Satuan wajib diisi!', 'error');
     return;
   }
 
-  if(materials.find(m=>String(m.code).trim()===String(code).trim())){
-    showToast('Kode material sudah terdaftar!','error');
-    return;
-  }
-
-  const localId='M'+Date.now();
-  materials.push({id:localId,code,name,category,unit,stock,minStock,location,dept,barcode:code});
+  const localId = 'M' + Date.now();
+  materials.push({
+    id: localId,
+    code: 'Generating...',
+    name,
+    category,
+    unit,
+    stock,
+    minStock,
+    location,
+    dept,
+    barcode: ''
+  });
   saveLocal();
   renderMaterials();
 
-  const result=await apiCallWithQueue('saveMaterial',{code,name,unit,stock,minStock,category,location,dept});
+  const result = await apiCallWithQueue('saveMaterial', {
+    name,
+    unit,
+    stock,
+    minStock,
+    category,
+    location,
+    dept
+  });
 
-  if(result?.success&&result.data){
-    const idx=materials.findIndex(m=>m.id===localId);
-    if(idx!==-1){
-      materials[idx].id=result.data.id||localId;
-      materials[idx].barcode=code;
+  if (result?.success && result.data) {
+    const idx = materials.findIndex(m => m.id === localId);
+    if (idx !== -1) {
+      materials[idx] = {
+        ...materials[idx],
+        id: result.data.id || localId,
+        code: result.data.code || '',
+        barcode: result.data.code || '',
+        name: result.data.name || name,
+        unit: result.data.unit || unit,
+        stock: result.data.stock ?? stock,
+        location: result.data.location || location,
+        dept: result.data.dept || dept
+      };
       saveLocal();
       renderMaterials();
     }
-    showToast('Material berhasil disimpan!','success');
-  } else if(result?.queued){
-    showToast('Disimpan lokal, akan sync ketika online','info');
+
+    showToast('Material berhasil disimpan!', 'success');
+
+    try {
+      const finalCode = result.data.code || '';
+      document.getElementById('m-code').value = finalCode;
+      document.getElementById('m-barcode-box').style.display = 'block';
+      JsBarcode('#m-barcode', finalCode, {
+        format: 'CODE128',
+        width: 2,
+        height: 80,
+        displayValue: true,
+        fontSize: 14
+      });
+      document.getElementById('m-barcode-label').textContent = `${result.data.name || name} • ${finalCode}`;
+    } catch (e) {}
+  } else if (result?.queued) {
+    showToast('Disimpan lokal, akan sync ketika online', 'info');
   } else {
-    const idx=materials.findIndex(m=>m.id===localId);
-    if(idx!==-1){
-      materials.splice(idx,1);
+    const idx = materials.findIndex(m => m.id === localId);
+    if (idx !== -1) {
+      materials.splice(idx, 1);
       saveLocal();
       renderMaterials();
     }
-    showToast('Gagal: '+(result?.message||''),'error');
+    showToast('Gagal: ' + (result?.message || ''), 'error');
     return;
   }
-
-  try{
-    document.getElementById('m-barcode-box').style.display='block';
-    JsBarcode('#m-barcode',code,{format:'CODE128',width:2,height:80,displayValue:true,fontSize:14});
-    document.getElementById('m-barcode-label').textContent=`${name} • ${code}`;
-  }catch(e){}
 
   clearMaterialForm(false);
 }
 
-function showMaterialBarcode(id){
-  const m=materials.find(m=>m.id===id);
-  if(!m) return;
+function showMaterialBarcode(id) {
+  const m = materials.find(m => m.id === id);
+  if (!m) return;
 
-  const barcodeValue=String(m.barcode||m.code||'').trim();
-  if(!barcodeValue){
-    showToast('Barcode material tidak tersedia!','error');
+  const barcodeValue = String(m.barcode || m.code || '').trim();
+  if (!barcodeValue || barcodeValue === 'Generating...') {
+    showToast('Barcode material belum tersedia!', 'error');
     return;
   }
 
-  try{
-    document.getElementById('m-barcode-box').style.display='block';
-    JsBarcode('#m-barcode',barcodeValue,{format:'CODE128',width:2,height:80,displayValue:true,fontSize:14});
-    document.getElementById('m-barcode-label').textContent=`${m.name||'-'} • ${barcodeValue}`;
-    document.getElementById('m-barcode-box').scrollIntoView({behavior:'smooth',block:'nearest'});
-  }catch(e){
-    showToast('Gagal menampilkan barcode material!','error');
+  try {
+    document.getElementById('m-barcode-box').style.display = 'block';
+    JsBarcode('#m-barcode', barcodeValue, {
+      format: 'CODE128',
+      width: 2,
+      height: 80,
+      displayValue: true,
+      fontSize: 14
+    });
+    document.getElementById('m-barcode-label').textContent = `${m.name || '-'} • ${barcodeValue}`;
+    document.getElementById('m-barcode-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) {
+    showToast('Gagal menampilkan barcode material!', 'error');
   }
 }
 
-function editMaterial(id){
-  const m=materials.find(m=>m.id===id);
-  if(!m) return;
+function editMaterial(id) {
+  const m = materials.find(m => m.id === id);
+  if (!m) return;
 
-  document.getElementById('m-dept').value=m.dept||'';
-  document.getElementById('m-code').value=m.code||'';
-  document.getElementById('m-name').value=m.name||'';
-  document.getElementById('m-category').value=m.category||'';
-  document.getElementById('m-unit').value=m.unit||'';
-  document.getElementById('m-stock').value=m.stock||0;
-  document.getElementById('m-min').value=m.minStock||0;
-  document.getElementById('m-location').value=m.location||'';
+  document.getElementById('m-dept').value = m.dept || '';
+  document.getElementById('m-code').value = m.code || '';
+  document.getElementById('m-name').value = m.name || '';
+  document.getElementById('m-category').value = m.category || '';
+  document.getElementById('m-unit').value = m.unit || '';
+  document.getElementById('m-stock').value = m.stock || 0;
+  document.getElementById('m-min').value = m.minStock || 0;
+  document.getElementById('m-location').value = m.location || '';
 
   showMaterialBarcode(id);
 
-  const btn=document.querySelector('#section-materials .btn-primary');
-  btn.textContent='✏️ Update Material';
-  btn.onclick=()=>updateMaterial(id);
+  const btn = document.querySelector('#section-materials .btn-primary');
+  btn.textContent = '✏️ Update Material';
+  btn.onclick = () => updateMaterial(id);
 }
 
-async function updateMaterial(id){
-  const dept=document.getElementById('m-dept').value;
-  const code=document.getElementById('m-code').value.trim();
-  const name=document.getElementById('m-name').value.trim();
-  const category=document.getElementById('m-category').value;
-  const unit=document.getElementById('m-unit').value.trim();
-  const stock=parseInt(document.getElementById('m-stock').value)||0;
-  const minStock=parseInt(document.getElementById('m-min').value)||0;
-  const location=document.getElementById('m-location').value.trim();
+async function updateMaterial(id) {
+  const dept = document.getElementById('m-dept').value.trim();
+  const name = document.getElementById('m-name').value.trim();
+  const category = document.getElementById('m-category').value;
+  const unit = document.getElementById('m-unit').value.trim();
+  const stock = parseInt(document.getElementById('m-stock').value) || 0;
+  const minStock = parseInt(document.getElementById('m-min').value) || 0;
+  const location = document.getElementById('m-location').value.trim();
 
-  if(!code||!name||!unit){
-    showToast('Kode, Nama, Satuan wajib diisi!','error');
+  if (!dept || !name || !unit) {
+    showToast('Departemen, Nama, dan Satuan wajib diisi!', 'error');
     return;
   }
 
-  const idx=materials.findIndex(m=>m.id===id);
-  if(idx===-1){
-    showToast('Material tidak ditemukan!','error');
+  const idx = materials.findIndex(m => m.id === id);
+  if (idx === -1) {
+    showToast('Material tidak ditemukan!', 'error');
     return;
   }
 
-  const backup={...materials[idx]};
-  materials[idx]={...materials[idx],dept,code,name,category,unit,stock,minStock,location,barcode:code};
+  const backup = { ...materials[idx] };
+  materials[idx] = { ...materials[idx], dept, name, category, unit, stock, minStock, location };
   saveLocal();
   renderMaterials();
 
-  const result=await apiCallWithQueue('saveMaterial',{originalKode:backup.code,code,name,unit,stock,minStock,category,location,dept});
+  const result = await apiCallWithQueue('saveMaterial', {
+    originalKode: backup.code,
+    name,
+    unit,
+    stock,
+    minStock,
+    category,
+    location,
+    dept
+  });
 
-  if(result?.success){
-    showToast('Material diupdate!','success');
-    showMaterialBarcode(id);
-  } else if(result?.queued){
-    showToast('Akan sync ketika online','info');
-    showMaterialBarcode(id);
-  } else {
-    materials[idx]=backup;
+  if (result?.success && result.data) {
+    materials[idx] = {
+      ...materials[idx],
+      id: result.data.id || id,
+      code: result.data.code || backup.code,
+barcode: result.data.code || backup.code,
+      name: result.data.name || name,
+      unit: result.data.unit || unit,
+      stock: result.data.stock ?? stock,
+      location: result.data.location || location,
+      dept: result.data.dept || dept
+    };
     saveLocal();
     renderMaterials();
-    showToast('Gagal update','error');
+    showToast('Material diupdate!', 'success');
+    showMaterialBarcode(materials[idx].id);
+  } else if (result?.queued) {
+    showToast('Akan sync ketika online', 'info');
+    showMaterialBarcode(id);
+  } else {
+    materials[idx] = backup;
+    saveLocal();
+    renderMaterials();
+    showToast('Gagal update: ' + (result?.message || ''), 'error');
     return;
   }
 
   clearMaterialForm(false);
 }
 
-// FIX M3: kirim id bukan kode
-async function deleteMaterial(id){
-  if(!confirm('Hapus material ini?')) return;
+async function deleteMaterial(id) {
+  if (!confirm('Hapus material ini?')) return;
 
-  const idx=materials.findIndex(m=>m.id===id);
-  if(idx===-1) return;
+  const idx = materials.findIndex(m => m.id === id);
+  if (idx === -1) return;
 
-  const backup=materials[idx];
-  materials.splice(idx,1);
+  const backup = materials[idx];
+  materials.splice(idx, 1);
   saveLocal();
   renderMaterials();
 
-  const result=await apiCallWithQueue('deleteMaterial',{id:backup.id});
-  if(result?.success){
-    showToast('Material dihapus!','success');
-  } else if(result?.queued){
-    showToast('Akan sync ketika online','info');
+  const result = await apiCallWithQueue('deleteMaterial', { id: backup.id });
+  if (result?.success) {
+    showToast('Material dihapus!', 'success');
+  } else if (result?.queued) {
+    showToast('Akan sync ketika online', 'info');
   } else {
-    materials.splice(idx,0,backup);
+    materials.splice(idx, 0, backup);
     saveLocal();
     renderMaterials();
-    showToast('Gagal hapus','error');
+    showToast('Gagal hapus', 'error');
   }
 }
 

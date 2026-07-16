@@ -633,131 +633,24 @@ function mapTransactionFromServer(t) {
     synced:       true
   };
 }
-function mergeTransactions(serverTransactions, localTransactions) {
-  const merged = [...serverTransactions];
-  const serverIds = new Set(serverTransactions.map(t => String(t.id)));
 
-  localTransactions.forEach(local => {
-    if (!local) return;
-
-    const isPending =
-      local.synced === false ||
-      local.syncStatus === 'pending' ||
-      local.syncStatus === 'failed';
-
-    const existsOnServer = serverIds.has(String(local.id));
-
-    if (isPending && !existsOnServer) {
-      merged.unshift(local);
-    }
-  });
-
-  return merged;
-}
-
-function mergeMaterials(serverMaterials, localMaterials) {
-  const localMap = new Map(localMaterials.map(m => [String(m.id), m]));
-  const merged = serverMaterials.map(serverItem => {
-    const localItem = localMap.get(String(serverItem.id));
-    if (!localItem) return serverItem;
-
-    const isPending =
-      localItem.synced === false ||
-      localItem.syncStatus === 'pending' ||
-      localItem.syncStatus === 'failed';
-
-    if (isPending) {
-      return { ...serverItem, ...localItem };
-    }
-
-    return serverItem;
-  });
-
-  localMaterials.forEach(localItem => {
-    const exists = merged.some(m => String(m.id) === String(localItem.id));
-    const isPending =
-      localItem.synced === false ||
-      localItem.syncStatus === 'pending' ||
-      localItem.syncStatus === 'failed';
-
-    if (!exists && isPending) {
-      merged.push(localItem);
-    }
-  });
-
-  return merged;
-}
-
-function mergeWorkers(serverWorkers, localWorkers) {
-  const localMap = new Map(localWorkers.map(w => [String(w.id), w]));
-  const merged = serverWorkers.map(serverItem => {
-    const localItem = localMap.get(String(serverItem.id));
-    if (!localItem) return serverItem;
-
-    const isPending =
-      localItem.synced === false ||
-      localItem.syncStatus === 'pending' ||
-      localItem.syncStatus === 'failed';
-
-    if (isPending) {
-      return { ...serverItem, ...localItem };
-    }
-
-    return serverItem;
-  });
-
-  localWorkers.forEach(localItem => {
-    const exists = merged.some(w => String(w.id) === String(localItem.id));
-    const isPending =
-      localItem.synced === false ||
-      localItem.syncStatus === 'pending' ||
-      localItem.syncStatus === 'failed';
-
-    if (!exists && isPending) {
-      merged.push(localItem);
-    }
-  });
-
-  return merged;
-}
 async function initialSync(showToastOnFail = false) {
-  if (!isOnline()) {
-    if (showToastOnFail) showToast('Offline — menampilkan data lokal', 'info');
-    return;
-  }
-
+  if (!isOnline()) { if (showToastOnFail) showToast('Offline — menampilkan data lokal', 'info'); return; }
   try {
-    const localWorkers = Array.isArray(workers) ? [...workers] : [];
-    const localMaterials = Array.isArray(materials) ? [...materials] : [];
-    const localTransactions = Array.isArray(transactions) ? [...transactions] : [];
-
     const res = await apiCall('syncAllData', {});
-
     if (res?.success && res.data) {
-      const serverWorkers = (res.data.workers || []).map(mapWorkerFromServer);
-      const serverMaterials = (res.data.materials || []).map(mapMaterialFromServer);
-      const serverTransactions = (res.data.transactions || []).map(mapTransactionFromServer);
-
-      workers = mergeWorkers(serverWorkers, localWorkers);
-      materials = mergeMaterials(serverMaterials, localMaterials);
-      transactions = mergeTransactions(serverTransactions, localTransactions);
-
+      // FIX M4: gunakan mapper agar field konsisten
+      workers      = (res.data.workers      || []).map(mapWorkerFromServer);
+      materials    = (res.data.materials    || []).map(mapMaterialFromServer);
+      transactions = (res.data.transactions || []).map(mapTransactionFromServer);
       saveLocal();
-      renderWorkers();
-      renderMaterials();
-      renderHistory();
-      renderDashboard();
-
+      renderWorkers(); renderMaterials(); renderHistory(); renderDashboard();
       await flushQueue();
     } else {
-      if (showToastOnFail) {
-        showToast('Gagal sinkronisasi: ' + (res?.message || 'Unknown'), 'error');
-      }
+      if (showToastOnFail) showToast('Gagal sinkronisasi: ' + (res?.message || 'Unknown'), 'error');
     }
   } catch (err) {
-    if (showToastOnFail) {
-      showToast('Sync error: ' + err.message, 'error');
-    }
+    if (showToastOnFail) showToast('Sync error: ' + err.message, 'error');
   }
 }
 
@@ -1015,315 +908,186 @@ function renderWorkers(){
   `).join('');
 }
 // ==================== MATERIALS ====================
-function clearMaterialForm(hideBarcode = true) {
-  ['m-dept','m-code','m-name','m-category','m-unit','m-stock','m-min','m-location'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
+function clearMaterialForm(hideBarcode = true){
+  ['m-dept','m-code','m-name','m-category','m-unit','m-stock','m-min','m-location'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
   });
 
-  const btn = document.querySelector('#section-materials .btn-primary');
-  if (btn) {
-    btn.textContent = '💾 Simpan & Generate Barcode';
-    btn.onclick = saveMaterial;
+  const btn=document.querySelector('#section-materials .btn-primary');
+  if(btn){
+    btn.textContent='💾 Simpan & Generate Barcode';
+    btn.onclick=saveMaterial;
   }
 
-  if (hideBarcode) {
-    document.getElementById('m-barcode-box').style.display = 'none';
-  }
+  if(hideBarcode) document.getElementById('m-barcode-box').style.display='none';
 }
 
-function generateMaterialCode() {
-  const deptEl = document.getElementById('m-dept');
-  const codeEl = document.getElementById('m-code');
-  if (!deptEl || !codeEl) return;
+async function saveMaterial(){
+  const dept=document.getElementById('m-dept').value;
+  const code=document.getElementById('m-code').value.trim();
+  const name=document.getElementById('m-name').value.trim();
+  const category=document.getElementById('m-category').value;
+  const unit=document.getElementById('m-unit').value.trim();
+  const stock=parseInt(document.getElementById('m-stock').value)||0;
+  const minStock=parseInt(document.getElementById('m-min').value)||0;
+  const location=document.getElementById('m-location').value.trim();
 
-  const dept = String(deptEl.value || '').trim();
-  if (!dept || dept === 'Pilih Departemen') {
-    codeEl.value = '';
+  if(!code||!name||!unit){
+    showToast('Kode, Nama, dan Satuan wajib diisi!','error');
     return;
   }
 
-  let basePrefix = 'GEN';
-  switch (dept) {
-    case 'Electrical': basePrefix = 'ELC'; break;
-    case 'Mechanical': basePrefix = 'MEC'; break;
-    case 'Store': basePrefix = 'STR'; break;
-    case 'Manajemen': basePrefix = 'MNG'; break;
-    case 'HSE': basePrefix = 'HSE'; break;
-    case 'HRD': basePrefix = 'HRD'; break;
-  }
-
-  codeEl.value = `${basePrefix}-MTR-...`;
-}
-
-async function saveMaterial() {
-  const dept = document.getElementById('m-dept').value.trim();
-  const name = document.getElementById('m-name').value.trim();
-  const category = document.getElementById('m-category').value;
-  const unit = document.getElementById('m-unit').value.trim();
-  const stock = parseInt(document.getElementById('m-stock').value) || 0;
-  const minStock = parseInt(document.getElementById('m-min').value) || 0;
-  const location = document.getElementById('m-location').value.trim();
-
-  if (!dept || !name || !unit) {
-    showToast('Departemen, Nama, dan Satuan wajib diisi!', 'error');
+  if(materials.find(m=>String(m.code).trim()===String(code).trim())){
+    showToast('Kode material sudah terdaftar!','error');
     return;
   }
 
-  const localId = 'M' + Date.now();
-  materials.push({
-    id: localId,
-    code: 'Generating...',
-    name,
-    category,
-    unit,
-    stock,
-    minStock,
-    location,
-    dept,
-    barcode: ''
-  });
+  const localId='M'+Date.now();
+  materials.push({id:localId,code,name,category,unit,stock,minStock,location,dept,barcode:code});
   saveLocal();
   renderMaterials();
 
-  const result = await apiCallWithQueue('saveMaterial', {
-    name,
-    unit,
-    stock,
-    minStock,
-    category,
-    location,
-    dept
-  });
+  const result=await apiCallWithQueue('saveMaterial',{code,name,unit,stock,minStock,category,location,dept});
 
-  if (result?.success && result.data) {
-    const idx = materials.findIndex(m => m.id === localId);
-    if (idx !== -1) {
-      materials[idx] = {
-        ...materials[idx],
-        id: result.data.id || localId,
-        code: result.data.code || '',
-        barcode: result.data.code || '',
-        name: result.data.name || name,
-        unit: result.data.unit || unit,
-        stock: result.data.stock ?? stock,
-        location: result.data.location || location,
-        dept: result.data.dept || dept
-      };
+  if(result?.success&&result.data){
+    const idx=materials.findIndex(m=>m.id===localId);
+    if(idx!==-1){
+      materials[idx].id=result.data.id||localId;
+      materials[idx].barcode=code;
       saveLocal();
       renderMaterials();
     }
-
-    showToast('Material berhasil disimpan!', 'success');
-
-    try {
-      const finalCode = result.data.code || '';
-      document.getElementById('m-code').value = finalCode;
-      document.getElementById('m-barcode-box').style.display = 'block';
-      JsBarcode('#m-barcode', finalCode, {
-        format: 'CODE128',
-        width: 2,
-        height: 80,
-        displayValue: true,
-        fontSize: 14
-      });
-      document.getElementById('m-barcode-label').textContent = `${result.data.name || name} • ${finalCode}`;
-    } catch (e) {}
-  } else if (result?.queued) {
-    showToast('Disimpan lokal, akan sync ketika online', 'info');
+    showToast('Material berhasil disimpan!','success');
+  } else if(result?.queued){
+    showToast('Disimpan lokal, akan sync ketika online','info');
   } else {
-    const idx = materials.findIndex(m => m.id === localId);
-    if (idx !== -1) {
-      materials.splice(idx, 1);
+    const idx=materials.findIndex(m=>m.id===localId);
+    if(idx!==-1){
+      materials.splice(idx,1);
       saveLocal();
       renderMaterials();
     }
-    showToast('Gagal: ' + (result?.message || ''), 'error');
+    showToast('Gagal: '+(result?.message||''),'error');
     return;
   }
+
+  try{
+    document.getElementById('m-barcode-box').style.display='block';
+    JsBarcode('#m-barcode',code,{format:'CODE128',width:2,height:80,displayValue:true,fontSize:14});
+    document.getElementById('m-barcode-label').textContent=`${name} • ${code}`;
+  }catch(e){}
 
   clearMaterialForm(false);
 }
 
-function showMaterialBarcode(id) {
-  const m = materials.find(m => m.id === id);
-  if (!m) return;
+function showMaterialBarcode(id){
+  const m=materials.find(m=>m.id===id);
+  if(!m) return;
 
-  const barcodeValue = String(m.barcode || m.code || '').trim();
-  if (!barcodeValue || barcodeValue === 'Generating...') {
-    showToast('Barcode material belum tersedia!', 'error');
+  const barcodeValue=String(m.barcode||m.code||'').trim();
+  if(!barcodeValue){
+    showToast('Barcode material tidak tersedia!','error');
     return;
   }
 
-  try {
-    document.getElementById('m-barcode-box').style.display = 'block';
-    JsBarcode('#m-barcode', barcodeValue, {
-      format: 'CODE128',
-      width: 2,
-      height: 80,
-      displayValue: true,
-      fontSize: 14
-    });
-    document.getElementById('m-barcode-label').textContent = `${m.name || '-'} • ${barcodeValue}`;
-    document.getElementById('m-barcode-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  } catch (e) {
-    showToast('Gagal menampilkan barcode material!', 'error');
+  try{
+    document.getElementById('m-barcode-box').style.display='block';
+    JsBarcode('#m-barcode',barcodeValue,{format:'CODE128',width:2,height:80,displayValue:true,fontSize:14});
+    document.getElementById('m-barcode-label').textContent=`${m.name||'-'} • ${barcodeValue}`;
+    document.getElementById('m-barcode-box').scrollIntoView({behavior:'smooth',block:'nearest'});
+  }catch(e){
+    showToast('Gagal menampilkan barcode material!','error');
   }
 }
 
-function editMaterial(id) {
-  const m = materials.find(m => m.id === id);
-  if (!m) {
-    showToast('Material tidak ditemukan!', 'error');
-    return;
-  }
+function editMaterial(id){
+  const m=materials.find(m=>m.id===id);
+  if(!m) return;
 
-  const deptEl = document.getElementById('m-dept');
-  const codeEl = document.getElementById('m-code');
-  const nameEl = document.getElementById('m-name');
-  const categoryEl = document.getElementById('m-category');
-  const unitEl = document.getElementById('m-unit');
-  const stockEl = document.getElementById('m-stock');
-  const minEl = document.getElementById('m-min');
-  const locationEl = document.getElementById('m-location');
-
-  if (deptEl) deptEl.value = String(m.dept || '').trim();
-  if (codeEl) codeEl.value = String(m.code || '').trim();
-  if (nameEl) nameEl.value = String(m.name || '').trim();
-  if (categoryEl) categoryEl.value = String(m.category || '').trim();
-  if (unitEl) unitEl.value = String(m.unit || '').trim();
-  if (stockEl) stockEl.value = Number(m.stock || 0);
-  if (minEl) minEl.value = Number(m.minStock || 0);
-  if (locationEl) locationEl.value = String(m.location || '').trim();
-
-  console.log('EDIT MATERIAL DATA', m);
-  console.log('FORM VALUES', {
-    dept: deptEl?.value,
-    code: codeEl?.value,
-    name: nameEl?.value,
-    category: categoryEl?.value,
-    unit: unitEl?.value,
-    stock: stockEl?.value,
-    minStock: minEl?.value,
-    location: locationEl?.value
-  });
+  document.getElementById('m-dept').value=m.dept||'';
+  document.getElementById('m-code').value=m.code||'';
+  document.getElementById('m-name').value=m.name||'';
+  document.getElementById('m-category').value=m.category||'';
+  document.getElementById('m-unit').value=m.unit||'';
+  document.getElementById('m-stock').value=m.stock||0;
+  document.getElementById('m-min').value=m.minStock||0;
+  document.getElementById('m-location').value=m.location||'';
 
   showMaterialBarcode(id);
 
-  const btn = document.querySelector('#section-materials .btn-primary');
-  if (btn) {
-    btn.textContent = '✏️ Update Material';
-    btn.onclick = () => updateMaterial(id);
-  }
+  const btn=document.querySelector('#section-materials .btn-primary');
+  btn.textContent='✏️ Update Material';
+  btn.onclick=()=>updateMaterial(id);
 }
 
-async function updateMaterial(id) {
-  const dept = String(document.getElementById('m-dept')?.value || '').trim();
-  const name = String(document.getElementById('m-name')?.value || '').trim();
-  const category = String(document.getElementById('m-category')?.value || '').trim();
-  const unit = String(document.getElementById('m-unit')?.value || '').trim();
-  const stock = parseInt(document.getElementById('m-stock')?.value || '0', 10) || 0;
-  const minStock = parseInt(document.getElementById('m-min')?.value || '0', 10) || 0;
-  const location = String(document.getElementById('m-location')?.value || '').trim();
+async function updateMaterial(id){
+  const dept=document.getElementById('m-dept').value;
+  const code=document.getElementById('m-code').value.trim();
+  const name=document.getElementById('m-name').value.trim();
+  const category=document.getElementById('m-category').value;
+  const unit=document.getElementById('m-unit').value.trim();
+  const stock=parseInt(document.getElementById('m-stock').value)||0;
+  const minStock=parseInt(document.getElementById('m-min').value)||0;
+  const location=document.getElementById('m-location').value.trim();
 
-  console.log('UPDATE MATERIAL VALUES', { id, dept, name, category, unit, stock, minStock, location });
-
-  if (!dept || !name || !unit) {
-    showToast(`Field wajib kosong -> Dept: "${dept}", Nama: "${name}", Satuan: "${unit}"`, 'error');
+  if(!code||!name||!unit){
+    showToast('Kode, Nama, Satuan wajib diisi!','error');
     return;
   }
 
-  const idx = materials.findIndex(m => m.id === id);
-  if (idx === -1) {
-    showToast('Material tidak ditemukan!', 'error');
+  const idx=materials.findIndex(m=>m.id===id);
+  if(idx===-1){
+    showToast('Material tidak ditemukan!','error');
     return;
   }
 
-  const backup = { ...materials[idx] };
-  materials[idx] = {
-    ...materials[idx],
-    dept,
-    name,
-    category,
-    unit,
-    stock,
-    minStock,
-    location
-  };
-
+  const backup={...materials[idx]};
+  materials[idx]={...materials[idx],dept,code,name,category,unit,stock,minStock,location,barcode:code};
   saveLocal();
   renderMaterials();
 
-  const result = await apiCallWithQueue('saveMaterial', {
-    originalKode: backup.code,
-    name,
-    unit,
-    stock,
-    minStock,
-    category,
-    location,
-    dept
-  });
+  const result=await apiCallWithQueue('saveMaterial',{originalKode:backup.code,code,name,unit,stock,minStock,category,location,dept});
 
-  if (result?.success && result.data) {
-    materials[idx] = {
-      ...materials[idx],
-      id: result.data.id || id,
-      code: result.data.code || backup.code,
-      barcode: result.data.code || backup.code,
-      name: result.data.name || name,
-      unit: result.data.unit || unit,
-      stock: result.data.stock ?? stock,
-      minStock: result.data.minStock ?? minStock,
-      category: result.data.category || category,
-      location: result.data.location || location,
-      dept: result.data.dept || dept
-    };
-    saveLocal();
-    renderMaterials();
-    showToast('Material diupdate!', 'success');
-    showMaterialBarcode(materials[idx].id);
-  } else if (result?.queued) {
-    showToast('Akan sync ketika online', 'info');
+  if(result?.success){
+    showToast('Material diupdate!','success');
+    showMaterialBarcode(id);
+  } else if(result?.queued){
+    showToast('Akan sync ketika online','info');
     showMaterialBarcode(id);
   } else {
-    materials[idx] = backup;
+    materials[idx]=backup;
     saveLocal();
     renderMaterials();
-    showToast('Gagal update: ' + (result?.message || ''), 'error');
+    showToast('Gagal update','error');
     return;
   }
 
   clearMaterialForm(false);
-
-  const btn = document.querySelector('#section-materials .btn-primary');
-  if (btn) {
-    btn.textContent = '➕ Tambah Material';
-    btn.onclick = addMaterial;
-  }
 }
 
-async function deleteMaterial(id) {
-  if (!confirm('Hapus material ini?')) return;
+// FIX M3: kirim id bukan kode
+async function deleteMaterial(id){
+  if(!confirm('Hapus material ini?')) return;
 
-  const idx = materials.findIndex(m => m.id === id);
-  if (idx === -1) return;
+  const idx=materials.findIndex(m=>m.id===id);
+  if(idx===-1) return;
 
-  const backup = materials[idx];
-  materials.splice(idx, 1);
+  const backup=materials[idx];
+  materials.splice(idx,1);
   saveLocal();
   renderMaterials();
 
-  const result = await apiCallWithQueue('deleteMaterial', { id: backup.id });
-  if (result?.success) {
-    showToast('Material dihapus!', 'success');
-  } else if (result?.queued) {
-    showToast('Akan sync ketika online', 'info');
+  const result=await apiCallWithQueue('deleteMaterial',{id:backup.id});
+  if(result?.success){
+    showToast('Material dihapus!','success');
+  } else if(result?.queued){
+    showToast('Akan sync ketika online','info');
   } else {
-    materials.splice(idx, 0, backup);
+    materials.splice(idx,0,backup);
     saveLocal();
     renderMaterials();
-    showToast('Gagal hapus', 'error');
+    showToast('Gagal hapus','error');
   }
 }
 
@@ -1673,389 +1437,58 @@ function printTrxPdf(id) { const t=transactions.find(t=>t.id===id); if(!t) retur
 function shareTrx(id) { const t=transactions.find(t=>t.id===id); if(!t) return; const text=`📋 *Bukti Pengambilan Material*\n👷 Pekerja  : ${t.workerName} (${t.workerNik})\n🏭 Dept     : ${t.workerDept}\n📦 Material : ${t.materialName}\n🏷️ Kode     : ${t.materialCode}\n📊 Jumlah   : ${t.qty} ${t.unit}\n📅 Tanggal  : ${t.dateStr} ${t.timeStr}\n— Marissa Store`; if(navigator.share){navigator.share({title:'Bukti Pengambilan',text}).catch(()=>{});}else{navigator.clipboard.writeText(text).then(()=>showToast('Teks disalin!','success'));} }
 </script>
 <script>
-// ==================== DASHBOARD + CHARTS (FINAL, AMAN) ====================
-// Catatan: blok ini sengaja menghindari innerHTML untuk data dinamis (anti-XSS),
-// menormalkan angka, dan memberi guard tanggal invalid + empty-state chart tanpa menghapus canvas.
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-function toNum(v) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-function isLowStock(m) {
-  const stock = toNum(m?.stock);
-  const min   = toNum(m?.minStock);
-  return stock <= 0 || stock <= min;
-}
-function ymdFromDateSafe(d) {
-  // return "YYYY-MM-DD" atau null jika invalid
-  const dt = (d instanceof Date) ? d : new Date(d);
-  if (Number.isNaN(dt.getTime())) return null;
-  return dt.toISOString().slice(0, 10);
-}
-
-// ---------- Dashboard small DOM helpers ----------
-function setText(id, v) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = String(v ?? '');
-}
-function clearEl(el) {
-  while (el && el.firstChild) el.removeChild(el.firstChild);
-}
-function addEmpty(el, text) {
-  const d = document.createElement('div');
-  d.className = 'empty';
-  d.textContent = text;
-  el.appendChild(d);
-}
-function createDashItem({ title, subtitle, badge }) {
-  const item = document.createElement('div');
-  item.className = 'list-item';
-  item.style.padding = '10px';
-
-  const info = document.createElement('div');
-  info.className = 'info';
-
-  const h4 = document.createElement('h4');
-  h4.style.fontSize = '0.85rem';
-  h4.textContent = title || '-';
-
-  if (badge) {
-    const sp = document.createElement('span');
-    sp.className = `stock-badge ${badge.className || ''}`.trim();
-    sp.textContent = badge.text || '';
-    h4.appendChild(document.createTextNode(' '));
-    h4.appendChild(sp);
-  }
-
-  const p = document.createElement('p');
-  p.style.fontSize = '0.75rem';
-  p.textContent = subtitle || '';
-
-  info.appendChild(h4);
-  info.appendChild(p);
-  item.appendChild(info);
-  return item;
-}
-
 // ==================== DASHBOARD ====================
 function renderDashboard() {
-  // Guard jika data global belum siap
-  const mats = Array.isArray(window.materials) ? window.materials : [];
-  const trx  = Array.isArray(window.transactions) ? window.transactions : [];
-
-  setText('dash-total-material', mats.length);
-  setText('dash-total-stok', mats.reduce((a, m) => a + toNum(m?.stock), 0));
-  setText('dash-total-trx', trx.length);
-  setText('dash-low-stok', mats.filter(isLowStock).length);
-
-  // Recent transactions (AMAN: pakai createElement + textContent)
+  const setText = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  setText('dash-total-material', materials.length);
+  setText('dash-total-stok',     materials.reduce((a,m)=>a+(m.stock||0),0));
+  setText('dash-total-trx',      transactions.length);
+  // FIX N1: ID sekarang 'dash-low-stok' konsisten dengan HTML
+  setText('dash-low-stok', materials.filter(m=>m.stock<=0||m.stock<=m.minStock).length);
+  // FIX N2: render dash-recent-trx yang sekarang sudah ada di HTML
   const recentList = document.getElementById('dash-recent-trx');
   if (recentList) {
-    clearEl(recentList);
-    if (!trx.length) {
-      addEmpty(recentList, 'Belum ada transaksi');
-    } else {
-      trx.slice(0, 5).forEach(t => {
-        const title = `📦 ${String(t?.materialName || '-')}`;
-        const qty = toNum(t?.qty);
-        const unit = String(t?.unit || '');
-        const worker = String(t?.workerName || '-');
-        const dateStr = String(t?.dateStr || '');
-        const subtitle = `👷 ${worker} | ${qty} ${unit} | ${dateStr}`;
-        recentList.appendChild(createDashItem({ title, subtitle }));
-      });
-    }
+    recentList.innerHTML = !transactions.length ? '<div class="empty">Belum ada transaksi</div>'
+      : transactions.slice(0,5).map(t=>`<div class="list-item" style="padding:10px;"><div class="info"><h4 style="font-size:0.85rem;">📦 ${t.materialName||'-'}</h4><p style="font-size:0.75rem;">👷 ${t.workerName||'-'} | ${t.qty} ${t.unit||''} | ${t.dateStr||''}</p></div></div>`).join('');
   }
-
-  // Low stock alerts (AMAN: pakai createElement + textContent)
   const alertList = document.getElementById('dash-low-list');
   if (alertList) {
-    const alerts = mats.filter(isLowStock);
-    clearEl(alertList);
-
-    if (!alerts.length) {
-      addEmpty(alertList, '✅ Semua stok aman');
-    } else {
-      alerts.forEach(m => {
-        const stock = toNum(m?.stock);
-        const min = toNum(m?.minStock);
-        const name = String(m?.name || '-');
-        const code = String(m?.code || '-');
-        const unit = String(m?.unit || '');
-
-        const badge = stock <= 0
-          ? { className: 'stock-empty', text: 'Habis' }
-          : { className: 'stock-low', text: 'Rendah' };
-
-        const title = `📦 ${name}`;
-        const subtitle = `${code} | Stok: ${stock} ${unit} | Min: ${min}`;
-        alertList.appendChild(createDashItem({ title, subtitle, badge }));
-      });
-    }
+    const alerts = materials.filter(m=>m.stock<=0||m.stock<=m.minStock);
+    alertList.innerHTML = !alerts.length ? '<div class="empty">✅ Semua stok aman</div>'
+      : alerts.map(m=>`<div class="list-item" style="padding:10px;"><div class="info"><h4 style="font-size:0.85rem;">📦 ${m.name||'-'} <span class="stock-badge ${m.stock<=0?'stock-empty':'stock-low'}">${m.stock<=0?'Habis':'Rendah'}</span></h4><p style="font-size:0.75rem;">${m.code} | Stok: <strong>${m.stock}</strong> ${m.unit} | Min: ${m.minStock}</p></div></div>`).join('');
   }
-
   refreshCharts();
 }
 
 // ==================== CHARTS ====================
-let chartDaily = null, chartTopMaterial = null, chartStockCat = null;
-
-const CHART_COLORS = [
-  '#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6',
-  '#06b6d4','#f97316','#84cc16','#ec4899','#14b8a6'
-];
-
-function destroyChart(c) { if (c) c.destroy(); return null; }
-
-function setChartEmpty(canvas, message) {
-  if (!canvas) return;
-  const wrap = canvas.parentElement;
-  if (!wrap) return;
-
-  // Buat/ambil overlay message tanpa menghapus canvas
-  let msg = wrap.querySelector('.chart-empty');
-  if (!msg) {
-    msg = document.createElement('div');
-    msg.className = 'chart-empty';
-    // sedikit default style biar kebaca walau CSS belum ada
-    msg.style.display = 'flex';
-    msg.style.alignItems = 'center';
-    msg.style.justifyContent = 'center';
-    msg.style.height = '100%';
-    msg.style.padding = '12px';
-    msg.style.color = '#64748b';
-    wrap.appendChild(msg);
-  }
-  msg.textContent = message;
-
-  canvas.style.display = 'none';
-}
-function clearChartEmpty(canvas) {
-  if (!canvas) return;
-  const wrap = canvas.parentElement;
-  if (!wrap) return;
-  const msg = wrap.querySelector('.chart-empty');
-  if (msg) msg.remove();
-  canvas.style.display = '';
-}
-
-function refreshCharts() {
-  // sedikit delay supaya DOM layout stabil
-  setTimeout(() => {
-    buildChartDaily();
-    buildChartTopMaterial();
-    buildChartStockCategory();
-  }, 100);
-}
-
-function buildChartDaily() {
-  chartDaily = destroyChart(chartDaily);
-  const canvas = document.getElementById('chart-daily');
-  if (!canvas) return;
-
-  clearChartEmpty(canvas);
-
-  const trx = Array.isArray(window.transactions) ? window.transactions : [];
-  const days = [];
-  const counts = [];
-
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    days.push(d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }));
-
-    const ds = ymdFromDateSafe(d); // selalu valid
-    const c = trx.filter(t => {
-      if (!t?.date) return false;
-      const ts = ymdFromDateSafe(t.date);
-      return ts && ts === ds;
-    }).length;
-
-    counts.push(c);
-  }
-
-  if (counts.every(c => c === 0)) {
-    setChartEmpty(canvas, '📭 Belum ada transaksi minggu ini');
-    return;
-  }
-
-  chartDaily = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: days,
-      datasets: [{
-        label: 'Transaksi',
-        data: counts,
-        backgroundColor: CHART_COLORS[0] + 'cc',
-        borderColor: CHART_COLORS[0],
-        borderWidth: 2,
-        borderRadius: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { beginAtZero: true, ticks: { stepSize: 1 } },
-        x: { grid: { display: false } }
-      }
-    }
-  });
-}
-
-function buildChartTopMaterial() {
-  chartTopMaterial = destroyChart(chartTopMaterial);
-  const canvas = document.getElementById('chart-top-material');
-  if (!canvas) return;
-
-  clearChartEmpty(canvas);
-
-  const trx = Array.isArray(window.transactions) ? window.transactions : [];
-  if (!trx.length) {
-    setChartEmpty(canvas, '📭 Belum ada transaksi');
-    return;
-  }
-
-  const map = Object.create(null);
-  trx.forEach(t => {
-    const code = String(t?.materialCode || '');
-    const name = String(t?.materialName || '-');
-    const key = code || name; // fallback kalau code kosong
-    if (!map[key]) map[key] = { name, qty: 0 };
-    map[key].qty += toNum(t?.qty);
-  });
-
-  const sorted = Object.values(map)
-    .sort((a, b) => b.qty - a.qty)
-    .slice(0, 5);
-
-  if (!sorted.length || sorted.every(x => x.qty === 0)) {
-    setChartEmpty(canvas, '📭 Tidak ada data qty');
-    return;
-  }
-
-  chartTopMaterial = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: sorted.map(m => (m.name.length > 16 ? m.name.slice(0, 16) + '…' : m.name)),
-      datasets: [{
-        data: sorted.map(m => m.qty),
-        backgroundColor: CHART_COLORS.slice(0, sorted.length).map(c => c + 'cc'),
-        borderColor: CHART_COLORS.slice(0, sorted.length),
-        borderWidth: 2,
-        borderRadius: 6
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { beginAtZero: true },
-        y: { grid: { display: false } }
-      }
-    }
-  });
-}
-
-function buildChartStockCategory() {
-  chartStockCat = destroyChart(chartStockCat);
-  const canvas = document.getElementById('chart-stock-category');
-  if (!canvas) return;
-
-  clearChartEmpty(canvas);
-
-  const mats = Array.isArray(window.materials) ? window.materials : [];
-  if (!mats.length) {
-    setChartEmpty(canvas, '📭 Belum ada material');
-    return;
-  }
-
-  const map = Object.create(null);
-  mats.forEach(m => {
-    const cat = String(m?.category || m?.dept || 'Lainnya');
-    map[cat] = (map[cat] || 0) + toNum(m?.stock);
-  });
-
-  const labels = Object.keys(map);
-  const data = labels.map(k => map[k]);
-
-  if (data.every(d => d === 0)) {
-    setChartEmpty(canvas, '📭 Semua stok kosong');
-    return;
-  }
-
-  chartStockCat = new Chart(canvas, {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: CHART_COLORS.slice(0, labels.length).map(c => c + 'dd'),
-        borderColor: CHART_COLORS.slice(0, labels.length),
-        borderWidth: 2,
-        hoverOffset: 8
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { font: { size: 11 }, padding: 12, usePointStyle: true }
-        }
-      },
-      cutout: '60%'
-    }
-  });
-}
-
-// ==================== DASHBOARD PRINT & SHARE (opsional) ====================
+let chartDaily=null, chartTopMaterial=null, chartStockCat=null;
+const CHART_COLORS=['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#14b8a6'];
+function destroyChart(c){ if(c) c.destroy(); return null; }
+function refreshCharts(){ setTimeout(()=>{ buildChartDaily(); buildChartTopMaterial(); buildChartStockCategory(); },100); }
+function buildChartDaily(){ chartDaily=destroyChart(chartDaily); const canvas=document.getElementById('chart-daily'); if(!canvas) return; const days=[],counts=[]; for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toLocaleDateString('id-ID',{day:'2-digit',month:'short'}));const ds=d.toISOString().slice(0,10);counts.push(transactions.filter(t=>t.date&&new Date(t.date).toISOString().slice(0,10)===ds).length);} if(counts.every(c=>c===0)){canvas.parentElement.innerHTML='<div class="chart-empty">📭 Belum ada transaksi minggu ini</div>';return;} chartDaily=new Chart(canvas,{type:'bar',data:{labels:days,datasets:[{label:'Transaksi',data:counts,backgroundColor:CHART_COLORS[0]+'cc',borderColor:CHART_COLORS[0],borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{grid:{display:false}}}}}); }
+function buildChartTopMaterial(){ chartTopMaterial=destroyChart(chartTopMaterial); const canvas=document.getElementById('chart-top-material'); if(!canvas) return; if(!transactions.length){canvas.parentElement.innerHTML='<div class="chart-empty">📭 Belum ada transaksi</div>';return;} const map={}; transactions.forEach(t=>{const k=t.materialCode||t.materialName;if(!map[k])map[k]={name:t.materialName,qty:0};map[k].qty+=t.qty||0;}); const sorted=Object.values(map).sort((a,b)=>b.qty-a.qty).slice(0,5); chartTopMaterial=new Chart(canvas,{type:'bar',data:{labels:sorted.map(m=>m.name.length>16?m.name.slice(0,16)+'…':m.name),datasets:[{data:sorted.map(m=>m.qty),backgroundColor:CHART_COLORS.slice(0,sorted.length).map(c=>c+'cc'),borderColor:CHART_COLORS.slice(0,sorted.length),borderWidth:2,borderRadius:6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{grid:{display:false}}}}}); }
+function buildChartStockCategory(){ chartStockCat=destroyChart(chartStockCat); const canvas=document.getElementById('chart-stock-category'); if(!canvas) return; if(!materials.length){canvas.parentElement.innerHTML='<div class="chart-empty">📭 Belum ada material</div>';return;} const map={}; materials.forEach(m=>{const c=m.category||m.dept||'Lainnya';if(!map[c])map[c]=0;map[c]+=m.stock||0;}); const labels=Object.keys(map),data=Object.values(map); if(data.every(d=>d===0)){canvas.parentElement.innerHTML='<div class="chart-empty">📭 Semua stok kosong</div>';return;} chartStockCat=new Chart(canvas,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:CHART_COLORS.slice(0,labels.length).map(c=>c+'dd'),borderColor:CHART_COLORS.slice(0,labels.length),borderWidth:2,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12,usePointStyle:true}}},cutout:'60%'}}); }
+// ==================== DASHBOARD PRINT & SHARE ====================
 function printDashboardPdf() {
-  if (typeof showSection === 'function') showSection('dashboard');
-  setTimeout(() => window.print(), 300);
+  showSection('dashboard');
+  setTimeout(() => {
+    window.print();
+  }, 300);
 }
-function shareDashboard() {
-  const mats = Array.isArray(window.materials) ? window.materials : [];
-  const trx  = Array.isArray(window.transactions) ? window.transactions : [];
 
-  const totalMaterial = mats.length;
-  const totalStok = mats.reduce((a, m) => a + toNum(m?.stock), 0);
-  const totalTrx = trx.length;
-  const lowStok = mats.filter(isLowStock).length;
+function shareDashboard() {
+  const totalMaterial = materials.length;
+  const totalStok = materials.reduce((a, m) => a + (m.stock || 0), 0);
+  const totalTrx = transactions.length;
+  const lowStok = materials.filter(m => m.stock <= 0 || m.stock <= m.minStock).length;
   const now = new Date().toLocaleString('id-ID');
 
-  let text =
-`📊 *Dashboard Marissa Store*
-📅 ${now}
+  let text = `📊 *Dashboard Marissa Store*\n📅 ${now}\n\n📦 Total Material: ${totalMaterial}\n🏷️ Total Stok: ${totalStok}\n📋 Total Transaksi: ${totalTrx}\n⚠️ Stok Rendah: ${lowStok}\n\n`;
 
-📦 Total Material: ${totalMaterial}
-🏷️ Total Stok: ${totalStok}
-📋 Total Transaksi: ${totalTrx}
-⚠️ Stok Rendah: ${lowStok}
-
-`;
-
-  if (trx.length) {
+  if (transactions.length) {
     text += `🕐 *5 Transaksi Terakhir:*\n`;
-    trx.slice(0, 5).forEach((t, i) => {
-      const name = String(t?.materialName || '-');
-      const qty  = toNum(t?.qty);
-      const unit = String(t?.unit || '');
-      const worker = String(t?.workerName || '-');
-      const dateStr = String(t?.dateStr || '');
-      text += `${i + 1}. ${name} — ${qty} ${unit} (${worker}) ${dateStr}\n`;
+    transactions.slice(0, 5).forEach((t, i) => {
+      text += `${i + 1}. ${t.materialName} — ${t.qty} ${t.unit} (${t.workerName}) ${t.dateStr}\n`;
     });
   }
 
@@ -2063,393 +1496,47 @@ function shareDashboard() {
 
   if (navigator.share) {
     navigator.share({ title: 'Dashboard Marissa Store', text }).catch(() => {});
-    return;
-  }
-
-  // fallback clipboard (akan gagal di sebagian browser non-HTTPS)
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text)
-      .then(() => typeof showToast === 'function' && showToast('Dashboard disalin ke clipboard!', 'success'))
-      .catch(() => typeof showToast === 'function' && showToast('Gagal menyalin', 'error'));
   } else {
-    // fallback manual copy (sederhana)
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.left = '-9999px';
-    document.body.appendChild(ta);
-    ta.select();
-    try {
-      document.execCommand('copy');
-      typeof showToast === 'function' && showToast('Dashboard disalin ke clipboard!', 'success');
-    } catch {
-      typeof showToast === 'function' && showToast('Gagal menyalin', 'error');
-    } finally {
-      document.body.removeChild(ta);
-    }
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('Dashboard disalin ke clipboard!', 'success'))
+      .catch(() => showToast('Gagal menyalin', 'error'));
   }
 }
-</script>
-<script>
-// ==================== LAPORAN — PATCH FINAL ====================
+// ==================== LAPORAN — FIX M6 ====================
 let laporanData = [];
-
-function getNamaBulan(m) {
-  return ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][m] || '';
+function getNamaBulan(m){ return ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][m]||''; }
+function generateLaporan(){
+  // FIX M6: baca dari 'lap-month' (bukan 'lap-bulan')
+  const bulan=document.getElementById('lap-month')?.value; const dept=document.getElementById('lap-dept')?.value||'';
+  if(!bulan){showToast('Pilih bulan terlebih dahulu!','error');return;}
+  const [year,month]=bulan.split('-').map(Number);
+  laporanData=transactions.filter(t=>{const d=new Date(t.date);return d.getFullYear()===year&&(d.getMonth()+1)===month&&(!dept||(t.workerDept||'').toLowerCase()===dept.toLowerCase());});
+  // FIX M6: tulis ke 'laporan-content' (bukan 'laporan-result')
+  const box=document.getElementById('laporan-content'); if(!box) return;
+  if(!laporanData.length){box.innerHTML=`<div class="empty">Tidak ada transaksi pada ${getNamaBulan(month)} ${year}</div>`;return;}
+  const rekapM={},rekapW={};
+  laporanData.forEach(t=>{if(!rekapM[t.materialCode]){rekapM[t.materialCode]={code:t.materialCode,name:t.materialName,unit:t.unit,totalQty:0,count:0};}rekapM[t.materialCode].totalQty+=t.qty;rekapM[t.materialCode].count++;if(!rekapW[t.workerNik]){rekapW[t.workerNik]={name:t.workerName,nik:t.workerNik,dept:t.workerDept,count:0};}rekapW[t.workerNik].count++;});
+  box.innerHTML=`<div class="laporan-header"><h3>📊 Laporan ${getNamaBulan(month)} ${year}${dept?' — '+dept:''}</h3><div class="lap-stats"><div class="lap-stat-card"><span class="lap-stat-num">${laporanData.length}</span><span class="lap-stat-lbl">Total Transaksi</span></div><div class="lap-stat-card"><span class="lap-stat-num">${laporanData.reduce((a,t)=>a+t.qty,0)}</span><span class="lap-stat-lbl">Total Item Keluar</span></div><div class="lap-stat-card"><span class="lap-stat-num">${Object.keys(rekapM).length}</span><span class="lap-stat-lbl">Jenis Material</span></div><div class="lap-stat-card"><span class="lap-stat-num">${Object.keys(rekapW).length}</span><span class="lap-stat-lbl">Pekerja Aktif</span></div></div></div><h4 style="margin:16px 0 8px;">📦 Rekap Per Material</h4><div class="lap-table-wrap"><table class="lap-table"><thead><tr><th>No</th><th>Kode</th><th>Nama</th><th>Total Keluar</th><th>Satuan</th><th>Frekuensi</th></tr></thead><tbody>${Object.values(rekapM).sort((a,b)=>b.totalQty-a.totalQty).map((m,i)=>`<tr><td>${i+1}</td><td><code>${m.code}</code></td><td>${m.name}</td><td><strong>${m.totalQty}</strong></td><td>${m.unit}</td><td>${m.count}x</td></tr>`).join('')}</tbody></table></div><h4 style="margin:16px 0 8px;">👷 Rekap Per Pekerja</h4><div class="lap-table-wrap"><table class="lap-table"><thead><tr><th>No</th><th>NIK</th><th>Nama</th><th>Departemen</th><th>Transaksi</th></tr></thead><tbody>${Object.values(rekapW).sort((a,b)=>b.count-a.count).map((w,i)=>`<tr><td>${i+1}</td><td>${w.nik}</td><td>${w.name}</td><td>${w.dept||'-'}</td><td><strong>${w.count}x</strong></td></tr>`).join('')}</tbody></table></div><div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;"><button class="btn btn-primary" style="width:auto;padding:10px 16px;" onclick="printLaporan()">🖨️ Print</button><button class="btn btn-outline" style="width:auto;padding:10px 16px;" onclick="exportCSV()">📥 Export CSV</button></div>`;
+  showToast(`Laporan ${getNamaBulan(month)} ${year} siap!`,'success');
 }
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+function printLaporan(){
+  // FIX M6: baca dari 'laporan-content' dan 'lap-month'
+  const content=document.getElementById('laporan-content'); if(!content||!laporanData.length){showToast('Generate laporan terlebih dahulu!','error');return;}
+  const bulan=document.getElementById('lap-month')?.value||''; const [year,month]=bulan?bulan.split('-').map(Number):[new Date().getFullYear(),new Date().getMonth()+1];
+  const win=window.open('','_blank'); win.document.write(`<html><head><title>Laporan</title><style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;padding:30px;color:#333;}h2{text-align:center;margin-bottom:20px;}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;}th{background:#f1f5f9;padding:8px 6px;text-align:left;border:1px solid #ddd;}td{padding:7px 6px;border:1px solid #eee;}.footer{text-align:center;margin-top:30px;font-size:11px;color:#999;}</style></head><body><h2>Laporan ${getNamaBulan(month)} ${year}</h2>${content.innerHTML}<div class="footer">Dicetak: ${new Date().toLocaleString('id-ID')} — Marissa Store</div></body></html>`); win.document.close(); setTimeout(()=>{win.print();win.close();},400);
 }
-
-function escapeCsvCell(value) {
-  let s = String(value ?? '');
-
-  // Cegah formula injection saat dibuka di Excel/Spreadsheet
-  if (/^[=+\-@]/.test(s)) {
-    s = "'" + s;
-  }
-
-  // Escape tanda kutip
-  s = s.replace(/"/g, '""');
-
-  return `"${s}"`;
+function exportCSV(){
+  if(!laporanData.length){showToast('Generate laporan terlebih dahulu!','error');return;}
+  // FIX M6: baca dari 'lap-month'
+  const bulan=document.getElementById('lap-month')?.value||'laporan';
+  const headers=['No','Tanggal','Waktu','NIK','Nama Pekerja','Departemen','Kode Material','Nama Material','Qty','Satuan'];
+  const rows=laporanData.map((t,i)=>[i+1,t.dateStr||'',t.timeStr||'',t.workerNik||'',`"${t.workerName||''}"`,t.workerDept||'',t.materialCode||'',`"${t.materialName||''}"`,t.qty,t.unit||'']);
+  const csv=[headers.join(','),...rows.map(r=>r.join(','))].join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`laporan-${bulan}.csv`; a.click(); URL.revokeObjectURL(url);
+  showToast('CSV berhasil diexport!','success');
 }
-
-function generateLaporan() {
-  const bulan = document.getElementById('lap-month')?.value;
-  const dept = (document.getElementById('lap-dept')?.value || '').trim();
-
-  if (!bulan) {
-    showToast('Pilih bulan terlebih dahulu!', 'error');
-    return;
-  }
-
-  const [year, month] = bulan.split('-').map(Number);
-
-  laporanData = transactions.filter(t => {
-    const d = new Date(t.date);
-    if (Number.isNaN(d.getTime())) return false;
-
-    const deptTrx = String(t.workerDept || '').trim().toLowerCase();
-    const deptFilter = dept.toLowerCase();
-
-    return d.getFullYear() === year &&
-      (d.getMonth() + 1) === month &&
-      (!deptFilter || deptTrx === deptFilter);
-  });
-
-  const box = document.getElementById('laporan-content');
-  if (!box) return;
-
-  if (!laporanData.length) {
-    box.innerHTML = `<div class="empty">Tidak ada transaksi pada ${escapeHtml(getNamaBulan(month))} ${year}</div>`;
-    return;
-  }
-
-  const rekapM = {};
-  const rekapW = {};
-
-  laporanData.forEach(t => {
-    const materialCode = String(t.materialCode || '');
-    const workerNik = String(t.workerNik || '');
-    const qty = Number(t.qty) || 0;
-
-    if (!rekapM[materialCode]) {
-      rekapM[materialCode] = {
-        code: materialCode,
-        name: t.materialName || '',
-        unit: t.unit || '',
-        totalQty: 0,
-        count: 0
-      };
-    }
-
-    rekapM[materialCode].totalQty += qty;
-    rekapM[materialCode].count++;
-
-    if (!rekapW[workerNik]) {
-      rekapW[workerNik] = {
-        name: t.workerName || '',
-        nik: workerNik,
-        dept: t.workerDept || '',
-        count: 0
-      };
-    }
-
-    rekapW[workerNik].count++;
-  });
-
-  const totalKeluar = laporanData.reduce((a, t) => a + (Number(t.qty) || 0), 0);
-
-  const materialRows = Object.values(rekapM)
-    .sort((a, b) => b.totalQty - a.totalQty)
-    .map((m, i) => `
-      <tr>
-        <td>${i + 1}</td>
-        <td><code>${escapeHtml(m.code)}</code></td>
-        <td>${escapeHtml(m.name)}</td>
-        <td><strong>${m.totalQty}</strong></td>
-        <td>${escapeHtml(m.unit)}</td>
-        <td>${m.count}x</td>
-      </tr>
-    `)
-    .join('');
-
-  const workerRows = Object.values(rekapW)
-    .sort((a, b) => b.count - a.count)
-    .map((w, i) => `
-      <tr>
-        <td>${i + 1}</td>
-        <td>${escapeHtml(w.nik)}</td>
-        <td>${escapeHtml(w.name)}</td>
-        <td>${escapeHtml(w.dept || '-')}</td>
-        <td><strong>${w.count}x</strong></td>
-      </tr>
-    `)
-    .join('');
-
-  box.innerHTML = `
-    <div class="laporan-header">
-      <h3>📊 Laporan ${escapeHtml(getNamaBulan(month))} ${year}${dept ? ' — ' + escapeHtml(dept) : ''}</h3>
-
-      <div class="lap-stats">
-        <div class="lap-stat-card">
-          <span class="lap-stat-num">${laporanData.length}</span>
-          <span class="lap-stat-lbl">Total Transaksi</span>
-        </div>
-        <div class="lap-stat-card">
-          <span class="lap-stat-num">${totalKeluar}</span>
-          <span class="lap-stat-lbl">Total Item Keluar</span>
-        </div>
-        <div class="lap-stat-card">
-          <span class="lap-stat-num">${Object.keys(rekapM).length}</span>
-          <span class="lap-stat-lbl">Jenis Material</span>
-        </div>
-        <div class="lap-stat-card">
-          <span class="lap-stat-num">${Object.keys(rekapW).length}</span>
-          <span class="lap-stat-lbl">Pekerja Aktif</span>
-        </div>
-      </div>
-    </div>
-
-    <h4 style="margin:16px 0 8px;">📦 Rekap Per Material</h4>
-    <div class="lap-table-wrap">
-      <table class="lap-table">
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Kode</th>
-            <th>Nama</th>
-            <th>Total Keluar</th>
-            <th>Satuan</th>
-            <th>Frekuensi</th>
-          </tr>
-        </thead>
-        <tbody>${materialRows}</tbody>
-      </table>
-    </div>
-
-    <h4 style="margin:16px 0 8px;">👷 Rekap Per Pekerja</h4>
-    <div class="lap-table-wrap">
-      <table class="lap-table">
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>NIK</th>
-            <th>Nama</th>
-            <th>Departemen</th>
-            <th>Transaksi</th>
-          </tr>
-        </thead>
-        <tbody>${workerRows}</tbody>
-      </table>
-    </div>
-
-    <div class="laporan-actions" style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
-      <button class="btn btn-primary" style="width:auto;padding:10px 16px;" onclick="printLaporan()">🖨️ Print</button>
-      <button class="btn btn-outline" style="width:auto;padding:10px 16px;" onclick="exportCSV()">📥 Export CSV</button>
-    </div>
-  `;
-
-  showToast(`Laporan ${getNamaBulan(month)} ${year} siap!`, 'success');
-}
-
-function printLaporan() {
-  const content = document.getElementById('laporan-content');
-  if (!content || !laporanData.length) {
-    showToast('Generate laporan terlebih dahulu!', 'error');
-    return;
-  }
-
-  const bulan = document.getElementById('lap-month')?.value || '';
-  const [year, month] = bulan
-    ? bulan.split('-').map(Number)
-    : [new Date().getFullYear(), new Date().getMonth() + 1];
-
-  const win = window.open('', '_blank');
-  if (!win) {
-    showToast('Popup diblokir browser. Izinkan popup untuk mencetak laporan.', 'error');
-    return;
-  }
-
-  win.document.write(`
-    <html>
-      <head>
-        <title>Laporan ${escapeHtml(getNamaBulan(month))} ${year}</title>
-        <style>
-          * { box-sizing: border-box; margin: 0; padding: 0; }
-          body { font-family: Arial, sans-serif; padding: 30px; color: #333; }
-          h2 { text-align: center; margin-bottom: 20px; }
-          h4 { margin: 16px 0 8px; }
-          table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
-          th { background: #f1f5f9; padding: 8px 6px; text-align: left; border: 1px solid #ddd; }
-          td { padding: 7px 6px; border: 1px solid #eee; }
-          code { font-family: Consolas, monospace; }
-          .laporan-actions { display: none !important; }
-          .lap-stats { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0 20px; }
-          .lap-stat-card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 12px 14px;
-            min-width: 140px;
-          }
-          .lap-stat-num {
-            display: block;
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 4px;
-          }
-          .lap-stat-lbl {
-            font-size: 12px;
-            color: #666;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 11px;
-            color: #999;
-          }
-        </style>
-      </head>
-      <body>
-        <h2>Laporan ${escapeHtml(getNamaBulan(month))} ${year}</h2>
-        ${content.innerHTML}
-        <div class="footer">Dicetak: ${new Date().toLocaleString('id-ID')} — Marissa Store</div>
-      </body>
-    </html>
-  `);
-
-  win.document.close();
-  setTimeout(() => {
-    win.print();
-    win.close();
-  }, 400);
-}
-
-function exportCSV() {
-  if (!laporanData.length) {
-    showToast('Generate laporan terlebih dahulu!', 'error');
-    return;
-  }
-
-  const bulan = document.getElementById('lap-month')?.value || 'laporan';
-
-  const headers = [
-    'No',
-    'Tanggal',
-    'Waktu',
-    'NIK',
-    'Nama Pekerja',
-    'Departemen',
-    'Kode Material',
-    'Nama Material',
-    'Qty',
-    'Satuan'
-  ];
-
-  const rows = laporanData.map((t, i) => [
-    i + 1,
-    t.dateStr || '',
-    t.timeStr || '',
-    t.workerNik || '',
-    t.workerName || '',
-    t.workerDept || '',
-    t.materialCode || '',
-    t.materialName || '',
-    Number(t.qty) || 0,
-    t.unit || ''
-  ]);
-
-  const csv = [
-    headers.map(escapeCsvCell).join(','),
-    ...rows.map(row => row.map(escapeCsvCell).join(','))
-  ].join('\n');
-
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-
-  a.href = url;
-  a.download = `laporan-${bulan}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-  showToast('CSV berhasil diexport!', 'success');
-}
-
 </script>
 
-<script>
-  // ==================== PENDING ====================
-  const PENDING_KEY = 'pendingTransactions';
-  let isSyncingPending = false;
-  function getPendingTransactions() {
-    try {
-      return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]');
-    } catch (err) {
-      console.error('Gagal membaca pending queue:', err);
-      return [];
-    }
-  }
-  function savePendingTransactions(items) {
-    localStorage.setItem(PENDING_KEY, JSON.stringify(items));
-    updatePendingBadge(items.length);
-  }
-  function addPendingTransaction(item) {
-    const pending = getPendingTransactions();
-    const exists = pending.some(row => row.id === item.id);
-    if (exists) return;
-    pending.push({
-      ...item,
-      queuedAt: new Date().toISOString()
-    });
-    savePendingTransactions(pending);
-    console.warn('Transaksi disimpan ke pending queue:', item.id);
-  }
-  function removePendingTransaction(id) {
-    const pending = getPendingTransactions();
-    const filtered = pending.filter(item => item.id !== id);
-    savePendingTransactions(filtered);
-  }
-  function updatePendingBadge(count) {
-    const el = document.getElementById('pendingCount');
-    if (el) {
-      el.textContent = String(count);
-    }
-  }
-  function refreshPendingIndicator() {
-    updatePendingBadge(getPendingTransactions().length);
-  }
-</script>
 <script>
 // ==================== AUTH — FIX C1 + N6 ====================
 function checkAuth(){ const auth=getAuth(); if(auth&&!isSessionExpired(auth)){showApp(auth);}else{clearAuth();showLoginScreen();} updateLoginBadge(); }

@@ -1014,20 +1014,6 @@ function setSelectValueSafe(selectId, value, allowTemporaryOption = false){
 function clearMaterialForm(hideBarcode = true){
   materialEditId = null;
 
-  const deptEl = document.getElementById('m-dept');
-  if(deptEl){
-    [...deptEl.options].forEach(opt => {
-      if(opt.dataset.temp === '1') opt.remove();
-    });
-  }
-
-  const catEl = document.getElementById('m-category');
-  if(catEl){
-    [...catEl.options].forEach(opt => {
-      if(opt.dataset.temp === '1') opt.remove();
-    });
-  }
-
   const ids = ['m-dept','m-code','m-name','m-category','m-unit','m-stock','m-min','m-location'];
   ids.forEach(id=>{
     const el = document.getElementById(id);
@@ -1035,10 +1021,15 @@ function clearMaterialForm(hideBarcode = true){
 
     if(el.tagName === 'SELECT'){
       el.selectedIndex = 0;
+      el.disabled = false;
     } else {
       el.value = '';
+      el.readOnly = false;
     }
   });
+
+  removeTempOption('m-dept');
+  removeTempOption('m-category');
 
   const btn = document.querySelector('#section-materials .btn-primary');
   if(btn){
@@ -1097,7 +1088,7 @@ function clearMaterialForm(hideBarcode = true){
   return true;
 }
 function editMaterial(id){
-  const m = materials.find(m => String(m.id) === String(id));
+  const m = materials.find(x => String(x.id) === String(id));
   if(!m){
     showToast('Material tidak ditemukan!','error');
     return;
@@ -1105,52 +1096,35 @@ function editMaterial(id){
 
   materialEditId = m.id;
 
-  const deptEl = document.getElementById('m-dept');
-  const catEl  = document.getElementById('m-category');
-
-  console.log('EDIT MATERIAL DATA =', m);
-  console.log('DEPT ELEMENT =', deptEl);
-  console.log('DEPT OPTIONS RAW =', deptEl ? [...deptEl.options].map((o,i)=>({
-    index: i,
-    text: o.textContent,
-    value: o.value
-  })) : []);
-
-const deptOk = forceSelectDept(m.dept);
-const catOk  = setSelectValueSafe('m-category', m.category, true);
-console.log('DEPT FINAL VALUE =', document.getElementById('m-dept')?.value);
-console.log('DEPT FINAL TEXT =', document.getElementById('m-dept')?.selectedOptions?.[0]?.textContent);
-  console.log('SET DEPT RESULT =', deptOk);
-  console.log('SET DEPT VALUE AFTER =', deptEl ? deptEl.value : null);
-  console.log('SET DEPT INDEX AFTER =', deptEl ? deptEl.selectedIndex : null);
-  console.log('SET CAT RESULT =', catOk);
-
-  document.getElementById('m-code').value = m.code || '';
-  document.getElementById('m-name').value = m.name || '';
-  document.getElementById('m-unit').value = m.unit || '';
   document.getElementById('m-stock').value = Number(m.stock || 0);
   document.getElementById('m-min').value = Number(m.minStock || 0);
   document.getElementById('m-location').value = m.location || '';
 
-if(!deptOk){
-  console.log('DEPT TIDAK MATCH:', m.dept);
-}
+  const codeEl = document.getElementById('m-code');
+  const nameEl = document.getElementById('m-name');
+  const unitEl = document.getElementById('m-unit');
+  const deptEl = document.getElementById('m-dept');
+  const categoryEl = document.getElementById('m-category');
 
-  if(!catOk){
-    console.log('CATEGORY TIDAK MATCH. m.category =', m.category,
-      'options =',
-      catEl ? [...catEl.options].map(o => ({ text:o.textContent, value:o.value })) : []
-    );
-  }
+  if(codeEl) codeEl.value = m.code || '';
+  if(nameEl) nameEl.value = m.name || '';
+  if(unitEl) unitEl.value = m.unit || '';
 
-  showMaterialBarcode(id);
+  if(deptEl) deptEl.disabled = true;
+  if(categoryEl) categoryEl.disabled = true;
+  if(codeEl) codeEl.readOnly = true;
+  if(nameEl) nameEl.readOnly = true;
+  if(unitEl) unitEl.readOnly = true;
 
   const btn = document.querySelector('#section-materials .btn-primary');
   if(btn){
-    btn.textContent = '✏️ Update Material';
+    btn.textContent = '✏️ Update Stok / Lokasi';
     btn.dataset.editId = String(m.id);
     btn.onclick = updateMaterial;
   }
+
+  const box = document.getElementById('m-barcode-box');
+  if(box) box.style.display = 'none';
 }
 
 async function updateMaterial(){

@@ -908,7 +908,20 @@ function renderWorkers(){
   `).join('');
 }
 // ==================== MATERIALS ====================
-function clearMaterialForm(hideBarcode = true){
+let materialEditId = null;
+
+function setSelectValueSafe(selectId, value){
+  const el = document.getElementById(selectId);
+  if(!el) return;
+
+  const target = String(value || '').trim();
+  const matched = [...el.options].find(opt => String(opt.value || '').trim() === target);
+
+  el.value = matched ? matched.value : '';
+}
+ function clearMaterialForm(hideBarcode = true){
+  materialEditId = null;
+
   ['m-dept','m-code','m-name','m-category','m-unit','m-stock','m-min','m-location'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.value='';
@@ -920,7 +933,10 @@ function clearMaterialForm(hideBarcode = true){
     btn.onclick=saveMaterial;
   }
 
-  if(hideBarcode) document.getElementById('m-barcode-box').style.display='none';
+  if(hideBarcode){
+    const box = document.getElementById('m-barcode-box');
+    if(box) box.style.display='none';
+  }
 }
 
 async function saveMaterial(){
@@ -1002,68 +1018,112 @@ function showMaterialBarcode(id){
 }
 
 function editMaterial(id){
-  const m=materials.find(m=>m.id===id);
-  if(!m) return;
+  const m = materials.find(m => String(m.id) === String(id));
+  if(!m){
+    showToast('Material tidak ditemukan!','error');
+    return;
+  }
 
-  document.getElementById('m-dept').value=m.dept||'';
-  document.getElementById('m-code').value=m.code||'';
-  document.getElementById('m-name').value=m.name||'';
-  document.getElementById('m-category').value=m.category||'';
-  document.getElementById('m-unit').value=m.unit||'';
-  document.getElementById('m-stock').value=m.stock||0;
-  document.getElementById('m-min').value=m.minStock||0;
-  document.getElementById('m-location').value=m.location||'';
+  materialEditId = m.id;
+
+  setSelectValueSafe('m-dept', m.dept);
+  document.getElementById('m-code').value = m.code || '';
+  document.getElementById('m-name').value = m.name || '';
+  setSelectValueSafe('m-category', m.category);
+  document.getElementById('m-unit').value = m.unit || '';
+  document.getElementById('m-stock').value = Number(m.stock || 0);
+  document.getElementById('m-min').value = Number(m.minStock || 0);
+  document.getElementById('m-location').value = m.location || '';
 
   showMaterialBarcode(id);
 
   const btn=document.querySelector('#section-materials .btn-primary');
-  btn.textContent='✏️ Update Material';
-  btn.onclick=()=>updateMaterial(id);
+  if(btn){
+    btn.textContent='✏️ Update Material';
+    btn.onclick=updateMaterial;
+  }
 }
 
-async function updateMaterial(id){
-  const dept=document.getElementById('m-dept').value;
+async function updateMaterial(){
+  const id = materialEditId;
+  if(!id){
+    showToast('Mode edit tidak aktif!','error');
+    return;
+  }
+
+  const dept=document.getElementById('m-dept').value.trim();
   const code=document.getElementById('m-code').value.trim();
   const name=document.getElementById('m-name').value.trim();
-  const category=document.getElementById('m-category').value;
+  const category=document.getElementById('m-category').value.trim();
   const unit=document.getElementById('m-unit').value.trim();
   const stock=parseInt(document.getElementById('m-stock').value)||0;
   const minStock=parseInt(document.getElementById('m-min').value)||0;
   const location=document.getElementById('m-location').value.trim();
 
-  if(!code||!name||!unit){
-    showToast('Kode, Nama, Satuan wajib diisi!','error');
+  if(!dept || !code || !name || !unit){
+    showToast('Departemen, Kode, Nama, dan Satuan wajib diisi!','error');
     return;
   }
 
-  const idx=materials.findIndex(m=>m.id===id);
+  const idx=materials.findIndex(m=>String(m.id)===String(id));
   if(idx===-1){
     showToast('Material tidak ditemukan!','error');
     return;
   }
 
+  const duplicate = materials.find(m =>
+    String(m.id) !== String(id) &&
+    String(m.code || '').trim().toLowerCase() === code.toLowerCase()
+  );
+  if(duplicate){
+    showToast('Kode material sudah dipakai material lain!','error');
+    return;
+  }
+
   const backup={...materials[idx]};
-  materials[idx]={...materials[idx],dept,code,name,category,unit,stock,minStock,location,barcode:code};
+
+  materials[idx]={
+    ...materials[idx],
+    dept,
+    code,
+    name,
+    category,
+    unit,
+    stock,
+    minStock,
+    location,
+    barcode: code
+  };
   saveLocal();
   renderMaterials();
 
-  const result=await apiCallWithQueue('saveMaterial',{originalKode:backup.code,code,name,unit,stock,minStock,category,location,dept});
+  const result=await apiCallWithQueue('updateMaterial',{
+    id,
+    originalKode: backup.code,
+    dept,
+    code,
+    name,
+    category,
+    unit,
+    stock,
+    minStock,
+    location
+  });
 
   if(result?.success){
-    showToast('Material diupdate!','success');
+    showToast('Material berhasil diupdate!','success');
     showMaterialBarcode(id);
+    clearMaterialForm(false);
   } else if(result?.queued){
-    showToast('Akan sync ketika online','info');
+    showToast('Update disimpan lokal, akan sync ketika online','info');
     showMaterialBarcode(id);
+    clearMaterialForm(false);
   } else {
     materials[idx]=backup;
     saveLocal();
     renderMaterials();
-    showToast('Gagal update','error');
-    return;
+    showToast('Gagal update: ' + (result?.message || ''),'error');
   }
-
-  clearMaterialForm(false);
 }
 
 // FIX M3: kirim id bukan kode

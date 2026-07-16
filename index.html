@@ -1016,7 +1016,23 @@ function showMaterialBarcode(id){
     showToast('Gagal menampilkan barcode material!','error');
   }
 }
+function setSelectValueSafe(selectId, value){
+  const el = document.getElementById(selectId);
+  if(!el) return false;
 
+  const target = String(value || '').trim().toLowerCase();
+
+  const found = [...el.options].find(opt =>
+    String(opt.value || '').trim().toLowerCase() === target
+  );
+
+  if(found){
+    el.value = found.value;
+    return true;
+  }
+
+  return false;
+}
 function editMaterial(id){
   const m = materials.find(m => String(m.id) === String(id));
   if(!m){
@@ -1024,23 +1040,38 @@ function editMaterial(id){
     return;
   }
 
-  materialEditId = m.id;
+  console.log('EDIT MATERIAL DATA:', m);
 
-  setSelectValueSafe('m-dept', m.dept);
+  const deptOk = setSelectValueSafe('m-dept', m.dept);
+  const catOk  = setSelectValueSafe('m-category', m.category);
+
   document.getElementById('m-code').value = m.code || '';
   document.getElementById('m-name').value = m.name || '';
-  setSelectValueSafe('m-category', m.category);
   document.getElementById('m-unit').value = m.unit || '';
   document.getElementById('m-stock').value = Number(m.stock || 0);
   document.getElementById('m-min').value = Number(m.minStock || 0);
   document.getElementById('m-location').value = m.location || '';
 
+  if(!deptOk){
+    const deptEl = document.getElementById('m-dept');
+    const options = deptEl ? [...deptEl.options].map(o => ({
+      text: o.textContent,
+      value: o.value
+    })) : [];
+    console.log('DEPT TIDAK MATCH. m.dept =', m.dept, 'options =', options);
+    showToast('Departemen material tidak cocok dengan pilihan dropdown','error');
+  }
+
+  if(!catOk){
+    console.log('CATEGORY TIDAK MATCH. m.category =', m.category);
+  }
+
   showMaterialBarcode(id);
 
-  const btn=document.querySelector('#section-materials .btn-primary');
+  const btn = document.querySelector('#section-materials .btn-primary');
   if(btn){
-    btn.textContent='✏️ Update Material';
-    btn.onclick=updateMaterial;
+    btn.textContent = '✏️ Update Material';
+    btn.onclick = () => updateMaterial(id);
   }
 }
 

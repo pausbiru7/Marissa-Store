@@ -980,8 +980,24 @@ function editMaterial(id){
 
   materialEditId = m.id;
 
+  const deptEl = document.getElementById('m-dept');
+  const catEl  = document.getElementById('m-category');
+
+  console.log('EDIT MATERIAL DATA =', m);
+  console.log('DEPT ELEMENT =', deptEl);
+  console.log('DEPT OPTIONS RAW =', deptEl ? [...deptEl.options].map((o,i)=>({
+    index: i,
+    text: o.textContent,
+    value: o.value
+  })) : []);
+
   const deptOk = setSelectValueSafe('m-dept', m.dept);
   const catOk  = setSelectValueSafe('m-category', m.category);
+
+  console.log('SET DEPT RESULT =', deptOk);
+  console.log('SET DEPT VALUE AFTER =', deptEl ? deptEl.value : null);
+  console.log('SET DEPT INDEX AFTER =', deptEl ? deptEl.selectedIndex : null);
+  console.log('SET CAT RESULT =', catOk);
 
   document.getElementById('m-code').value = m.code || '';
   document.getElementById('m-name').value = m.name || '';
@@ -991,22 +1007,14 @@ function editMaterial(id){
   document.getElementById('m-location').value = m.location || '';
 
   if(!deptOk){
-    const deptEl = document.getElementById('m-dept');
-    const options = deptEl ? [...deptEl.options].map(o => ({
-      text: o.textContent,
-      value: o.value
-    })) : [];
-    console.log('DEPT TIDAK MATCH. m.dept =', m.dept, 'options =', options);
     showToast('Departemen material tidak cocok dengan pilihan dropdown','error');
   }
 
   if(!catOk){
-    const catEl = document.getElementById('m-category');
-    const options = catEl ? [...catEl.options].map(o => ({
-      text: o.textContent,
-      value: o.value
-    })) : [];
-    console.log('CATEGORY TIDAK MATCH. m.category =', m.category, 'options =', options);
+    console.log('CATEGORY TIDAK MATCH. m.category =', m.category,
+      'options =',
+      catEl ? [...catEl.options].map(o => ({ text:o.textContent, value:o.value })) : []
+    );
   }
 
   showMaterialBarcode(id);

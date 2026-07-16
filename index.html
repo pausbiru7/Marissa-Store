@@ -540,13 +540,21 @@ function saveLocal() {
 async function apiCall(action, data = {}) {
   try {
     const body = { apiKey: API_KEY, action, payload: data };
-    const res  = await fetch(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(body),
       redirect: 'follow'
     });
+
     const text = await res.text();
+    console.log('RAW API RESPONSE', {
+      action,
+      status: res.status,
+      ok: res.ok,
+      text
+    });
+
     return JSON.parse(text);
   } catch (e) {
     console.error('API Error:', e.message);
@@ -563,16 +571,48 @@ function pushQueue(op) { const q = getQueue(); q.push(op); setQueue(q); }
 async function apiCallWithQueue(action, payload, opts = {}) {
   try {
     const res = await apiCall(action, payload);
-    if (res && res.success) return res;
-    pushQueue({ action, payload, timestamp: Date.now(), opts });
-    return { success: false, queued: true, message: res?.message || 'Server error; queued' };
+
+    console.log('API WITH QUEUE RESULT', { action, payload, res });
+
+    if (res && res.success) {
+      return res;
+    }
+
+    const msg = String(res?.message || '').toLowerCase();
+
+    const shouldQueue =
+      !res ||
+      msg.includes('network') ||
+      msg.includes('timeout') ||
+      msg.includes('fetch') ||
+      msg.includes('offline') ||
+      msg.includes('temporar');
+
+    if (shouldQueue) {
+      pushQueue({ action, payload, timestamp: Date.now(), opts });
+      return {
+        success: false,
+        queued: true,
+        message: res?.message || 'Queued due to temporary/network problem'
+      };
+    }
+
+    return {
+      success: false,
+      queued: false,
+      message: res?.message || 'Server rejected request'
+    };
   } catch (err) {
+    console.error('API QUEUE CATCH', err);
     pushQueue({ action, payload, timestamp: Date.now(), opts });
-    return { success: false, queued: true, message: 'Queued due to network error' };
+    return {
+      success: false,
+      queued: true,
+      message: 'Queued due to network error'
+    };
   }
 }
-
-let _isFlushing = false;
+  let _isFlushing = false;
 async function flushQueue() {
   if (_isFlushing || !isOnline()) return;
   let q = getQueue();

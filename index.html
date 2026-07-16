@@ -943,14 +943,15 @@ function setSelectValueSafe(selectId, value, allowTemporaryOption = false){
 
   const options = [...el.options];
 
-  let found = options.find(opt => normalizeText(opt.value) === target);
+  let foundIndex = options.findIndex(opt => normalizeText(opt.value) === target);
 
-  if(!found){
-    found = options.find(opt => normalizeText(opt.textContent) === target);
+  if(foundIndex === -1){
+    foundIndex = options.findIndex(opt => normalizeText(opt.textContent) === target);
   }
 
-  if(found){
-    found.selected = true;
+  if(foundIndex !== -1){
+    el.selectedIndex = foundIndex;
+    el.value = options[foundIndex].value;
     el.dispatchEvent(new Event('change', { bubbles: true }));
     return true;
   }
@@ -959,6 +960,8 @@ function setSelectValueSafe(selectId, value, allowTemporaryOption = false){
     const temp = new Option(rawValue, rawValue, false, true);
     temp.dataset.temp = '1';
     el.add(temp);
+    el.value = temp.value;
+    temp.selected = true;
     el.dispatchEvent(new Event('change', { bubbles: true }));
     return true;
   }
@@ -1084,10 +1087,13 @@ async function updateMaterial(){
   const minStock = parseInt(document.getElementById('m-min').value) || 0;
   const location = document.getElementById('m-location').value.trim();
 
-  if(!dept || !code || !name || !unit){
-    showToast('Departemen, Kode, Nama, dan Satuan wajib diisi!','error');
-    return;
-  }
+if(!dept || !code || !name || !unit){
+  showToast(
+    `Field wajib kosong → dept="${dept}", code="${code}", name="${name}", unit="${unit}"`,
+    'error'
+  );
+  return;
+}
 
   const idx = materials.findIndex(m => String(m.id) === String(id));
   if(idx === -1){

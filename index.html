@@ -1173,35 +1173,63 @@ function showMaterialBarcode(id) {
 
 function editMaterial(id) {
   const m = materials.find(m => m.id === id);
-  if (!m) return;
+  if (!m) {
+    showToast('Material tidak ditemukan!', 'error');
+    return;
+  }
 
-  document.getElementById('m-dept').value = m.dept || '';
-  document.getElementById('m-code').value = m.code || '';
-  document.getElementById('m-name').value = m.name || '';
-  document.getElementById('m-category').value = m.category || '';
-  document.getElementById('m-unit').value = m.unit || '';
-  document.getElementById('m-stock').value = m.stock || 0;
-  document.getElementById('m-min').value = m.minStock || 0;
-  document.getElementById('m-location').value = m.location || '';
+  const deptEl = document.getElementById('m-dept');
+  const codeEl = document.getElementById('m-code');
+  const nameEl = document.getElementById('m-name');
+  const categoryEl = document.getElementById('m-category');
+  const unitEl = document.getElementById('m-unit');
+  const stockEl = document.getElementById('m-stock');
+  const minEl = document.getElementById('m-min');
+  const locationEl = document.getElementById('m-location');
+
+  if (deptEl) deptEl.value = String(m.dept || '').trim();
+  if (codeEl) codeEl.value = String(m.code || '').trim();
+  if (nameEl) nameEl.value = String(m.name || '').trim();
+  if (categoryEl) categoryEl.value = String(m.category || '').trim();
+  if (unitEl) unitEl.value = String(m.unit || '').trim();
+  if (stockEl) stockEl.value = Number(m.stock || 0);
+  if (minEl) minEl.value = Number(m.minStock || 0);
+  if (locationEl) locationEl.value = String(m.location || '').trim();
+
+  console.log('EDIT MATERIAL DATA', m);
+  console.log('FORM VALUES', {
+    dept: deptEl?.value,
+    code: codeEl?.value,
+    name: nameEl?.value,
+    category: categoryEl?.value,
+    unit: unitEl?.value,
+    stock: stockEl?.value,
+    minStock: minEl?.value,
+    location: locationEl?.value
+  });
 
   showMaterialBarcode(id);
 
   const btn = document.querySelector('#section-materials .btn-primary');
-  btn.textContent = '✏️ Update Material';
-  btn.onclick = () => updateMaterial(id);
+  if (btn) {
+    btn.textContent = '✏️ Update Material';
+    btn.onclick = () => updateMaterial(id);
+  }
 }
 
 async function updateMaterial(id) {
-  const dept = document.getElementById('m-dept').value.trim();
-  const name = document.getElementById('m-name').value.trim();
-  const category = document.getElementById('m-category').value;
-  const unit = document.getElementById('m-unit').value.trim();
-  const stock = parseInt(document.getElementById('m-stock').value) || 0;
-  const minStock = parseInt(document.getElementById('m-min').value) || 0;
-  const location = document.getElementById('m-location').value.trim();
+  const dept = String(document.getElementById('m-dept')?.value || '').trim();
+  const name = String(document.getElementById('m-name')?.value || '').trim();
+  const category = String(document.getElementById('m-category')?.value || '').trim();
+  const unit = String(document.getElementById('m-unit')?.value || '').trim();
+  const stock = parseInt(document.getElementById('m-stock')?.value || '0', 10) || 0;
+  const minStock = parseInt(document.getElementById('m-min')?.value || '0', 10) || 0;
+  const location = String(document.getElementById('m-location')?.value || '').trim();
+
+  console.log('UPDATE MATERIAL VALUES', { id, dept, name, category, unit, stock, minStock, location });
 
   if (!dept || !name || !unit) {
-    showToast('Departemen, Nama, dan Satuan wajib diisi!', 'error');
+    showToast(`Field wajib kosong -> Dept: "${dept}", Nama: "${name}", Satuan: "${unit}"`, 'error');
     return;
   }
 
@@ -1210,6 +1238,9 @@ async function updateMaterial(id) {
     showToast('Material tidak ditemukan!', 'error');
     return;
   }
+
+  // lanjutkan kode lama...
+}
 
   const backup = { ...materials[idx] };
   materials[idx] = { ...materials[idx], dept, name, category, unit, stock, minStock, location };

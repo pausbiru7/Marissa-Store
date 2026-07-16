@@ -910,26 +910,32 @@ function renderWorkers(){
 // ==================== MATERIALS ====================
 let materialEditId = null;
 
-function setSelectValueSafe(selectId, value){
+function normalizeText(v){
+  return String(v || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+function setSelectValueSafe(selectId, value, allowTemporaryOption = false){
   const el = document.getElementById(selectId);
   if(!el) return false;
 
-  const target = String(value || '').trim().toLowerCase();
+  const target = normalizeText(value);
   if(!target){
     el.selectedIndex = 0;
-    el.dispatchEvent(new Event('change', { bubbles: true }));
     return false;
   }
 
   const options = [...el.options];
 
   let foundIndex = options.findIndex(opt =>
-    String(opt.value || '').trim().toLowerCase() === target
+    normalizeText(opt.value) === target
   );
 
   if(foundIndex === -1){
     foundIndex = options.findIndex(opt =>
-      String(opt.textContent || '').trim().toLowerCase() === target
+      normalizeText(opt.textContent) === target
     );
   }
 
@@ -939,13 +945,37 @@ function setSelectValueSafe(selectId, value){
     return true;
   }
 
+  if(allowTemporaryOption){
+    const temp = document.createElement('option');
+    temp.value = String(value || '').trim();
+    temp.textContent = String(value || '').trim();
+    temp.dataset.temp = '1';
+    el.appendChild(temp);
+    el.value = temp.value;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  }
+
   el.selectedIndex = 0;
-  el.dispatchEvent(new Event('change', { bubbles: true }));
   return false;
 }
 
 function clearMaterialForm(hideBarcode = true){
   materialEditId = null;
+
+  const deptEl = document.getElementById('m-dept');
+  if(deptEl){
+    [...deptEl.options].forEach(opt => {
+      if(opt.dataset.temp === '1') opt.remove();
+    });
+  }
+
+  const catEl = document.getElementById('m-category');
+  if(catEl){
+    [...catEl.options].forEach(opt => {
+      if(opt.dataset.temp === '1') opt.remove();
+    });
+  }
 
   const ids = ['m-dept','m-code','m-name','m-category','m-unit','m-stock','m-min','m-location'];
   ids.forEach(id=>{
@@ -991,8 +1021,8 @@ function editMaterial(id){
     value: o.value
   })) : []);
 
-  const deptOk = setSelectValueSafe('m-dept', m.dept);
-  const catOk  = setSelectValueSafe('m-category', m.category);
+ const deptOk = setSelectValueSafe('m-dept', m.dept, true);
+const catOk  = setSelectValueSafe('m-category', m.category, true);
 
   console.log('SET DEPT RESULT =', deptOk);
   console.log('SET DEPT VALUE AFTER =', deptEl ? deptEl.value : null);

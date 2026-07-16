@@ -912,127 +912,66 @@ let materialEditId = null;
 
 function setSelectValueSafe(selectId, value){
   const el = document.getElementById(selectId);
-  if(!el) return;
+  if(!el) return false;
 
-  const target = String(value || '').trim();
-  const matched = [...el.options].find(opt => String(opt.value || '').trim() === target);
+  const target = String(value || '').trim().toLowerCase();
+  if(!target){
+    el.selectedIndex = 0;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return false;
+  }
 
-  el.value = matched ? matched.value : '';
+  const options = [...el.options];
+
+  let foundIndex = options.findIndex(opt =>
+    String(opt.value || '').trim().toLowerCase() === target
+  );
+
+  if(foundIndex === -1){
+    foundIndex = options.findIndex(opt =>
+      String(opt.textContent || '').trim().toLowerCase() === target
+    );
+  }
+
+  if(foundIndex !== -1){
+    el.selectedIndex = foundIndex;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  }
+
+  el.selectedIndex = 0;
+  el.dispatchEvent(new Event('change', { bubbles: true }));
+  return false;
 }
- function clearMaterialForm(hideBarcode = true){
+
+function clearMaterialForm(hideBarcode = true){
   materialEditId = null;
 
-  ['m-dept','m-code','m-name','m-category','m-unit','m-stock','m-min','m-location'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.value='';
+  const ids = ['m-dept','m-code','m-name','m-category','m-unit','m-stock','m-min','m-location'];
+
+  ids.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+
+    if(el.tagName === 'SELECT'){
+      el.selectedIndex = 0;
+    } else {
+      el.value = '';
+    }
   });
 
-  const btn=document.querySelector('#section-materials .btn-primary');
+  const btn = document.querySelector('#section-materials .btn-primary');
   if(btn){
-    btn.textContent='💾 Simpan & Generate Barcode';
-    btn.onclick=saveMaterial;
+    btn.textContent = '💾 Simpan & Generate Barcode';
+    btn.onclick = saveMaterial;
   }
 
   if(hideBarcode){
     const box = document.getElementById('m-barcode-box');
-    if(box) box.style.display='none';
+    if(box) box.style.display = 'none';
   }
 }
 
-async function saveMaterial(){
-  const dept=document.getElementById('m-dept').value;
-  const code=document.getElementById('m-code').value.trim();
-  const name=document.getElementById('m-name').value.trim();
-  const category=document.getElementById('m-category').value;
-  const unit=document.getElementById('m-unit').value.trim();
-  const stock=parseInt(document.getElementById('m-stock').value)||0;
-  const minStock=parseInt(document.getElementById('m-min').value)||0;
-  const location=document.getElementById('m-location').value.trim();
-
-  if(!code||!name||!unit){
-    showToast('Kode, Nama, dan Satuan wajib diisi!','error');
-    return;
-  }
-
-  if(materials.find(m=>String(m.code).trim()===String(code).trim())){
-    showToast('Kode material sudah terdaftar!','error');
-    return;
-  }
-
-  const localId='M'+Date.now();
-  materials.push({id:localId,code,name,category,unit,stock,minStock,location,dept,barcode:code});
-  saveLocal();
-  renderMaterials();
-
-  const result=await apiCallWithQueue('saveMaterial',{code,name,unit,stock,minStock,category,location,dept});
-
-  if(result?.success&&result.data){
-    const idx=materials.findIndex(m=>m.id===localId);
-    if(idx!==-1){
-      materials[idx].id=result.data.id||localId;
-      materials[idx].barcode=code;
-      saveLocal();
-      renderMaterials();
-    }
-    showToast('Material berhasil disimpan!','success');
-  } else if(result?.queued){
-    showToast('Disimpan lokal, akan sync ketika online','info');
-  } else {
-    const idx=materials.findIndex(m=>m.id===localId);
-    if(idx!==-1){
-      materials.splice(idx,1);
-      saveLocal();
-      renderMaterials();
-    }
-    showToast('Gagal: '+(result?.message||''),'error');
-    return;
-  }
-
-  try{
-    document.getElementById('m-barcode-box').style.display='block';
-    JsBarcode('#m-barcode',code,{format:'CODE128',width:2,height:80,displayValue:true,fontSize:14});
-    document.getElementById('m-barcode-label').textContent=`${name} • ${code}`;
-  }catch(e){}
-
-  clearMaterialForm(false);
-}
-
-function showMaterialBarcode(id){
-  const m=materials.find(m=>m.id===id);
-  if(!m) return;
-
-  const barcodeValue=String(m.barcode||m.code||'').trim();
-  if(!barcodeValue){
-    showToast('Barcode material tidak tersedia!','error');
-    return;
-  }
-
-  try{
-    document.getElementById('m-barcode-box').style.display='block';
-    JsBarcode('#m-barcode',barcodeValue,{format:'CODE128',width:2,height:80,displayValue:true,fontSize:14});
-    document.getElementById('m-barcode-label').textContent=`${m.name||'-'} • ${barcodeValue}`;
-    document.getElementById('m-barcode-box').scrollIntoView({behavior:'smooth',block:'nearest'});
-  }catch(e){
-    showToast('Gagal menampilkan barcode material!','error');
-  }
-}
-function setSelectValueSafe(selectId, value){
-  const el = document.getElementById(selectId);
-  if(!el) return false;
-
-  const target = String(value || '').trim().toLowerCase();
-
-  const found = [...el.options].find(opt =>
-    String(opt.value || '').trim().toLowerCase() === target
-  );
-
-  if(found){
-    el.value = found.value;
-    return true;
-  }
-
-  return false;
-}
 function editMaterial(id){
   const m = materials.find(m => String(m.id) === String(id));
   if(!m){
@@ -1040,7 +979,7 @@ function editMaterial(id){
     return;
   }
 
-  console.log('EDIT MATERIAL DATA:', m);
+  materialEditId = m.id;
 
   const deptOk = setSelectValueSafe('m-dept', m.dept);
   const catOk  = setSelectValueSafe('m-category', m.category);
@@ -1063,7 +1002,12 @@ function editMaterial(id){
   }
 
   if(!catOk){
-    console.log('CATEGORY TIDAK MATCH. m.category =', m.category);
+    const catEl = document.getElementById('m-category');
+    const options = catEl ? [...catEl.options].map(o => ({
+      text: o.textContent,
+      value: o.value
+    })) : [];
+    console.log('CATEGORY TIDAK MATCH. m.category =', m.category, 'options =', options);
   }
 
   showMaterialBarcode(id);
@@ -1071,7 +1015,7 @@ function editMaterial(id){
   const btn = document.querySelector('#section-materials .btn-primary');
   if(btn){
     btn.textContent = '✏️ Update Material';
-    btn.onclick = () => updateMaterial(id);
+    btn.onclick = updateMaterial;
   }
 }
 

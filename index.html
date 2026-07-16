@@ -1186,7 +1186,7 @@ async function updateMaterial(){
   saveLocal();
   renderMaterials();
 
-  const result = await apiCallWithQueue('saveMaterial', {
+ const result = await apiCallWithQueue('saveMaterial', {
   id,
   originalKode: backup.code,
   dept,

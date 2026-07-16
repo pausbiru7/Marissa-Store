@@ -1186,18 +1186,18 @@ async function updateMaterial(){
   saveLocal();
   renderMaterials();
 
-  const result = await apiCallWithQueue('updateMaterial', {
-    id,
-    originalKode: backup.code,
-    dept,
-    code,
-    name,
-    category,
-    unit,
-    stock,
-    minStock,
-    location
-  });
+  const result = await apiCallWithQueue('saveMaterial', {
+  id,
+  originalKode: backup.code,
+  dept,
+  code,
+  name,
+  category,
+  unit,
+  stock,
+  minStock,
+  location
+});
 
   if(result?.success){
     showToast('Material berhasil diupdate!','success');

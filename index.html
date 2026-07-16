@@ -1239,11 +1239,18 @@ async function updateMaterial(id) {
     return;
   }
 
-  // lanjutkan kode lama...
-}
-
   const backup = { ...materials[idx] };
-  materials[idx] = { ...materials[idx], dept, name, category, unit, stock, minStock, location };
+  materials[idx] = {
+    ...materials[idx],
+    dept,
+    name,
+    category,
+    unit,
+    stock,
+    minStock,
+    location
+  };
+
   saveLocal();
   renderMaterials();
 
@@ -1263,10 +1270,12 @@ async function updateMaterial(id) {
       ...materials[idx],
       id: result.data.id || id,
       code: result.data.code || backup.code,
-barcode: result.data.code || backup.code,
+      barcode: result.data.code || backup.code,
       name: result.data.name || name,
       unit: result.data.unit || unit,
       stock: result.data.stock ?? stock,
+      minStock: result.data.minStock ?? minStock,
+      category: result.data.category || category,
       location: result.data.location || location,
       dept: result.data.dept || dept
     };
@@ -1286,6 +1295,12 @@ barcode: result.data.code || backup.code,
   }
 
   clearMaterialForm(false);
+
+  const btn = document.querySelector('#section-materials .btn-primary');
+  if (btn) {
+    btn.textContent = '➕ Tambah Material';
+    btn.onclick = addMaterial;
+  }
 }
 
 async function deleteMaterial(id) {

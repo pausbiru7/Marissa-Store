@@ -1012,6 +1012,50 @@ function clearMaterialForm(hideBarcode = true){
     if(box) box.style.display = 'none';
   }
 }
+  function forceSelectDept(value){
+  const el = document.getElementById('m-dept');
+  if(!el) return false;
+
+  const rawValue = String(value || '').trim();
+  if(!rawValue){
+    el.selectedIndex = 0;
+    return false;
+  }
+
+  const normalize = v => String(v || '')
+    .normalize('NFKC')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+
+  const target = normalize(rawValue);
+  const options = [...el.options];
+
+  let found = options.find(opt => normalize(opt.value) === target);
+  if(!found){
+    found = options.find(opt => normalize(opt.textContent) === target);
+  }
+
+  if(found){
+    found.selected = true;
+    el.value = found.value;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  }
+
+  [...el.options].forEach(opt => {
+    if(opt.dataset.temp === '1') opt.remove();
+  });
+
+  const temp = new Option(rawValue, rawValue, false, true);
+  temp.dataset.temp = '1';
+  el.add(temp);
+  temp.selected = true;
+  el.value = temp.value;
+  el.dispatchEvent(new Event('change', { bubbles: true }));
+
+  return true;
+}
 function editMaterial(id){
   const m = materials.find(m => String(m.id) === String(id));
   if(!m){
@@ -1032,9 +1076,10 @@ function editMaterial(id){
     value: o.value
   })) : []);
 
-const deptOk = setSelectValueSafe('m-dept', m.dept, true);
+const deptOk = forceSelectDept(m.dept);
 const catOk  = setSelectValueSafe('m-category', m.category, true);
-
+console.log('DEPT FINAL VALUE =', document.getElementById('m-dept')?.value);
+console.log('DEPT FINAL TEXT =', document.getElementById('m-dept')?.selectedOptions?.[0]?.textContent);
   console.log('SET DEPT RESULT =', deptOk);
   console.log('SET DEPT VALUE AFTER =', deptEl ? deptEl.value : null);
   console.log('SET DEPT INDEX AFTER =', deptEl ? deptEl.selectedIndex : null);
@@ -1073,27 +1118,51 @@ async function updateMaterial(){
   const idFromButton = btn?.dataset?.editId || '';
   const id = idFromButton || materialEditId;
 
+  const deptEl = document.getElementById('m-dept');
+  const codeEl = document.getElementById('m-code');
+  const nameEl = document.getElementById('m-name');
+  const categoryEl = document.getElementById('m-category');
+  const unitEl = document.getElementById('m-unit');
+  const stockEl = document.getElementById('m-stock');
+  const minEl = document.getElementById('m-min');
+  const locationEl = document.getElementById('m-location');
+
+  const dept = deptEl ? deptEl.value.trim() : '';
+  const code = codeEl ? codeEl.value.trim() : '';
+  const name = nameEl ? nameEl.value.trim() : '';
+  const category = categoryEl ? categoryEl.value.trim() : '';
+  const unit = unitEl ? unitEl.value.trim() : '';
+  const stock = stockEl ? (parseInt(stockEl.value) || 0) : 0;
+  const minStock = minEl ? (parseInt(minEl.value) || 0) : 0;
+  const location = locationEl ? locationEl.value.trim() : '';
+
+  console.log('UPDATE MATERIAL CHECK', {
+    idFromButton,
+    materialEditId,
+    finalId: id,
+    dept,
+    deptText: deptEl?.selectedOptions?.[0]?.textContent || '',
+    code,
+    name,
+    category,
+    unit,
+    stock,
+    minStock,
+    location
+  });
+
   if(!id){
     showToast('Mode edit tidak aktif!','error');
     return;
   }
 
-  const dept = document.getElementById('m-dept').value.trim();
-  const code = document.getElementById('m-code').value.trim();
-  const name = document.getElementById('m-name').value.trim();
-  const category = document.getElementById('m-category').value.trim();
-  const unit = document.getElementById('m-unit').value.trim();
-  const stock = parseInt(document.getElementById('m-stock').value) || 0;
-  const minStock = parseInt(document.getElementById('m-min').value) || 0;
-  const location = document.getElementById('m-location').value.trim();
-
-if(!dept || !code || !name || !unit){
-  showToast(
-    `Field wajib kosong → dept="${dept}", code="${code}", name="${name}", unit="${unit}"`,
-    'error'
-  );
-  return;
-}
+  if(!dept || !code || !name || !unit){
+    showToast(
+      `Field wajib kosong → dept="${dept}", code="${code}", name="${name}", unit="${unit}"`,
+      'error'
+    );
+    return;
+  }
 
   const idx = materials.findIndex(m => String(m.id) === String(id));
   if(idx === -1){
@@ -1155,7 +1224,6 @@ if(!dept || !code || !name || !unit){
     showToast('Gagal update: ' + (result?.message || ''),'error');
   }
 }
-
 // FIX M3: kirim id bukan kode
 async function deleteMaterial(id){
   if(!confirm('Hapus material ini?')) return;

@@ -1118,49 +1118,8 @@ async function updateMaterial(){
   const idFromButton = btn?.dataset?.editId || '';
   const id = idFromButton || materialEditId;
 
-  const deptEl = document.getElementById('m-dept');
-  const codeEl = document.getElementById('m-code');
-  const nameEl = document.getElementById('m-name');
-  const categoryEl = document.getElementById('m-category');
-  const unitEl = document.getElementById('m-unit');
-  const stockEl = document.getElementById('m-stock');
-  const minEl = document.getElementById('m-min');
-  const locationEl = document.getElementById('m-location');
-
-  const dept = deptEl ? deptEl.value.trim() : '';
-  const code = codeEl ? codeEl.value.trim() : '';
-  const name = nameEl ? nameEl.value.trim() : '';
-  const category = categoryEl ? categoryEl.value.trim() : '';
-  const unit = unitEl ? unitEl.value.trim() : '';
-  const stock = stockEl ? (parseInt(stockEl.value) || 0) : 0;
-  const minStock = minEl ? (parseInt(minEl.value) || 0) : 0;
-  const location = locationEl ? locationEl.value.trim() : '';
-
-  console.log('UPDATE MATERIAL CHECK', {
-    idFromButton,
-    materialEditId,
-    finalId: id,
-    dept,
-    deptText: deptEl?.selectedOptions?.[0]?.textContent || '',
-    code,
-    name,
-    category,
-    unit,
-    stock,
-    minStock,
-    location
-  });
-
   if(!id){
     showToast('Mode edit tidak aktif!','error');
-    return;
-  }
-
-  if(!dept || !code || !name || !unit){
-    showToast(
-      `Field wajib kosong → dept="${dept}", code="${code}", name="${name}", unit="${unit}"`,
-      'error'
-    );
     return;
   }
 
@@ -1170,19 +1129,20 @@ async function updateMaterial(){
     return;
   }
 
-  const duplicate = materials.find(m =>
-    String(m.id) !== String(id) &&
-    String(m.code || '').trim().toLowerCase() === code.toLowerCase()
-  );
-  if(duplicate){
-    showToast('Kode material sudah dipakai material lain!','error');
-    return;
-  }
+  const oldData = materials[idx];
 
-  const backup = { ...materials[idx] };
+  const dept = String(oldData.dept || '').trim();
+  const code = String(oldData.code || '').trim();
+  const name = String(oldData.name || '').trim();
+  const category = String(oldData.category || '').trim();
+  const unit = String(oldData.unit || '').trim();
 
-  materials[idx] = {
-    ...materials[idx],
+  const stock = parseInt(document.getElementById('m-stock')?.value) || 0;
+  const minStock = parseInt(document.getElementById('m-min')?.value) || 0;
+  const location = String(document.getElementById('m-location')?.value || '').trim();
+
+  console.log('UPDATE MATERIAL FIXED MODE', {
+    id,
     dept,
     code,
     name,
@@ -1190,8 +1150,24 @@ async function updateMaterial(){
     unit,
     stock,
     minStock,
-    location,
-    barcode: code
+    location
+  });
+
+  if(!code || !name || !unit){
+    showToast(
+      `Field master kosong → code="${code}", name="${name}", unit="${unit}"`,
+      'error'
+    );
+    return;
+  }
+
+  const backup = { ...oldData };
+
+  materials[idx] = {
+    ...oldData,
+    stock,
+    minStock,
+    location
   };
   saveLocal();
   renderMaterials();

@@ -912,51 +912,59 @@ let materialEditId = null;
 
 function normalizeText(v){
   return String(v || '')
+    .normalize('NFKC')
     .trim()
     .toLowerCase()
     .replace(/\s+/g, ' ');
+}
+
+function removeTempOption(selectId){
+  const el = document.getElementById(selectId);
+  if(!el) return;
+  [...el.options].forEach(opt => {
+    if(opt.dataset.temp === '1') opt.remove();
+  });
 }
 
 function setSelectValueSafe(selectId, value, allowTemporaryOption = false){
   const el = document.getElementById(selectId);
   if(!el) return false;
 
-  const target = normalizeText(value);
+  removeTempOption(selectId);
+
+  const rawValue = String(value || '').trim();
+  const target = normalizeText(rawValue);
+
   if(!target){
     el.selectedIndex = 0;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
     return false;
   }
 
   const options = [...el.options];
 
-  let foundIndex = options.findIndex(opt =>
-    normalizeText(opt.value) === target
-  );
+  let found = options.find(opt => normalizeText(opt.value) === target);
 
-  if(foundIndex === -1){
-    foundIndex = options.findIndex(opt =>
-      normalizeText(opt.textContent) === target
-    );
+  if(!found){
+    found = options.find(opt => normalizeText(opt.textContent) === target);
   }
 
-  if(foundIndex !== -1){
-    el.selectedIndex = foundIndex;
+  if(found){
+    found.selected = true;
     el.dispatchEvent(new Event('change', { bubbles: true }));
     return true;
   }
 
   if(allowTemporaryOption){
-    const temp = document.createElement('option');
-    temp.value = String(value || '').trim();
-    temp.textContent = String(value || '').trim();
+    const temp = new Option(rawValue, rawValue, false, true);
     temp.dataset.temp = '1';
-    el.appendChild(temp);
-    el.value = temp.value;
+    el.add(temp);
     el.dispatchEvent(new Event('change', { bubbles: true }));
     return true;
   }
 
   el.selectedIndex = 0;
+  el.dispatchEvent(new Event('change', { bubbles: true }));
   return false;
 }
 
@@ -1021,7 +1029,7 @@ function editMaterial(id){
     value: o.value
   })) : []);
 
- const deptOk = setSelectValueSafe('m-dept', m.dept, true);
+const deptOk = setSelectValueSafe('m-dept', m.dept, true);
 const catOk  = setSelectValueSafe('m-category', m.category, true);
 
   console.log('SET DEPT RESULT =', deptOk);
@@ -1036,9 +1044,9 @@ const catOk  = setSelectValueSafe('m-category', m.category, true);
   document.getElementById('m-min').value = Number(m.minStock || 0);
   document.getElementById('m-location').value = m.location || '';
 
-  if(!deptOk){
-    showToast('Departemen material tidak cocok dengan pilihan dropdown','error');
-  }
+if(!deptOk){
+  console.log('DEPT TIDAK MATCH:', m.dept);
+}
 
   if(!catOk){
     console.log('CATEGORY TIDAK MATCH. m.category =', m.category,

@@ -633,24 +633,131 @@ function mapTransactionFromServer(t) {
     synced:       true
   };
 }
+function mergeTransactions(serverTransactions, localTransactions) {
+  const merged = [...serverTransactions];
+  const serverIds = new Set(serverTransactions.map(t => String(t.id)));
 
+  localTransactions.forEach(local => {
+    if (!local) return;
+
+    const isPending =
+      local.synced === false ||
+      local.syncStatus === 'pending' ||
+      local.syncStatus === 'failed';
+
+    const existsOnServer = serverIds.has(String(local.id));
+
+    if (isPending && !existsOnServer) {
+      merged.unshift(local);
+    }
+  });
+
+  return merged;
+}
+
+function mergeMaterials(serverMaterials, localMaterials) {
+  const localMap = new Map(localMaterials.map(m => [String(m.id), m]));
+  const merged = serverMaterials.map(serverItem => {
+    const localItem = localMap.get(String(serverItem.id));
+    if (!localItem) return serverItem;
+
+    const isPending =
+      localItem.synced === false ||
+      localItem.syncStatus === 'pending' ||
+      localItem.syncStatus === 'failed';
+
+    if (isPending) {
+      return { ...serverItem, ...localItem };
+    }
+
+    return serverItem;
+  });
+
+  localMaterials.forEach(localItem => {
+    const exists = merged.some(m => String(m.id) === String(localItem.id));
+    const isPending =
+      localItem.synced === false ||
+      localItem.syncStatus === 'pending' ||
+      localItem.syncStatus === 'failed';
+
+    if (!exists && isPending) {
+      merged.push(localItem);
+    }
+  });
+
+  return merged;
+}
+
+function mergeWorkers(serverWorkers, localWorkers) {
+  const localMap = new Map(localWorkers.map(w => [String(w.id), w]));
+  const merged = serverWorkers.map(serverItem => {
+    const localItem = localMap.get(String(serverItem.id));
+    if (!localItem) return serverItem;
+
+    const isPending =
+      localItem.synced === false ||
+      localItem.syncStatus === 'pending' ||
+      localItem.syncStatus === 'failed';
+
+    if (isPending) {
+      return { ...serverItem, ...localItem };
+    }
+
+    return serverItem;
+  });
+
+  localWorkers.forEach(localItem => {
+    const exists = merged.some(w => String(w.id) === String(localItem.id));
+    const isPending =
+      localItem.synced === false ||
+      localItem.syncStatus === 'pending' ||
+      localItem.syncStatus === 'failed';
+
+    if (!exists && isPending) {
+      merged.push(localItem);
+    }
+  });
+
+  return merged;
+}
 async function initialSync(showToastOnFail = false) {
-  if (!isOnline()) { if (showToastOnFail) showToast('Offline — menampilkan data lokal', 'info'); return; }
+  if (!isOnline()) {
+    if (showToastOnFail) showToast('Offline — menampilkan data lokal', 'info');
+    return;
+  }
+
   try {
+    const localWorkers = Array.isArray(workers) ? [...workers] : [];
+    const localMaterials = Array.isArray(materials) ? [...materials] : [];
+    const localTransactions = Array.isArray(transactions) ? [...transactions] : [];
+
     const res = await apiCall('syncAllData', {});
+
     if (res?.success && res.data) {
-      // FIX M4: gunakan mapper agar field konsisten
-      workers      = (res.data.workers      || []).map(mapWorkerFromServer);
-      materials    = (res.data.materials    || []).map(mapMaterialFromServer);
-      transactions = (res.data.transactions || []).map(mapTransactionFromServer);
+      const serverWorkers = (res.data.workers || []).map(mapWorkerFromServer);
+      const serverMaterials = (res.data.materials || []).map(mapMaterialFromServer);
+      const serverTransactions = (res.data.transactions || []).map(mapTransactionFromServer);
+
+      workers = mergeWorkers(serverWorkers, localWorkers);
+      materials = mergeMaterials(serverMaterials, localMaterials);
+      transactions = mergeTransactions(serverTransactions, localTransactions);
+
       saveLocal();
-      renderWorkers(); renderMaterials(); renderHistory(); renderDashboard();
+      renderWorkers();
+      renderMaterials();
+      renderHistory();
+      renderDashboard();
+
       await flushQueue();
     } else {
-      if (showToastOnFail) showToast('Gagal sinkronisasi: ' + (res?.message || 'Unknown'), 'error');
+      if (showToastOnFail) {
+        showToast('Gagal sinkronisasi: ' + (res?.message || 'Unknown'), 'error');
+      }
     }
   } catch (err) {
-    if (showToastOnFail) showToast('Sync error: ' + err.message, 'error');
+    if (showToastOnFail) {
+      showToast('Sync error: ' + err.message, 'error');
+    }
   }
 }
 

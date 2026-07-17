@@ -1266,7 +1266,11 @@ function renderMaterials(){
   }).join('');
 }
 function showMaterialBarcode(id){
+  console.log('SHOW BARCODE CLICK', { id, materialsCount: materials.length });
+
   const m = materials.find(x => String(x.id) === String(id));
+  console.log('BARCODE MATERIAL FOUND', m);
+
   if(!m){
     showToast('Material tidak ditemukan untuk barcode!','error');
     return;
@@ -1276,18 +1280,27 @@ function showMaterialBarcode(id){
   const svg = document.getElementById('m-barcode');
   const label = document.getElementById('m-barcode-label');
 
+  console.log('BARCODE ELEMENTS', { box, svg, label, jsBarcodeType: typeof JsBarcode });
+
   if(!box || !svg || !label){
     showToast('Elemen barcode tidak ditemukan!','error');
     return;
   }
 
   const code = String(m.code || '').trim();
+  console.log('BARCODE CODE', code);
+
   if(!code){
     showToast('Kode material kosong, barcode tidak bisa dibuat!','error');
     return;
   }
 
   try {
+    if(typeof JsBarcode !== 'function'){
+      showToast('Library JsBarcode belum termuat!','error');
+      return;
+    }
+
     JsBarcode(svg, code, {
       format: 'CODE128',
       lineColor: '#111',
@@ -1300,9 +1313,11 @@ function showMaterialBarcode(id){
 
     label.textContent = `${m.name || '-'} • ${code}`;
     box.style.display = 'block';
+
+    console.log('BARCODE RENDERED OK');
   } catch (err) {
     console.error('Barcode error:', err);
-    showToast('Gagal menampilkan barcode','error');
+    showToast('Gagal menampilkan barcode: ' + err.message,'error');
   }
 }
 // ==================== BARCODE ====================

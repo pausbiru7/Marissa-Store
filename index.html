@@ -615,17 +615,74 @@ async function apiCallWithQueue(action, payload, opts = {}) {
   let _isFlushing = false;
 async function flushQueue() {
   if (_isFlushing || !isOnline()) return;
+
   let q = getQueue();
   if (!q.length) return;
+
   _isFlushing = true;
-  for (let i = 0; i < q.length; i++) {
-    try {
-      const res = await apiCall(q[i].action, q[i].payload);
-      if (res && res.success) { q.splice(i, 1); i--; setQueue(q); }
-      else break;
-    } catch { break; }
+
+  try {
+    for (let i = 0; i < q.length; i++) {
+      const item = q[i];
+
+      try {
+        const res = await apiCall(item.action, item.payload);
+
+        if (!(res && res.success)) {
+          break;
+        }
+
+        // ===== reconcile local state after successful replay =====
+        if (item.action === 'saveMaterial') {
+          const payload = item.payload || {};
+          const targetId = String(payload.id || '');
+          const targetCode = String(payload.code || payload.originalKode || '');
+
+          const idx = materials.findIndex(m =>
+            String(m.id || '') === targetId ||
+            String(m.code || '') === targetCode
+          );
+
+          if (idx !== -1) {
+            materials[idx] = {
+              ...materials[idx],
+              synced: true,
+              pendingAction: null,
+              updatedAt: new Date().toISOString()
+            };
+          }
+        }
+
+        if (item.action === 'saveTransaction') {
+          const payload = item.payload || {};
+          const targetId = String(payload.id || '');
+
+          const idx = transactions.findIndex(t => String(t.id || '') === targetId);
+
+          if (idx !== -1) {
+            transactions[idx] = {
+              ...transactions[idx],
+              synced: true
+            };
+          }
+        }
+
+        // hapus dari queue setelah reconcile berhasil
+        q.splice(i, 1);
+        i--;
+        setQueue(q);
+        saveLocal();
+      } catch (err) {
+        break;
+      }
+    }
+  } finally {
+    _isFlushing = false;
+    saveLocal();
+    renderMaterials();
+    renderHistory();
+    renderDashboard();
   }
-  _isFlushing = false;
 }
 
 // FIX M4: mapping field GAS → lokal yang konsisten

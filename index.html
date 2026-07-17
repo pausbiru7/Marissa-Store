@@ -1294,31 +1294,30 @@ function showMaterialBarcode(id){
     showToast('Kode material kosong, barcode tidak bisa dibuat!','error');
     return;
   }
-
-  try {
-    if(typeof JsBarcode !== 'function'){
-      showToast('Library JsBarcode belum termuat!','error');
-      return;
-    }
-
-    JsBarcode(svg, code, {
-      format: 'CODE128',
-      lineColor: '#111',
-      width: 2,
-      height: 60,
-      displayValue: true,
-      fontSize: 14,
-      margin: 8
-    });
-
-    label.textContent = `${m.name || '-'} • ${code}`;
-    box.style.display = 'block';
-
-    console.log('BARCODE RENDERED OK');
-  } catch (err) {
-    console.error('Barcode error:', err);
-    showToast('Gagal menampilkan barcode: ' + err.message,'error');
+try {
+  if(typeof JsBarcode !== 'function'){
+    showToast('Library JsBarcode belum termuat!','error');
+    return;
   }
+
+  JsBarcode(svg, code, {
+    format: 'CODE128',
+    lineColor: '#111',
+    width: 2,
+    height: 60,
+    displayValue: true,
+    fontSize: 14,
+    margin: 8
+  });
+
+  label.textContent = `${m.name || '-'} • ${code}`;
+  box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  console.log('BARCODE RENDERED OK');
+} catch (err) {
+  console.error('Barcode error:', err);
+  showToast('Gagal menampilkan barcode: ' + err.message,'error');
 }
 // ==================== BARCODE ====================
 function downloadBarcode(type){ const svgEl=document.getElementById(`${type}-barcode`); if(!svgEl) return; const svgData=new XMLSerializer().serializeToString(svgEl); const canvas=document.createElement('canvas'); const img=new Image(); const url=URL.createObjectURL(new Blob([svgData],{type:'image/svg+xml;charset=utf-8'})); img.onload=()=>{canvas.width=img.width;canvas.height=img.height;canvas.getContext('2d').drawImage(img,0,0);URL.revokeObjectURL(url);const a=document.createElement('a');a.download=`barcode-${type}-${Date.now()}.png`;a.href=canvas.toDataURL('image/png');a.click();};img.src=url; }

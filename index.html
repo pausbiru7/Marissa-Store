@@ -675,29 +675,106 @@ function mapTransactionFromServer(t) {
 }
 
 async function initialSync(showToastOnFail = false) {
-  if (!isOnline()) { if (showToastOnFail) showToast('Offline — menampilkan data lokal', 'info'); return; }
+  if (!isOnline()) {
+    if (showToastOnFail) showToast('Offline — menampilkan data lokal', 'info');
+    return;
+  }
+
   try {
+    // 1. Kirim antrean dulu agar server snapshot lebih baru
+    await flushQueue();
+
+    // 2. Ambil data terbaru dari server
     const res = await apiCall('syncAllData', {});
-    if (res?.success && res.data) {
-      // FIX M4: gunakan mapper agar field konsisten
-      workers      = (res.data.workers      || []).map(mapWorkerFromServer);
-      materials    = (res.data.materials    || []).map(mapMaterialFromServer);
-      transactions = (res.data.transactions || []).map(mapTransactionFromServer);
-      saveLocal();
-      renderWorkers(); renderMaterials(); renderHistory(); renderDashboard();
-      await flushQueue();
-    } else {
-      if (showToastOnFail) showToast('Gagal sinkronisasi: ' + (res?.message || 'Unknown'), 'error');
+    if (!(res?.success && res.data)) {
+      if (showToastOnFail) {
+        showToast('Gagal sinkronisasi: ' + (res?.message || 'Unknown'), 'error');
+      }
+      return;
     }
+
+    const serverWorkers = (res.data.workers || []).map(mapWorkerFromServer);
+    const serverMaterials = (res.data.materials || []).map(mapMaterialFromServer);
+    const serverTransactions = (res.data.transactions || []).map(mapTransactionFromServer);
+
+    // 3. Ambil transaksi lokal yang masih pending
+    const localPendingTransactions = (transactions || []).filter(t => !t.synced);
+
+    // 4. Ambil pending dari queue saveTransaction agar tetap tampil
+    const queue = getQueue();
+    const queuedTransactions = queue
+      .filter(item => item.action === 'saveTransaction' && item.payload)
+      .map(item => {
+        const p = item.payload;
+        const d = p.date ? new Date(p.date) : new Date();
+        return {
+          id: p.id || ('queued-' + item.timestamp),
+          workerId: p.workerId || '',
+          workerName: p.workerName || '',
+          workerNik: p.workerNik || '',
+          workerDept: p.workerDept || '',
+          materialId: p.materialId || '',
+          materialCode: p.materialCode || '',
+          materialName: p.materialName || '',
+          unit: p.unit || '',
+          qty: Number(p.qty) || 0,
+          date: p.date || d.toISOString(),
+          dateStr: d.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }),
+          timeStr: d.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }),
+          synced: false
+        };
+      });
+
+    // 5. Merge transaksi server + pending lokal
+    const trxMap = new Map();
+
+    serverTransactions.forEach(t => {
+      if (t.id) trxMap.set(t.id, { ...t, synced: true });
+    });
+
+    [...localPendingTransactions, ...queuedTransactions].forEach(t => {
+      if (!t || !t.id) return;
+      if (!trxMap.has(t.id)) {
+        trxMap.set(t.id, { ...t, synced: false });
+      }
+    });
+
+    // 6. Apply server snapshot untuk worker/material
+    //    (material pending akan kita rapikan di langkah berikutnya)
+    workers = serverWorkers;
+    materials = serverMaterials;
+    transactions = Array.from(trxMap.values())
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    saveLocal();
+    renderWorkers();
+    renderMaterials();
+    renderHistory();
+    renderDashboard();
+
   } catch (err) {
     if (showToastOnFail) showToast('Sync error: ' + err.message, 'error');
   }
 }
 
-window.addEventListener('online',  () => { setSyncStatus('🟢 Online'); showToast('Koneksi kembali','info'); flushQueue(); initialSync(); });
-window.addEventListener('offline', () => { setSyncStatus('🔴 Offline'); showToast('Anda offline','error'); });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') initialSync(); });
-setInterval(() => { if (isOnline()) flushQueue(); }, 60000);
+window.addEventListener('online', async () => {
+  setSyncStatus('🟢 Online');
+  showToast('Koneksi kembali', 'info');
+  await initialSync();
+});
+
+window.addEventListener('offline', () => {
+  setSyncStatus('🔴 Offline');
+  showToast('Anda offline', 'error');
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') initialSync();
+});
+
+setInterval(() => {
+  if (isOnline()) initialSync();
+}, 60000);
 
 // ==================== TOAST & STATUS ====================
 function showToast(msg, type = 'info') {

@@ -739,10 +739,40 @@ async function initialSync(showToastOnFail = false) {
       }
     });
 
-    // 6. Apply server snapshot untuk worker/material
-    //    (material pending akan kita rapikan di langkah berikutnya)
+       // 6. Merge material server + pending lokal
+    const localPendingMaterials = (materials || []).filter(m => m.synced === false);
+
+    const materialMap = new Map();
+
+    serverMaterials.forEach(m => {
+      const key = String(m.id || m.code || '');
+      if (key) {
+        materialMap.set(key, { ...m, synced: true });
+      }
+    });
+
+    localPendingMaterials.forEach(m => {
+      const key = String(m.id || m.code || '');
+      if (!key) return;
+
+      const serverVersion = materialMap.get(key);
+
+      if (!serverVersion) {
+        materialMap.set(key, { ...m });
+        return;
+      }
+
+      const localTime = new Date(m.updatedAt || 0).getTime();
+      const serverTime = new Date(serverVersion.updatedAt || 0).getTime();
+
+      if (!serverVersion || localTime >= serverTime) {
+        materialMap.set(key, { ...serverVersion, ...m });
+      }
+    });
+
+    // 7. Apply final state
     workers = serverWorkers;
-    materials = serverMaterials;
+    materials = Array.from(materialMap.values());
     transactions = Array.from(trxMap.values())
       .sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -751,7 +781,6 @@ async function initialSync(showToastOnFail = false) {
     renderMaterials();
     renderHistory();
     renderDashboard();
-
   } catch (err) {
     if (showToastOnFail) showToast('Sync error: ' + err.message, 'error');
   }
@@ -1204,19 +1233,19 @@ function editMaterial(id){
   if(box) box.style.display = 'none';
 }
 
-async function updateMaterial(){
+async function updateMaterial() {
   const btn = document.querySelector('#section-materials .btn-primary');
   const idFromButton = btn?.dataset?.editId || '';
   const id = idFromButton || materialEditId;
 
-  if(!id){
-    showToast('Mode edit tidak aktif!','error');
+  if (!id) {
+    showToast('Mode edit tidak aktif!', 'error');
     return;
   }
 
   const idx = materials.findIndex(m => String(m.id) === String(id));
-  if(idx === -1){
-    showToast('Material tidak ditemukan!','error');
+  if (idx === -1) {
+    showToast('Material tidak ditemukan!', 'error');
     return;
   }
 
@@ -1232,8 +1261,31 @@ async function updateMaterial(){
   const minStock = parseInt(document.getElementById('m-min')?.value) || 0;
   const location = String(document.getElementById('m-location')?.value || '').trim();
 
-  console.log('UPDATE MATERIAL FIXED MODE', {
+  if (!code || !name || !unit) {
+    showToast(`Field master kosong → code="${code}", name="${name}", unit="${unit}"`, 'error');
+    return;
+  }
+
+  const backup = { ...oldData };
+  const nowIso = new Date().toISOString();
+
+  // Optimistic local update + tandai pending
+  materials[idx] = {
+    ...oldData,
+    stock,
+    minStock,
+    location,
+    synced: false,
+    updatedAt: nowIso,
+    pendingAction: 'update'
+  };
+
+  saveLocal();
+  renderMaterials();
+
+  const result = await apiCallWithQueue('saveMaterial', {
     id,
+    originalKode: backup.code,
     dept,
     code,
     name,
@@ -1244,52 +1296,43 @@ async function updateMaterial(){
     location
   });
 
-  if(!code || !name || !unit){
-    showToast(
-      `Field master kosong → code="${code}", name="${name}", unit="${unit}"`,
-      'error'
-    );
+  if (result?.success) {
+    materials[idx] = {
+      ...materials[idx],
+      synced: true,
+      pendingAction: null,
+      updatedAt: nowIso
+    };
+    saveLocal();
+    renderMaterials();
+
+    showToast('Material berhasil diupdate!', 'success');
+    showMaterialBarcode(id);
+    clearMaterialForm(false);
     return;
   }
 
-  const backup = { ...oldData };
-
-  materials[idx] = {
-    ...oldData,
-    stock,
-    minStock,
-    location
-  };
-  saveLocal();
-  renderMaterials();
-
- const result = await apiCallWithQueue('saveMaterial', {
-  id,
-  originalKode: backup.code,
-  dept,
-  code,
-  name,
-  category,
-  unit,
-  stock,
-  minStock,
-  location
-});
-
-  if(result?.success){
-    showToast('Material berhasil diupdate!','success');
-    showMaterialBarcode(id);
-    clearMaterialForm(false);
-  } else if(result?.queued){
-    showToast('Update disimpan lokal, akan sync ketika online','info');
-    showMaterialBarcode(id);
-    clearMaterialForm(false);
-  } else {
-    materials[idx] = backup;
+  if (result?.queued) {
+    materials[idx] = {
+      ...materials[idx],
+      synced: false,
+      pendingAction: 'update',
+      updatedAt: nowIso
+    };
     saveLocal();
     renderMaterials();
-    showToast('Gagal update: ' + (result?.message || ''),'error');
+
+    showToast('Update disimpan lokal, akan sync ketika online', 'info');
+    showMaterialBarcode(id);
+    clearMaterialForm(false);
+    return;
   }
+
+  // permanent failure → rollback
+  materials[idx] = backup;
+  saveLocal();
+  renderMaterials();
+  showToast('Gagal update: ' + (result?.message || ''), 'error');
 }
 // FIX M3: kirim id bukan kode
 async function deleteMaterial(id){

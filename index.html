@@ -2074,24 +2074,42 @@ function showTrxSummary(trx) {
 
 async function shareTrx(trxId) {
   const trx = transactions.find(t => t.id === trxId);
-  if (!trx) { showToast('Transaksi tidak ditemukan!', 'error'); return; }
-  
-  const text = `📦 Bukti Pengambilan
-
-ID: ${trx.id}
-👷 ${trx.workerName} (${trx.workerNik})
-🏭 ${trx.workerDept}
-📦 ${trx.materialName} (${trx.materialCode})
-📊 ${trx.qty} ${trx.unit}
-${trx.note ? '📝 Tujuan: ' + trx.note + '\n' : ''}📅 ${trx.dateStr} ${trx.timeStr}`;
-  
-  if (navigator.share) {
-    try { await navigator.share({ title: 'Bukti Pengambilan', text: text }); return; } 
-    catch (e) { if (e.name !== 'AbortError') console.error(e); }
+  if (!trx) {
+    showToast('Transaksi tidak ditemukan!', 'error');
+    return;
   }
-  
-  try { await navigator.clipboard.writeText(text); showToast('Teks disalin!', 'success'); } 
-  catch (e) { showToast('Gagal menyalin', 'error'); }
+
+  const text = `📦 Pengambilan Material
+${trx.workerName || '-'} (${trx.workerNik || '-'}) - ${trx.workerDept || '-'}
+
+Mengambil:
+${trx.materialName || '-'}
+Kode: ${trx.materialCode || '-'}
+Qty: ${trx.qty || 0} ${trx.unit || ''}
+
+Tanggal: ${trx.dateStr || '-'}, ${trx.timeStr || '-'}
+Status: ${trx.synced ? '✅ Synced' : '⏳ Pending'}
+Marissa Store
+Powered by Pausbiru7`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'Pengambilan Material',
+        text: text
+      });
+      return;
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error(e);
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Teks disalin!', 'success');
+  } catch (e) {
+    showToast('Gagal menyalin', 'error');
+  }
 }
 // ===== INIT SCANNER (Html5Qrcode) =====
 let workerScanner = null;

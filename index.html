@@ -2401,79 +2401,134 @@ async function printLaporan() {
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  let y = 18;
+  const margin = 14;
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text(`Laporan ${getNamaBulan(month)} ${year}`, pageWidth / 2, y, { align: 'center' });
+  const totalTransaksi = laporanData.length;
+  const totalQty = laporanData.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+  const uniqueWorkers = new Set(laporanData.map(i => String(i.workerNik || i.workerId || i.workerName || ''))).size;
+  const uniqueMaterials = new Set(laporanData.map(i => String(i.materialCode || i.materialId || i.materialName || ''))).size;
 
-  y += 8;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, y, { align: 'center' });
+  let y = 16;
 
-  y += 12;
+  function drawHeader() {
+    doc.setFillColor(37, 99, 235);
+    doc.rect(0, 0, pageWidth, 28, 'F');
 
-  const headers = ['Tanggal', 'Pekerja', 'Material', 'Kode', 'Qty'];
-  const colX = [14, 40, 92, 145, 176];
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('Laporan Pengambilan Material', margin, 12);
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  headers.forEach((h, i) => doc.text(h, colX[i], y));
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`Periode: ${getNamaBulan(month)} ${year}`, margin, 19);
+    doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, pageWidth - margin, 19, { align: 'right' });
 
-  y += 4;
-  doc.line(14, y, 196, y);
-  y += 6;
-
-  doc.setFont('helvetica', 'normal');
-
-  let totalQty = 0;
-
-  for (const item of laporanData) {
-    const tanggal = item.dateStr || '-';
-    const pekerja = String(item.workerName || '-').slice(0, 22);
-    const material = String(item.materialName || '-').slice(0, 28);
-    const kode = String(item.materialCode || '-').slice(0, 14);
-    const qty = `${item.qty || 0} ${item.unit || ''}`;
-
-    totalQty += Number(item.qty || 0);
-
-    if (y > pageHeight - 20) {
-      doc.addPage();
-      y = 18;
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      headers.forEach((h, i) => doc.text(h, colX[i], y));
-      y += 4;
-      doc.line(14, y, 196, y);
-      y += 6;
-      doc.setFont('helvetica', 'normal');
-    }
-
-    doc.text(tanggal, colX[0], y);
-    doc.text(pekerja, colX[1], y);
-    doc.text(material, colX[2], y);
-    doc.text(kode, colX[3], y);
-    doc.text(qty, colX[4], y);
-
-    y += 7;
+    y = 36;
   }
 
-  y += 4;
-  doc.line(14, y, 196, y);
-  y += 8;
+  function drawFooter(pageNumber) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text(`Marissa Store`, margin, pageHeight - 8);
+    doc.text(`Powered by Pausbiru7`, pageWidth / 2, pageHeight - 8, { align: 'center' });
+    doc.text(`Halaman ${pageNumber}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
+  }
 
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Total Transaksi: ${laporanData.length}`, 14, y);
-  doc.text(`Total Qty: ${totalQty}`, 110, y);
+  function drawSummary() {
+    const boxY = y;
+    const boxW = 42;
+    const gap = 4;
 
-  y += 12;
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(10);
-  doc.text('Marissa Store', pageWidth / 2, y, { align: 'center' });
-  y += 5;
-  doc.text('Powered by Pausbiru7', pageWidth / 2, y, { align: 'center' });
+    const summary = [
+      ['Total Transaksi', String(totalTransaksi)],
+      ['Total Qty', String(totalQty)],
+      ['Pekerja', String(uniqueWorkers)],
+      ['Material', String(uniqueMaterials)]
+    ];
+
+    summary.forEach((item, i) => {
+      const x = margin + i * (boxW + gap);
+      doc.setFillColor(245, 247, 250);
+      doc.setDrawColor(220, 220, 220);
+      doc.roundedRect(x, boxY, boxW, 18, 2, 2, 'FD');
+
+      doc.setTextColor(90, 90, 90);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(item[0], x + 3, boxY + 6);
+
+      doc.setTextColor(30, 30, 30);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text(item[1], x + 3, boxY + 13);
+    });
+
+    y += 26;
+  }
+
+  function drawTableHeader() {
+    doc.setFillColor(37, 99, 235);
+    doc.rect(margin, y, pageWidth - margin * 2, 8, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+
+    const cols = [
+      { label: 'Tanggal', x: 16 },
+      { label: 'Pekerja', x: 40 },
+      { label: 'Material', x: 86 },
+      { label: 'Kode', x: 138 },
+      { label: 'Qty', x: 170 }
+    ];
+
+    cols.forEach(col => doc.text(col.label, col.x, y + 5.5));
+    y += 10;
+  }
+
+  function addNewPage() {
+    drawFooter(doc.internal.getNumberOfPages());
+    doc.addPage();
+    drawHeader();
+    drawTableHeader();
+  }
+
+  drawHeader();
+  drawSummary();
+  drawTableHeader();
+
+  doc.setTextColor(40, 40, 40);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+
+  laporanData.forEach((item, index) => {
+    const tanggal = String(item.dateStr || '-');
+    const pekerja = String(item.workerName || '-').slice(0, 24);
+    const material = String(item.materialName || '-').slice(0, 28);
+    const kode = String(item.materialCode || '-').slice(0, 16);
+    const qty = `${item.qty || 0} ${item.unit || ''}`;
+
+    if (y > pageHeight - 20) {
+      addNewPage();
+    }
+
+    if (index % 2 === 0) {
+      doc.setFillColor(249, 250, 251);
+      doc.rect(margin, y - 4.5, pageWidth - margin * 2, 7, 'F');
+    }
+
+    doc.text(tanggal, 16, y);
+    doc.text(pekerja, 40, y);
+    doc.text(material, 86, y);
+    doc.text(kode, 138, y);
+    doc.text(qty, 170, y);
+
+    y += 7;
+  });
+
+  drawFooter(doc.internal.getNumberOfPages());
 
   const blob = doc.output('blob');
   const fileName = `laporan-${year}-${String(month).padStart(2, '0')}.pdf`;

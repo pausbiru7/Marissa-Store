@@ -2167,15 +2167,18 @@ function renderHistory() {
     return;
   }
 
-  const search = (document.getElementById('history-search')?.value || '').toLowerCase();
+ const search = (document.getElementById('history-search')?.value || '').toLowerCase();
+const keyword = String(document.getElementById('history-search')?.value || '')
+  .toLowerCase()
+  .trim();
 
-  const filtered = transactions.filter(t =>
-    !search ||
-    (t.workerName || '').toLowerCase().includes(search) ||
-    (t.materialName || '').toLowerCase().includes(search) ||
-    (t.materialCode || '').toLowerCase().includes(search) ||
-    (t.workerNik || '').toLowerCase().includes(search)
-  );
+const filtered = transactions.filter(t =>
+  !keyword ||
+  String(t.workerName || '').toLowerCase().includes(keyword) ||
+  String(t.materialName || '').toLowerCase().includes(keyword) ||
+  String(t.materialCode || '').toLowerCase().includes(keyword) ||
+  String(t.workerNik || '').toLowerCase().includes(keyword)
+);
 
   if (!filtered.length) {
     list.innerHTML = '<div class="empty">Tidak ada hasil pencarian</div>';

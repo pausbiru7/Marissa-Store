@@ -566,7 +566,64 @@ async function apiCall(action, data = {}) {
 function isOnline() { return navigator.onLine; }
 function getQueue()  { return JSON.parse(localStorage.getItem('wh_queue') || '[]'); }
 function setQueue(q) { localStorage.setItem('wh_queue', JSON.stringify(q)); }
-function pushQueue(op) { const q = getQueue(); q.push(op); setQueue(q); }
+
+function getQueueEntityKey(item) {
+  const action = String(item?.action || '').trim();
+  const payload = item?.payload || {};
+
+  if (action === 'saveWorker' || action === 'deleteWorker') {
+    return `worker:${String(payload.id || payload.nik || '').trim()}`;
+  }
+
+  if (action === 'saveMaterial' || action === 'deleteMaterial') {
+    return `material:${String(payload.id || payload.code || '').trim()}`;
+  }
+
+  if (action === 'saveTransaction') {
+    return `transaction:${String(payload.id || '').trim()}`;
+  }
+
+  return '';
+}
+
+function pushQueue(op) {
+  const q = getQueue();
+  const next = {
+    ...op,
+    timestamp: op.timestamp || Date.now()
+  };
+
+  const action = String(next.action || '').trim();
+  const entityKey = getQueueEntityKey(next);
+
+  if (!entityKey) {
+    q.push(next);
+    setQueue(q);
+    return;
+  }
+
+  const filtered = q.filter(item => {
+    const sameEntity = getQueueEntityKey(item) === entityKey;
+    if (!sameEntity) return true;
+
+    const prevAction = String(item.action || '').trim();
+
+    // save terbaru menimpa save lama untuk entity yang sama
+    if (action.startsWith('save') && prevAction.startsWith('save')) {
+      return false;
+    }
+
+    // delete baru membuang save/delete lama untuk entity yang sama
+    if (action.startsWith('delete')) {
+      return false;
+    }
+
+    return true;
+  });
+
+  filtered.push(next);
+  setQueue(filtered);
+}
 let backendReachable = false;
 let lastBackendCheckAt = 0;
 
@@ -644,8 +701,8 @@ async function apiCallWithQueue(action, payload, opts = {}) {
 async function flushQueue() {
   if (_isFlushing) return;
 
-const canReachBackend = await checkBackendHealth();
-if (!canReachBackend) return;
+  const canReachBackend = await checkBackendHealth();
+  if (!canReachBackend) return;
 
   let q = getQueue();
   if (!q.length) return;
@@ -698,6 +755,36 @@ if (!canReachBackend) return;
           }
         }
 
+        if (item.action === 'saveWorker') {
+          const payload = item.payload || {};
+          const targetNik = String(payload.nik || payload.originalNik || '').trim();
+          const targetId = String(payload.id || '').trim();
+
+          const idx = workers.findIndex(w =>
+            String(w.id || '').trim() === targetId ||
+            String(w.nik || '').trim() === targetNik
+          );
+
+          if (idx !== -1) {
+            workers[idx] = {
+              ...workers[idx],
+              synced: true,
+              pendingAction: null,
+              updatedAt: new Date().toISOString()
+            };
+          }
+        }
+
+        if (item.action === 'deleteWorker') {
+          const targetId = String(item.payload?.id || '').trim();
+          workers = workers.filter(w => String(w.id || '').trim() !== targetId);
+        }
+
+        if (item.action === 'deleteMaterial') {
+          const targetId = String(item.payload?.id || '').trim();
+          materials = materials.filter(m => String(m.id || '').trim() !== targetId);
+        }
+
         // hapus dari queue setelah reconcile berhasil
         q.splice(i, 1);
         i--;
@@ -707,9 +794,10 @@ if (!canReachBackend) return;
         break;
       }
     }
-  } finally {
+   } finally {
     _isFlushing = false;
     saveLocal();
+    renderWorkers();
     renderMaterials();
     renderHistory();
     renderDashboard();
@@ -860,9 +948,41 @@ async function initialSync(showToastOnFail = false) {
         materialMap.set(key, { ...serverVersion, ...m });
       }
     });
+    // 6b. Merge worker server + pending lokal
+    const localPendingWorkers = (workers || []).filter(w => w.synced === false);
 
-       // 7. Apply final state
-    workers = serverWorkers;
+    const workerMap = new Map();
+
+    serverWorkers.forEach(w => {
+      const key = String(w.id || w.nik || '').trim();
+      if (key) {
+        workerMap.set(key, { ...w, synced: true, pendingAction: null });
+      }
+    });
+
+    localPendingWorkers.forEach(w => {
+      const key = String(w.id || w.nik || '').trim();
+      if (!key) return;
+
+      const serverVersion = workerMap.get(key);
+
+      if (!serverVersion) {
+        workerMap.set(key, { ...w });
+        return;
+      }
+
+      const localTime = new Date(w.updatedAt || 0).getTime();
+      const serverTime = new Date(serverVersion.updatedAt || 0).getTime();
+
+      if (!serverVersion || localTime >= serverTime) {
+        workerMap.set(key, {
+          ...serverVersion,
+          ...w
+        });
+      }
+    });
+           // 7. Apply final state
+    workers = Array.from(workerMap.values());
     materials = Array.from(materialMap.values());
     transactions = Array.from(trxMap.values())
       .sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -975,9 +1095,22 @@ async function saveWorker() {
   }
 
   const localId = 'W' + Date.now();
-  workers.push({ id: localId, nik, name, dept, position, barcode: nik });
-  saveLocal();
-  renderWorkers();
+const nowIso = new Date().toISOString();
+
+workers.push({
+  id: localId,
+  nik,
+  name,
+  dept,
+  position,
+  barcode: nik,
+  synced: false,
+  pendingAction: 'create',
+  updatedAt: nowIso
+});
+
+saveLocal();
+renderWorkers();
 
   const result = await apiCallWithQueue('saveWorker', {
     nik,
@@ -986,23 +1119,33 @@ async function saveWorker() {
     posisi: position
   });
 
-  if(result?.success && result.data){
-    const idx = workers.findIndex(w => w.id === localId);
-    if(idx !== -1){
-      workers[idx].id = result.data.id || localId;
-      workers[idx].name = result.data.nama || name;
-      workers[idx].barcode = nik;
-      saveLocal();
-      renderWorkers();
-    }
-    showToast('Pekerja berhasil disimpan!','success');
-  } else if(result?.queued){
-    showToast('Disimpan lokal, akan sync ketika online','info');
-  } else {
-    workers.splice(workers.findIndex(w => w.id === localId), 1);
+ if (result?.success && result.data) {
+  const idx = workers.findIndex(w => w.id === localId);
+  if (idx !== -1) {
+    workers[idx] = {
+      ...workers[idx],
+      id: result.data.id || localId,
+      name: result.data.nama || name,
+      barcode: nik,
+      synced: true,
+      pendingAction: null,
+      updatedAt: new Date().toISOString()
+    };
     saveLocal();
     renderWorkers();
-    showToast('Gagal: ' + (result?.message || ''),'error');
+  }
+  showToast('Pekerja berhasil disimpan!', 'success');
+}
+  } else if(result?.queued){
+    showToast('Disimpan lokal, akan sync ketika online','info');
+   } else {
+    const rollbackIdx = workers.findIndex(w => w.id === localId);
+    if (rollbackIdx !== -1) {
+      workers.splice(rollbackIdx, 1);
+    }
+    saveLocal();
+    renderWorkers();
+    showToast('Gagal: ' + (result?.message || ''), 'error');
     return;
   }
 
@@ -1083,8 +1226,21 @@ async function updateWorker(id){
     return;
   }
 
-  const backup = { ...workers[idx] };
-  workers[idx] = { ...workers[idx], nik, name, dept, position, barcode: nik };
+    const backup = { ...workers[idx] };
+  const nowIso = new Date().toISOString();
+
+  workers[idx] = {
+    ...workers[idx],
+    nik,
+    name,
+    dept,
+    position,
+    barcode: nik,
+    synced: false,
+    pendingAction: 'update',
+    updatedAt: nowIso
+  };
+
   saveLocal();
   renderWorkers();
 
@@ -1096,11 +1252,29 @@ async function updateWorker(id){
     posisi: position
   });
 
-  if(result?.success){
-    showToast('Pekerja diupdate!','success');
+  if (result?.success) {
+    workers[idx] = {
+      ...workers[idx],
+      synced: true,
+      pendingAction: null,
+      updatedAt: nowIso
+    };
+    saveLocal();
+    renderWorkers();
+
+    showToast('Pekerja diupdate!', 'success');
     showWorkerBarcode(id);
-  } else if(result?.queued){
-    showToast('Akan sync ketika online','info');
+  } else if (result?.queued) {
+    workers[idx] = {
+      ...workers[idx],
+      synced: false,
+      pendingAction: 'update',
+      updatedAt: nowIso
+    };
+    saveLocal();
+    renderWorkers();
+
+    showToast('Akan sync ketika online', 'info');
     showWorkerBarcode(id);
   } else {
     workers[idx] = backup;

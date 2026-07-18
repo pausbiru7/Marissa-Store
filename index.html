@@ -567,7 +567,35 @@ function isOnline() { return navigator.onLine; }
 function getQueue()  { return JSON.parse(localStorage.getItem('wh_queue') || '[]'); }
 function setQueue(q) { localStorage.setItem('wh_queue', JSON.stringify(q)); }
 function pushQueue(op) { const q = getQueue(); q.push(op); setQueue(q); }
+let backendReachable = false;
+let lastBackendCheckAt = 0;
 
+async function checkBackendHealth(force = false) {
+  const now = Date.now();
+
+  if (!force && now - lastBackendCheckAt < 15000) {
+    return backendReachable;
+  }
+
+  lastBackendCheckAt = now;
+
+  if (!navigator.onLine) {
+    backendReachable = false;
+    setSyncStatus('🔴 Offline');
+    return false;
+  }
+
+  try {
+    const res = await apiCall('ping', {});
+    backendReachable = !!(res && res.success);
+    setSyncStatus(backendReachable ? '🟢 Tersambung' : '🟠 Jaringan ada, server gagal');
+    return backendReachable;
+  } catch (err) {
+    backendReachable = false;
+    setSyncStatus('🟠 Jaringan ada, server gagal');
+    return false;
+  }
+}
 async function apiCallWithQueue(action, payload, opts = {}) {
   try {
     const res = await apiCall(action, payload);
@@ -614,7 +642,10 @@ async function apiCallWithQueue(action, payload, opts = {}) {
 }
   let _isFlushing = false;
 async function flushQueue() {
-  if (_isFlushing || !isOnline()) return;
+  if (_isFlushing) return;
+
+const canReachBackend = await checkBackendHealth();
+if (!canReachBackend) return;
 
   let q = getQueue();
   if (!q.length) return;
@@ -732,8 +763,11 @@ function mapTransactionFromServer(t) {
 }
 
 async function initialSync(showToastOnFail = false) {
-  if (!isOnline()) {
-    if (showToastOnFail) showToast('Offline — menampilkan data lokal', 'info');
+  const canReachBackend = await checkBackendHealth();
+  if (!canReachBackend) {
+    if (showToastOnFail) {
+      showToast('Backend belum dapat dihubungi — menampilkan data lokal', 'info');
+    }
     return;
   }
 
@@ -844,22 +878,30 @@ async function initialSync(showToastOnFail = false) {
 }
 
 window.addEventListener('online', async () => {
-  setSyncStatus('🟢 Online');
   showToast('Koneksi kembali', 'info');
+  await checkBackendHealth(true);
   await initialSync();
 });
 
 window.addEventListener('offline', () => {
+  backendReachable = false;
   setSyncStatus('🔴 Offline');
   showToast('Anda offline', 'error');
 });
 
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') initialSync();
+  if (document.visibilityState === 'visible') {
+    checkBackendHealth(true).then(ok => {
+      if (ok) initialSync();
+    });
+  }
 });
 
-setInterval(() => {
-  if (isOnline()) initialSync();
+setInterval(async () => {
+  await checkBackendHealth();
+  if (backendReachable) {
+    await initialSync();
+  }
 }, 60000);
 
 // ==================== TOAST & STATUS ====================

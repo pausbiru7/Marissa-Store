@@ -2110,25 +2110,49 @@ setInterval(()=>{ const auth=getAuth(); if(auth&&isSessionExpired(auth)){doLogou
 
 // ==================== SERVICE WORKER ====================
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js');
+
+      let refreshing = false;
+
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+
       reg.addEventListener('updatefound', () => {
-        const w = reg.installing;
-        w.addEventListener('statechange', () => {
-          if (w.state==='installed'&&navigator.serviceWorker.controller) {
-            if(confirm('Ada pembaruan baru. Muat ulang?')){ w.postMessage({type:'SKIP_WAITING'}); window.location.reload(); }
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+
+        newWorker.addEventListener('statechange', () => {
+          if (
+            newWorker.state === 'installed' &&
+            navigator.serviceWorker.controller
+          ) {
+            const yes = confirm('Ada pembaruan aplikasi. Muat ulang sekarang?');
+            if (yes) {
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+            }
           }
         });
       });
-    }).catch(err => console.error('SW failed:', err));
+
+      // cek update manual saat app dibuka
+      reg.update().catch(() => {});
+    } catch (err) {
+      console.error('SW failed:', err);
+    }
   });
 }
 
-// FIX N6 + C4: init() setelah semua konstanta dideklarasikan, dan di dalam tag <script>
+// INIT
 (async function init() {
   checkAuth();
-  renderWorkers(); renderMaterials();
-  setSyncStatus(isOnline() ? '🟢 Online' : '🔴 Offline');
+  renderWorkers();
+  renderMaterials();
+  await checkBackendHealth(true);
   await initialSync(false);
 })();
 </script>

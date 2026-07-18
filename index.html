@@ -2084,7 +2084,7 @@ async function printTrxPdf(trxId) {
   doc.text(`NIK        : ${trx.workerNik || '-'}`, margin + 4, y + 20);
   doc.text(`Departemen : ${trx.workerDept || '-'}`, margin + 70, y + 14);
 
- y += 34;
+y += 34;
 
 doc.setFillColor(245, 247, 250);
 doc.setDrawColor(220, 220, 220);
@@ -2124,14 +2124,20 @@ if (trx.note) {
   const noteLines = doc.splitTextToSize(String(trx.note), pageWidth - margin * 2 - 10);
   const noteHeight = 10 + (noteLines.length * 5);
 
-    doc.roundedRect(margin, y, pageWidth - margin * 2, noteHeight, 3, 3, 'FD');
-    doc.setFont('helvetica', 'bold');
-    doc.text('Tujuan / Catatan', margin + 4, y + 7);
-    doc.setFont('helvetica', 'normal');
-    doc.text(noteLines, margin + 4, y + 13);
+  doc.setFillColor(255, 248, 225);
+  doc.setDrawColor(220, 220, 220);
+  doc.roundedRect(margin, y, pageWidth - margin * 2, noteHeight, 3, 3, 'FD');
 
-    y += noteHeight + 8;
-  }
+  doc.setTextColor(40, 40, 40);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('Tujuan / Catatan', margin + 4, y + 7);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(noteLines, margin + 4, y + 13);
+
+  y += noteHeight + 8;
+}
 
   doc.setFillColor(trx.synced ? 220 : 255, trx.synced ? 245 : 244, trx.synced ? 228 : 230);
   doc.setDrawColor(220, 220, 220);

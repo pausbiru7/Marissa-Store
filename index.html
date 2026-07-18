@@ -1138,11 +1138,11 @@ async function deleteWorker(id){
   }
 }
 
-function renderWorkers(){
+window.renderWorkers = function () {
   const list = document.getElementById('workers-list');
-  if(!list) return;
+  if (!list) return;
 
-  if(!workers.length){
+  if (!workers.length) {
     list.innerHTML = '<div class="empty">Belum ada data pekerja</div>';
     return;
   }
@@ -1151,7 +1151,7 @@ function renderWorkers(){
     <div class="list-item">
       <div class="info">
         <h4>👷 ${w.name || '-'}</h4>
-        <p>NIK: ${w.nik} | ${w.dept || '-'} | ${w.position || '-'}</p>
+        <p>NIK: ${w.nik || '-'} | ${w.dept || '-'} | ${w.position || '-'}</p>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="btn btn-outline" style="padding:6px 10px;font-size:0.75rem;width:auto;" onclick="showWorkerBarcode('${w.id}')">🏷️ Lihat Barcode</button>
@@ -1160,7 +1160,7 @@ function renderWorkers(){
       </div>
     </div>
   `).join('');
-}
+};
 // ==================== MATERIALS ====================
 let materialEditId = null;
 

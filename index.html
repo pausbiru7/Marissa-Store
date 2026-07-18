@@ -861,18 +861,27 @@ async function initialSync(showToastOnFail = false) {
       }
     });
 
-    // 7. Apply final state
+       // 7. Apply final state
     workers = serverWorkers;
     materials = Array.from(materialMap.values());
     transactions = Array.from(trxMap.values())
       .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    console.log('SYNC RESULT', {
+      workersCount: workers.length,
+      materialsCount: materials.length,
+      transactionsCount: transactions.length,
+      workersSample: workers.slice(0, 2),
+      materialsSample: materials.slice(0, 2)
+    });
 
     saveLocal();
     renderWorkers();
     renderMaterials();
     renderHistory();
     renderDashboard();
-  } catch (err) {
+  } 
+  catch (err) {
     if (showToastOnFail) showToast('Sync error: ' + err.message, 'error');
   }
 }

@@ -2084,12 +2084,16 @@ async function printTrxPdf(trxId) {
   doc.text(`NIK        : ${trx.workerNik || '-'}`, margin + 4, y + 20);
   doc.text(`Departemen : ${trx.workerDept || '-'}`, margin + 70, y + 14);
 
-  y += 34;
+ y += 34;
 
-  doc.roundedRect(margin, y, pageWidth - margin * 2, 34, 3, 3, 'FD');
+doc.setFillColor(245, 247, 250);
+doc.setDrawColor(220, 220, 220);
+doc.roundedRect(margin, y, pageWidth - margin * 2, 34, 3, 3, 'FD');
 
-  doc.setFont('helvetica', 'bold');
-  doc.text('Data Material', margin + 4, y + 7);
+doc.setTextColor(40, 40, 40);
+doc.setFont('helvetica', 'bold');
+doc.setFontSize(10);
+doc.text('Data Material', margin + 4, y + 7);
 
 const materialName =
   trx.materialName ||
@@ -2108,6 +2112,8 @@ const materialCode =
 const qtyText = `${trx.qty || 0} ${trx.unit || ''}`;
 
 doc.setFont('helvetica', 'normal');
+doc.setFontSize(10);
+doc.setTextColor(40, 40, 40);
 doc.text(`Nama Material : ${materialName}`, margin + 4, y + 14);
 doc.text(`Kode Material : ${materialCode}`, margin + 4, y + 20);
 doc.text(`Jumlah        : ${qtyText}`, margin + 4, y + 26);

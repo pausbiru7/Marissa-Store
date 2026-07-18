@@ -2040,7 +2040,9 @@ async function printTrxPdf(trxId) {
     return;
   }
 
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
   const { jsPDF } = window.jspdf;
+
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -2075,7 +2077,7 @@ async function printTrxPdf(trxId) {
 
   rows.forEach(([label, value]) => {
     doc.setFont('helvetica', 'bold');
-    doc.text(`${label}`, 20, y);
+    doc.text(label, 20, y);
     doc.setFont('helvetica', 'normal');
     doc.text(`: ${value}`, 55, y);
     y += 8;
@@ -2101,32 +2103,43 @@ async function printTrxPdf(trxId) {
   const fileName = `pengambilan-material-${trx.id || 'trx'}.pdf`;
   const file = new File([blob], fileName, { type: 'application/pdf' });
 
-  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({
-        title: 'Bukti Pengambilan Material',
-        text: `Laporan PDF transaksi ${trx.id || ''}`,
-        files: [file]
-      });
-      showToast('PDF berhasil dibagikan', 'success');
-      return;
-    } catch (e) {
-      if (e.name !== 'AbortError') {
-        console.error(e);
+  if (isMobile) {
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: 'Bukti Pengambilan Material',
+          text: `Laporan PDF transaksi ${trx.id || ''}`,
+          files: [file]
+        });
+        showToast('PDF berhasil dibagikan', 'success');
+        return;
+      } catch (e) {
+        if (e.name !== 'AbortError') console.error(e);
       }
     }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    showToast('PDF berhasil diunduh', 'success');
+    return;
   }
 
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  const pdfUrl = doc.output('bloburl');
+  const win = window.open(pdfUrl, '_blank');
+  if (!win) {
+    doc.save(fileName);
+    showToast('Popup diblokir, PDF diunduh', 'info');
+    return;
+  }
 
-  setTimeout(() => URL.revokeObjectURL(url), 3000);
-  showToast('PDF berhasil diunduh', 'success');
+  showToast('PDF dibuka untuk print', 'success');
 }
 async function shareTrx(trxId) {
   const trx = transactions.find(t => t.id === trxId);

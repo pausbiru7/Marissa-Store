@@ -2429,18 +2429,140 @@ function shareDashboard() {
 let laporanData = [];
 function getNamaBulan(m){ return ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][m]||''; }
 function generateLaporan(){
-  // FIX M6: baca dari 'lap-month' (bukan 'lap-bulan')
-  const bulan=document.getElementById('lap-month')?.value; const dept=document.getElementById('lap-dept')?.value||'';
-  if(!bulan){showToast('Pilih bulan terlebih dahulu!','error');return;}
-  const [year,month]=bulan.split('-').map(Number);
-  laporanData=transactions.filter(t=>{const d=new Date(t.date);return d.getFullYear()===year&&(d.getMonth()+1)===month&&(!dept||(t.workerDept||'').toLowerCase()===dept.toLowerCase());});
-  // FIX M6: tulis ke 'laporan-content' (bukan 'laporan-result')
-  const box=document.getElementById('laporan-content'); if(!box) return;
-  if(!laporanData.length){box.innerHTML=`<div class="empty">Tidak ada transaksi pada ${getNamaBulan(month)} ${year}</div>`;return;}
-  const rekapM={},rekapW={};
-  laporanData.forEach(t=>{if(!rekapM[t.materialCode]){rekapM[t.materialCode]={code:t.materialCode,name:t.materialName,unit:t.unit,totalQty:0,count:0};}rekapM[t.materialCode].totalQty+=t.qty;rekapM[t.materialCode].count++;if(!rekapW[t.workerNik]){rekapW[t.workerNik]={name:t.workerName,nik:t.workerNik,dept:t.workerDept,count:0};}rekapW[t.workerNik].count++;});
-  box.innerHTML=`<div class="laporan-header"><h3>📊 Laporan ${getNamaBulan(month)} ${year}${dept?' — '+dept:''}</h3><div class="lap-stats"><div class="lap-stat-card"><span class="lap-stat-num">${laporanData.length}</span><span class="lap-stat-lbl">Total Transaksi</span></div><div class="lap-stat-card"><span class="lap-stat-num">${laporanData.reduce((a,t)=>a+t.qty,0)}</span><span class="lap-stat-lbl">Total Item Keluar</span></div><div class="lap-stat-card"><span class="lap-stat-num">${Object.keys(rekapM).length}</span><span class="lap-stat-lbl">Jenis Material</span></div><div class="lap-stat-card"><span class="lap-stat-num">${Object.keys(rekapW).length}</span><span class="lap-stat-lbl">Pekerja Aktif</span></div></div></div><h4 style="margin:16px 0 8px;">📦 Rekap Per Material</h4><div class="lap-table-wrap"><table class="lap-table"><thead><tr><th>No</th><th>Kode</th><th>Nama</th><th>Total Keluar</th><th>Satuan</th><th>Frekuensi</th></tr></thead><tbody>${Object.values(rekapM).sort((a,b)=>b.totalQty-a.totalQty).map((m,i)=>`<tr><td>${i+1}</td><td><code>${m.code}</code></td><td>${m.name}</td><td><strong>${m.totalQty}</strong></td><td>${m.unit}</td><td>${m.count}x</td></tr>`).join('')}</tbody></table></div><h4 style="margin:16px 0 8px;">👷 Rekap Per Pekerja</h4><div class="lap-table-wrap"><table class="lap-table"><thead><tr><th>No</th><th>NIK</th><th>Nama</th><th>Departemen</th><th>Transaksi</th></tr></thead><tbody>${Object.values(rekapW).sort((a,b)=>b.count-a.count).map((w,i)=>`<tr><td>${i+1}</td><td>${w.nik}</td><td>${w.name}</td><td>${w.dept||'-'}</td><td><strong>${w.count}x</strong></td></tr>`).join('')}</tbody></table></div><div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;"><button class="btn btn-primary" style="width:auto;padding:10px 16px;" onclick="printLaporan()">🖨️ Print</button><button class="btn btn-outline" style="width:auto;padding:10px 16px;" onclick="exportCSV()">📥 Export CSV</button></div>`;
-  showToast(`Laporan ${getNamaBulan(month)} ${year} siap!`,'success');
+  const bulan = document.getElementById('lap-month')?.value;
+  const dept = document.getElementById('lap-dept')?.value || '';
+
+  if(!bulan){
+    showToast('Pilih bulan terlebih dahulu!', 'error');
+    return;
+  }
+
+  const [year, month] = bulan.split('-').map(Number);
+
+  laporanData = transactions.filter(t => {
+    const d = new Date(t.date);
+    return d.getFullYear() === year &&
+           (d.getMonth() + 1) === month &&
+           (!dept || (t.workerDept || '').toLowerCase() === dept.toLowerCase());
+  });
+
+  const box = document.getElementById('laporan-content');
+  if(!box) return;
+
+  if(!laporanData.length){
+    box.innerHTML = `<div class="empty">Tidak ada transaksi pada ${getNamaBulan(month)} ${year}</div>`;
+    return;
+  }
+
+  const rekapM = {}, rekapW = {};
+
+  laporanData.forEach(t => {
+    if(!rekapM[t.materialCode]){
+      rekapM[t.materialCode] = {
+        code: t.materialCode,
+        name: t.materialName,
+        unit: t.unit,
+        totalQty: 0,
+        count: 0
+      };
+    }
+    rekapM[t.materialCode].totalQty += t.qty;
+    rekapM[t.materialCode].count++;
+
+    if(!rekapW[t.workerNik]){
+      rekapW[t.workerNik] = {
+        name: t.workerName,
+        nik: t.workerNik,
+        dept: t.workerDept,
+        count: 0
+      };
+    }
+    rekapW[t.workerNik].count++;
+  });
+
+  box.innerHTML = `
+    <div class="laporan-header">
+      <h3>📊 Laporan ${getNamaBulan(month)} ${year}${dept ? ' — ' + dept : ''}</h3>
+      <div class="lap-stats">
+        <div class="lap-stat-card">
+          <span class="lap-stat-num">${laporanData.length}</span>
+          <span class="lap-stat-lbl">Total Transaksi</span>
+        </div>
+        <div class="lap-stat-card">
+          <span class="lap-stat-num">${laporanData.reduce((a, t) => a + t.qty, 0)}</span>
+          <span class="lap-stat-lbl">Total Item Keluar</span>
+        </div>
+        <div class="lap-stat-card">
+          <span class="lap-stat-num">${Object.keys(rekapM).length}</span>
+          <span class="lap-stat-lbl">Jenis Material</span>
+        </div>
+        <div class="lap-stat-card">
+          <span class="lap-stat-num">${Object.keys(rekapW).length}</span>
+          <span class="lap-stat-lbl">Pekerja Aktif</span>
+        </div>
+      </div>
+    </div>
+
+    <h4 style="margin:16px 0 8px;">📦 Rekap Per Material</h4>
+    <div class="lap-table-wrap">
+      <table class="lap-table">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Kode</th>
+            <th>Nama</th>
+            <th>Total Keluar</th>
+            <th>Satuan</th>
+            <th>Frekuensi</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${Object.values(rekapM)
+            .sort((a, b) => b.totalQty - a.totalQty)
+            .map((m, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td><code>${m.code}</code></td>
+                <td>${m.name}</td>
+                <td><strong>${m.totalQty}</strong></td>
+                <td>${m.unit}</td>
+                <td>${m.count}x</td>
+              </tr>
+            `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <h4 style="margin:16px 0 8px;">👷 Rekap Per Pekerja</h4>
+    <div class="lap-table-wrap">
+      <table class="lap-table">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>NIK</th>
+            <th>Nama</th>
+            <th>Departemen</th>
+            <th>Transaksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${Object.values(rekapW)
+            .sort((a, b) => b.count - a.count)
+            .map((w, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td>${w.nik}</td>
+                <td>${w.name}</td>
+                <td>${w.dept || '-'}</td>
+                <td><strong>${w.count}x</strong></td>
+              </tr>
+            `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  showToast(`Laporan ${getNamaBulan(month)} ${year} siap!`, 'success');
 }
 async function printLaporan() {
   if (!laporanData || !laporanData.length) {

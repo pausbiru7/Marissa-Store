@@ -2050,57 +2050,91 @@ async function printTrxPdf(trxId) {
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
-  let y = 20;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 16;
+  let y = 16;
 
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, pageWidth, 30, 'F');
+
+  doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('Bukti Pengambilan Material', pageWidth / 2, y, { align: 'center' });
+  doc.text('Bukti Pengambilan Material', margin, 13);
 
-  y += 10;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text(`ID Transaksi: ${trx.id || '-'}`, 20, y);
+  doc.text(`ID: ${trx.id || '-'}`, margin, 20);
+  doc.text(`${trx.dateStr || '-'}, ${trx.timeStr || '-'}`, pageWidth - margin, 20, { align: 'right' });
 
-  y += 12;
-  doc.setFontSize(11);
+  y = 40;
 
-  const rows = [
-    ['Pekerja', trx.workerName || '-'],
-    ['NIK', String(trx.workerNik || '-')],
-    ['Departemen', trx.workerDept || '-'],
-    ['Material', trx.materialName || '-'],
-    ['Kode', trx.materialCode || '-'],
-    ['Jumlah', `${trx.qty || 0} ${trx.unit || ''}`],
-    ['Tanggal', `${trx.dateStr || '-'}, ${trx.timeStr || '-'}`],
-    ['Status', trx.synced ? 'Synced' : 'Pending']
-  ];
+  doc.setFillColor(245, 247, 250);
+  doc.setDrawColor(220, 220, 220);
+  doc.roundedRect(margin, y, pageWidth - margin * 2, 26, 3, 3, 'FD');
 
-  rows.forEach(([label, value]) => {
-    doc.setFont('helvetica', 'bold');
-    doc.text(label, 20, y);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`: ${value}`, 55, y);
-    y += 8;
-  });
+  doc.setTextColor(40, 40, 40);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('Data Pekerja', margin + 4, y + 7);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`Nama       : ${trx.workerName || '-'}`, margin + 4, y + 14);
+  doc.text(`NIK        : ${trx.workerNik || '-'}`, margin + 4, y + 20);
+  doc.text(`Departemen : ${trx.workerDept || '-'}`, margin + 70, y + 14);
+
+  y += 34;
+
+  doc.roundedRect(margin, y, pageWidth - margin * 2, 34, 3, 3, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Data Material', margin + 4, y + 7);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Nama Material : ${trx.materialName || '-'}`, margin + 4, y + 14);
+  doc.text(`Kode Material : ${trx.materialCode || '-'}`, margin + 4, y + 20);
+  doc.text(`Jumlah        : ${trx.qty || 0} ${trx.unit || ''}`, margin + 4, y + 26);
+
+  y += 42;
 
   if (trx.note) {
-    y += 4;
+    const noteLines = doc.splitTextToSize(String(trx.note), pageWidth - margin * 2 - 10);
+    const noteHeight = 10 + (noteLines.length * 5);
+
+    doc.roundedRect(margin, y, pageWidth - margin * 2, noteHeight, 3, 3, 'FD');
     doc.setFont('helvetica', 'bold');
-    doc.text('Tujuan', 20, y);
+    doc.text('Tujuan / Catatan', margin + 4, y + 7);
     doc.setFont('helvetica', 'normal');
-    const noteLines = doc.splitTextToSize(`: ${trx.note}`, 130);
-    doc.text(noteLines, 55, y);
-    y += noteLines.length * 6;
+    doc.text(noteLines, margin + 4, y + 13);
+
+    y += noteHeight + 8;
   }
 
-  y += 12;
+  doc.setFillColor(trx.synced ? 220 : 255, trx.synced ? 245 : 244, trx.synced ? 228 : 230);
+  doc.setDrawColor(220, 220, 220);
+  doc.roundedRect(margin, y, pageWidth - margin * 2, 14, 3, 3, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 30, 30);
+  doc.text('Status Sinkronisasi', margin + 4, y + 9);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(trx.synced ? '✅ Synced' : '⏳ Pending', pageWidth - margin - 4, y + 9, { align: 'right' });
+
+  y += 28;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80);
+  doc.text('Dokumen ini dibuat otomatis oleh sistem sebagai bukti pengambilan material.', margin, y);
+
   doc.setFont('helvetica', 'italic');
-  doc.text('Marissa Store', pageWidth / 2, y, { align: 'center' });
-  y += 6;
-  doc.text('Powered by Pausbiru7', pageWidth / 2, y, { align: 'center' });
+  doc.text('Marissa Store', margin, pageHeight - 12);
+  doc.text('Powered by Pausbiru7', pageWidth - margin, pageHeight - 12, { align: 'right' });
 
   const blob = doc.output('blob');
-  const fileName = `pengambilan-material-${trx.id || 'trx'}.pdf`;
+  const fileName = `bukti-pengambilan-${trx.id || 'trx'}.pdf`;
   const file = new File([blob], fileName, { type: 'application/pdf' });
 
   if (isMobile) {
@@ -2108,7 +2142,7 @@ async function printTrxPdf(trxId) {
       try {
         await navigator.share({
           title: 'Bukti Pengambilan Material',
-          text: `Laporan PDF transaksi ${trx.id || ''}`,
+          text: `PDF transaksi ${trx.id || ''}`,
           files: [file]
         });
         showToast('PDF berhasil dibagikan', 'success');
@@ -2125,8 +2159,8 @@ async function printTrxPdf(trxId) {
     document.body.appendChild(a);
     a.click();
     a.remove();
-
     setTimeout(() => URL.revokeObjectURL(url), 3000);
+
     showToast('PDF berhasil diunduh', 'success');
     return;
   }

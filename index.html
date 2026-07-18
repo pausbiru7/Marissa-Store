@@ -1095,22 +1095,22 @@ async function saveWorker() {
   }
 
   const localId = 'W' + Date.now();
-const nowIso = new Date().toISOString();
+  const nowIso = new Date().toISOString();
 
-workers.push({
-  id: localId,
-  nik,
-  name,
-  dept,
-  position,
-  barcode: nik,
-  synced: false,
-  pendingAction: 'create',
-  updatedAt: nowIso
-});
+  workers.push({
+    id: localId,
+    nik,
+    name,
+    dept,
+    position,
+    barcode: nik,
+    synced: false,
+    pendingAction: 'create',
+    updatedAt: nowIso
+  });
 
-saveLocal();
-renderWorkers();
+  saveLocal();
+  renderWorkers();
 
   const result = await apiCallWithQueue('saveWorker', {
     nik,
@@ -1119,26 +1119,25 @@ renderWorkers();
     posisi: position
   });
 
- if (result?.success && result.data) {
-  const idx = workers.findIndex(w => w.id === localId);
-  if (idx !== -1) {
-    workers[idx] = {
-      ...workers[idx],
-      id: result.data.id || localId,
-      name: result.data.nama || name,
-      barcode: nik,
-      synced: true,
-      pendingAction: null,
-      updatedAt: new Date().toISOString()
-    };
-    saveLocal();
-    renderWorkers();
-  }
-  showToast('Pekerja berhasil disimpan!', 'success');
-}
-  } else if(result?.queued){
-    showToast('Disimpan lokal, akan sync ketika online','info');
-   } else {
+  if (result?.success && result.data) {
+    const idx = workers.findIndex(w => w.id === localId);
+    if (idx !== -1) {
+      workers[idx] = {
+        ...workers[idx],
+        id: result.data.id || localId,
+        name: result.data.nama || name,
+        barcode: nik,
+        synced: true,
+        pendingAction: null,
+        updatedAt: new Date().toISOString()
+      };
+      saveLocal();
+      renderWorkers();
+    }
+    showToast('Pekerja berhasil disimpan!', 'success');
+  } else if (result?.queued) {
+    showToast('Disimpan lokal, akan sync ketika online', 'info');
+  } else {
     const rollbackIdx = workers.findIndex(w => w.id === localId);
     if (rollbackIdx !== -1) {
       workers.splice(rollbackIdx, 1);

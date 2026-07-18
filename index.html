@@ -2380,11 +2380,142 @@ function generateLaporan(){
   box.innerHTML=`<div class="laporan-header"><h3>📊 Laporan ${getNamaBulan(month)} ${year}${dept?' — '+dept:''}</h3><div class="lap-stats"><div class="lap-stat-card"><span class="lap-stat-num">${laporanData.length}</span><span class="lap-stat-lbl">Total Transaksi</span></div><div class="lap-stat-card"><span class="lap-stat-num">${laporanData.reduce((a,t)=>a+t.qty,0)}</span><span class="lap-stat-lbl">Total Item Keluar</span></div><div class="lap-stat-card"><span class="lap-stat-num">${Object.keys(rekapM).length}</span><span class="lap-stat-lbl">Jenis Material</span></div><div class="lap-stat-card"><span class="lap-stat-num">${Object.keys(rekapW).length}</span><span class="lap-stat-lbl">Pekerja Aktif</span></div></div></div><h4 style="margin:16px 0 8px;">📦 Rekap Per Material</h4><div class="lap-table-wrap"><table class="lap-table"><thead><tr><th>No</th><th>Kode</th><th>Nama</th><th>Total Keluar</th><th>Satuan</th><th>Frekuensi</th></tr></thead><tbody>${Object.values(rekapM).sort((a,b)=>b.totalQty-a.totalQty).map((m,i)=>`<tr><td>${i+1}</td><td><code>${m.code}</code></td><td>${m.name}</td><td><strong>${m.totalQty}</strong></td><td>${m.unit}</td><td>${m.count}x</td></tr>`).join('')}</tbody></table></div><h4 style="margin:16px 0 8px;">👷 Rekap Per Pekerja</h4><div class="lap-table-wrap"><table class="lap-table"><thead><tr><th>No</th><th>NIK</th><th>Nama</th><th>Departemen</th><th>Transaksi</th></tr></thead><tbody>${Object.values(rekapW).sort((a,b)=>b.count-a.count).map((w,i)=>`<tr><td>${i+1}</td><td>${w.nik}</td><td>${w.name}</td><td>${w.dept||'-'}</td><td><strong>${w.count}x</strong></td></tr>`).join('')}</tbody></table></div><div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;"><button class="btn btn-primary" style="width:auto;padding:10px 16px;" onclick="printLaporan()">🖨️ Print</button><button class="btn btn-outline" style="width:auto;padding:10px 16px;" onclick="exportCSV()">📥 Export CSV</button></div>`;
   showToast(`Laporan ${getNamaBulan(month)} ${year} siap!`,'success');
 }
-function printLaporan(){
-  // FIX M6: baca dari 'laporan-content' dan 'lap-month'
-  const content=document.getElementById('laporan-content'); if(!content||!laporanData.length){showToast('Generate laporan terlebih dahulu!','error');return;}
-  const bulan=document.getElementById('lap-month')?.value||''; const [year,month]=bulan?bulan.split('-').map(Number):[new Date().getFullYear(),new Date().getMonth()+1];
-  const win=window.open('','_blank'); win.document.write(`<html><head><title>Laporan</title><style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;padding:30px;color:#333;}h2{text-align:center;margin-bottom:20px;}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;}th{background:#f1f5f9;padding:8px 6px;text-align:left;border:1px solid #ddd;}td{padding:7px 6px;border:1px solid #eee;}.footer{text-align:center;margin-top:30px;font-size:11px;color:#999;}</style></head><body><h2>Laporan ${getNamaBulan(month)} ${year}</h2>${content.innerHTML}<div class="footer">Dicetak: ${new Date().toLocaleString('id-ID')} — Marissa Store</div></body></html>`); win.document.close(); setTimeout(()=>{win.print();win.close();},400);
+async function printLaporan() {
+  if (!laporanData || !laporanData.length) {
+    showToast('Generate laporan terlebih dahulu!', 'error');
+    return;
+  }
+
+  const bulan = document.getElementById('lap-month')?.value || '';
+  const [year, month] = bulan
+    ? bulan.split('-').map(Number)
+    : [new Date().getFullYear(), new Date().getMonth() + 1];
+
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  let y = 18;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text(`Laporan ${getNamaBulan(month)} ${year}`, pageWidth / 2, y, { align: 'center' });
+
+  y += 8;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, y, { align: 'center' });
+
+  y += 12;
+
+  const headers = ['Tanggal', 'Pekerja', 'Material', 'Kode', 'Qty'];
+  const colX = [14, 40, 92, 145, 176];
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  headers.forEach((h, i) => doc.text(h, colX[i], y));
+
+  y += 4;
+  doc.line(14, y, 196, y);
+  y += 6;
+
+  doc.setFont('helvetica', 'normal');
+
+  let totalQty = 0;
+
+  for (const item of laporanData) {
+    const tanggal = item.dateStr || '-';
+    const pekerja = String(item.workerName || '-').slice(0, 22);
+    const material = String(item.materialName || '-').slice(0, 28);
+    const kode = String(item.materialCode || '-').slice(0, 14);
+    const qty = `${item.qty || 0} ${item.unit || ''}`;
+
+    totalQty += Number(item.qty || 0);
+
+    if (y > pageHeight - 20) {
+      doc.addPage();
+      y = 18;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      headers.forEach((h, i) => doc.text(h, colX[i], y));
+      y += 4;
+      doc.line(14, y, 196, y);
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+    }
+
+    doc.text(tanggal, colX[0], y);
+    doc.text(pekerja, colX[1], y);
+    doc.text(material, colX[2], y);
+    doc.text(kode, colX[3], y);
+    doc.text(qty, colX[4], y);
+
+    y += 7;
+  }
+
+  y += 4;
+  doc.line(14, y, 196, y);
+  y += 8;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Total Transaksi: ${laporanData.length}`, 14, y);
+  doc.text(`Total Qty: ${totalQty}`, 110, y);
+
+  y += 12;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(10);
+  doc.text('Marissa Store', pageWidth / 2, y, { align: 'center' });
+  y += 5;
+  doc.text('Powered by Pausbiru7', pageWidth / 2, y, { align: 'center' });
+
+  const blob = doc.output('blob');
+  const fileName = `laporan-${year}-${String(month).padStart(2, '0')}.pdf`;
+  const file = new File([blob], fileName, { type: 'application/pdf' });
+
+  if (isMobile) {
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: `Laporan ${getNamaBulan(month)} ${year}`,
+          text: 'Laporan PDF Marissa Store',
+          files: [file]
+        });
+        showToast('PDF laporan berhasil dibagikan', 'success');
+        return;
+      } catch (e) {
+        if (e.name !== 'AbortError') console.error(e);
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+    showToast('PDF laporan berhasil diunduh', 'success');
+    return;
+  }
+
+  const pdfUrl = doc.output('bloburl');
+  const win = window.open(pdfUrl, '_blank');
+  if (!win) {
+    doc.save(fileName);
+    showToast('Popup diblokir, PDF diunduh', 'info');
+    return;
+  }
+
+  showToast('PDF laporan dibuka untuk print', 'success');
 }
 function exportCSV(){
   if(!laporanData.length){showToast('Generate laporan terlebih dahulu!','error');return;}

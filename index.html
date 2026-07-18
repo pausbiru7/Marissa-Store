@@ -1985,16 +1985,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ==================== HISTORY ====================
 function renderHistory() {
-  const list = document.getElementById('history-list'); if (!list) return;
-  if (!transactions.length) { list.innerHTML='<div class="empty">Belum ada riwayat transaksi</div>'; return; }
-  const search = (document.getElementById('history-search')?.value||'').toLowerCase();
-  const filtered = transactions.filter(t => !search||(t.workerName||'').toLowerCase().includes(search)||(t.materialName||'').toLowerCase().includes(search)||(t.materialCode||'').toLowerCase().includes(search)||(t.workerNik||'').toLowerCase().includes(search));
-  if (!filtered.length) { list.innerHTML='<div class="empty">Tidak ada hasil pencarian</div>'; return; }
-  list.innerHTML = filtered.map(t => `<div class="list-item"><div class="info"><h4>📦 ${t.materialName||'-'} <span style="font-weight:400;color:var(--text-muted);font-size:0.8rem;">${t.materialCode}</span></h4><p>👷 ${t.workerName||'-'} (${t.workerNik||'-'}) | ${t.workerDept||'-'}</p><p>📊 ${t.qty} ${t.unit||''} | 📅 ${t.dateStr||''} ${t.timeStr||''} ${t.synced?'<span class="stock-badge stock-ok" style="font-size:0.65rem;">✅ Synced</span>':'<span class="stock-badge stock-low" style="font-size:0.65rem;">⏳ Pending</span>'}</p></div><div style="display:flex;gap:6px;"><button class="btn btn-outline" style="padding:6px 10px;font-size:0.75rem;width:auto;" onclick="printTrxPdf('${t.id}')">🖨️</button><button class="btn btn-outline" style="padding:6px 10px;font-size:0.75rem;width:auto;" onclick="shareTrx('${t.id}')">📤</button></div></div>`).join('');
-}
+  const list = document.getElementById('history-list');
+  if (!list) return;
 
-function printTrxPdf(id) { const t=transactions.find(t=>t.id===id); if(!t) return; const win=window.open('','_blank'); win.document.write(`<html><head><title>Bukti Pengambilan</title><style>body{font-family:Arial,sans-serif;padding:30px;max-width:400px;margin:0 auto;}h2{text-align:center;border-bottom:2px solid #333;padding-bottom:10px;}table{width:100%;border-collapse:collapse;margin-top:16px;}td{padding:8px 4px;border-bottom:1px solid #eee;font-size:14px;}td:first-child{color:#666;width:40%;}.footer{text-align:center;margin-top:30px;font-size:12px;color:#999;}</style></head><body><h2>📋 Bukti Pengambilan Material</h2><table><tr><td>Pekerja</td><td><strong>${t.workerName}</strong></td></tr><tr><td>NIK</td><td>${t.workerNik}</td></tr><tr><td>Departemen</td><td>${t.workerDept}</td></tr><tr><td>Material</td><td><strong>${t.materialName}</strong></td></tr><tr><td>Kode</td><td>${t.materialCode}</td></tr><tr><td>Jumlah</td><td><strong>${t.qty} ${t.unit}</strong></td></tr><tr><td>Tanggal</td><td>${t.dateStr} ${t.timeStr}</td></tr></table><div class="footer">Marissa Store — ${new Date().getFullYear()}</div></body></html>`); win.document.close(); win.print(); win.close(); }
-function shareTrx(id) { const t=transactions.find(t=>t.id===id); if(!t) return; const text=`📋 *Bukti Pengambilan Material*\n👷 Pekerja  : ${t.workerName} (${t.workerNik})\n🏭 Dept     : ${t.workerDept}\n📦 Material : ${t.materialName}\n🏷️ Kode     : ${t.materialCode}\n📊 Jumlah   : ${t.qty} ${t.unit}\n📅 Tanggal  : ${t.dateStr} ${t.timeStr}\n— Marissa Store`; if(navigator.share){navigator.share({title:'Bukti Pengambilan',text}).catch(()=>{});}else{navigator.clipboard.writeText(text).then(()=>showToast('Teks disalin!','success'));} }
+  if (!transactions.length) {
+    list.innerHTML = '<div class="empty">Belum ada riwayat transaksi</div>';
+    return;
+  }
+
+  const search = (document.getElementById('history-search')?.value || '').toLowerCase();
+
+  const filtered = transactions.filter(t =>
+    !search ||
+    (t.workerName || '').toLowerCase().includes(search) ||
+    (t.materialName || '').toLowerCase().includes(search) ||
+    (t.materialCode || '').toLowerCase().includes(search) ||
+    (t.workerNik || '').toLowerCase().includes(search)
+  );
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty">Tidak ada hasil pencarian</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(t => `
+    <div class="list-item">
+      <div class="info">
+        <h4>
+          📦 ${t.materialName || '-'}
+          <span style="font-weight:400;color:var(--text-muted);font-size:0.8rem;">
+            ${t.materialCode}
+          </span>
+        </h4>
+        <p>👷 ${t.workerName || '-'} (${t.workerNik || '-'}) | ${t.workerDept || '-'}</p>
+        <p>
+          📊 ${t.qty} ${t.unit || ''} | 📅 ${t.dateStr || ''} ${t.timeStr || ''}
+          ${t.synced
+            ? '<span class="stock-badge stock-ok" style="font-size:0.65rem;">✅ Synced</span>'
+            : '<span class="stock-badge stock-low" style="font-size:0.65rem;">⏳ Pending</span>'}
+        </p>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-outline" style="padding:6px 10px;font-size:0.75rem;width:auto;" onclick="printTrxPdf('${t.id}')">🖨️</button>
+        <button class="btn btn-outline" style="padding:6px 10px;font-size:0.75rem;width:auto;" onclick="shareTrx('${t.id}')">📤</button>
+      </div>
+    </div>
+  `).join('');
+}
 </script>
 <script>
 // ==================== DASHBOARD ====================

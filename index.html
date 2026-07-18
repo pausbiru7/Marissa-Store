@@ -2033,45 +2033,101 @@ function showTrxSummary(trx) {
     </div>
   </div>`;
 }
-  function printTrxPdf(trxId) {
+async function printTrxPdf(trxId) {
   const trx = transactions.find(t => t.id === trxId);
-  if (!trx) { showToast('Transaksi tidak ditemukan!', 'error'); return; }
-  
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) { showToast('Izinkan popup untuk print!', 'error'); return; }
-  
-  printWindow.document.write(`<!DOCTYPE html>
-  <html><head><title>Cetak - ${trx.id}</title>
-  <style>body{font-family:sans-serif;padding:15px;max-width:320px;margin:0 auto}
-  h2{text-align:center;border-bottom:2px dashed #333;padding-bottom:10px}
-  table{width:100%;border-collapse:collapse;margin:10px 0}
-  td{padding:6px 0;border-bottom:1px solid #eee;font-size:12px}
-  td:first-child{color:#666;width:35%}
-  .total{background:#222;color:#fff;padding:12px;border-radius:6px;text-align:center;margin-top:15px}
-  .tujuan{background:#fff8e1;padding:8px;border-radius:4px;margin-top:10px;font-size:11px}</style>
-  </head><body>
-  <h2>📦 Bukti Pengambilan</h2>
-  <div style="background:#eee;padding:6px;text-align:center;font-family:monospace;font-size:11px">${trx.id}</div>
-  <table>
-    <tr><td>Pekerja</td><td><strong>${trx.workerName}</strong></td></tr>
-    <tr><td>NIK</td><td>${trx.workerNik}</td></tr>
-    <tr><td>Dept</td><td>${trx.workerDept}</td></tr>
-    <tr><td>Material</td><td>${trx.materialName}</td></tr>
-    <tr><td>Kode</td><td>${trx.materialCode}</td></tr>
-    <tr><td>Tanggal</td><td>${trx.dateStr}</td></tr>
-  </table>
-  ${trx.note ? '<div class="tujuan"><strong>Tujuan:</strong> ' + trx.note + '</div>' : ''}
-  <div class="total"><div style="font-size:10px;opacity:0.8">JUMLAH</div>
-  <div style="font-size:18px;font-weight:bold">${trx.qty} ${trx.unit}</div></div>
-  <div style="display:flex;justify-content:space-between;margin-top:20px;font-size:10px">
-    <div><div style="border-bottom:1px solid #333;width:60px;margin-bottom:4px"></div>Penerima</div>
-    <div><div style="border-bottom:1px solid #333;width:60px;margin-bottom:4px"></div>Petugas</div>
-  </div>
-  </body></html>`);
-  printWindow.document.close();
-  printWindow.onload = () => { printWindow.print(); printWindow.close(); };
-}
+  if (!trx) {
+    showToast('Transaksi tidak ditemukan!', 'error');
+    return;
+  }
 
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  let y = 20;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('Bukti Pengambilan Material', pageWidth / 2, y, { align: 'center' });
+
+  y += 10;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`ID Transaksi: ${trx.id || '-'}`, 20, y);
+
+  y += 12;
+  doc.setFontSize(11);
+
+  const rows = [
+    ['Pekerja', trx.workerName || '-'],
+    ['NIK', String(trx.workerNik || '-')],
+    ['Departemen', trx.workerDept || '-'],
+    ['Material', trx.materialName || '-'],
+    ['Kode', trx.materialCode || '-'],
+    ['Jumlah', `${trx.qty || 0} ${trx.unit || ''}`],
+    ['Tanggal', `${trx.dateStr || '-'}, ${trx.timeStr || '-'}`],
+    ['Status', trx.synced ? 'Synced' : 'Pending']
+  ];
+
+  rows.forEach(([label, value]) => {
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${label}`, 20, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`: ${value}`, 55, y);
+    y += 8;
+  });
+
+  if (trx.note) {
+    y += 4;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Tujuan', 20, y);
+    doc.setFont('helvetica', 'normal');
+    const noteLines = doc.splitTextToSize(`: ${trx.note}`, 130);
+    doc.text(noteLines, 55, y);
+    y += noteLines.length * 6;
+  }
+
+  y += 12;
+  doc.setFont('helvetica', 'italic');
+  doc.text('Marissa Store', pageWidth / 2, y, { align: 'center' });
+  y += 6;
+  doc.text('Powered by Pausbiru7', pageWidth / 2, y, { align: 'center' });
+
+  const blob = doc.output('blob');
+  const fileName = `pengambilan-material-${trx.id || 'trx'}.pdf`;
+  const file = new File([blob], fileName, { type: 'application/pdf' });
+
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        title: 'Bukti Pengambilan Material',
+        text: `Laporan PDF transaksi ${trx.id || ''}`,
+        files: [file]
+      });
+      showToast('PDF berhasil dibagikan', 'success');
+      return;
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.error(e);
+      }
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  showToast('PDF berhasil diunduh', 'success');
+}
 async function shareTrx(trxId) {
   const trx = transactions.find(t => t.id === trxId);
   if (!trx) {

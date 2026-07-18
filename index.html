@@ -2091,16 +2091,32 @@ async function printTrxPdf(trxId) {
   doc.setFont('helvetica', 'bold');
   doc.text('Data Material', margin + 4, y + 7);
 
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Nama Material : ${trx.materialName || '-'}`, margin + 4, y + 14);
-  doc.text(`Kode Material : ${trx.materialCode || '-'}`, margin + 4, y + 20);
-  doc.text(`Jumlah        : ${trx.qty || 0} ${trx.unit || ''}`, margin + 4, y + 26);
+const materialName =
+  trx.materialName ||
+  trx.namaMaterial ||
+  trx.material ||
+  trx.itemName ||
+  '-';
 
-  y += 42;
+const materialCode =
+  trx.materialCode ||
+  trx.kodeMaterial ||
+  trx.code ||
+  trx.itemCode ||
+  '-';
 
-  if (trx.note) {
-    const noteLines = doc.splitTextToSize(String(trx.note), pageWidth - margin * 2 - 10);
-    const noteHeight = 10 + (noteLines.length * 5);
+const qtyText = `${trx.qty || 0} ${trx.unit || ''}`;
+
+doc.setFont('helvetica', 'normal');
+doc.text(`Nama Material : ${materialName}`, margin + 4, y + 14);
+doc.text(`Kode Material : ${materialCode}`, margin + 4, y + 20);
+doc.text(`Jumlah        : ${qtyText}`, margin + 4, y + 26);
+
+y += 42;
+
+if (trx.note) {
+  const noteLines = doc.splitTextToSize(String(trx.note), pageWidth - margin * 2 - 10);
+  const noteHeight = 10 + (noteLines.length * 5);
 
     doc.roundedRect(margin, y, pageWidth - margin * 2, noteHeight, 3, 3, 'FD');
     doc.setFont('helvetica', 'bold');

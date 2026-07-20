@@ -2782,7 +2782,10 @@ function drawTableHeader() {
     { label: 'Qty', x: 170 }
   ];
 
-  cols.forEach(col => doc.text(col.label, col.x, y + 4.4));
+  cols.forEach(col => {
+    doc.text(col.label, col.x, y + 3.8, { baseline: 'middle' });
+  });
+
   y += 10;
 }
 

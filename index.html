@@ -2727,7 +2727,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('history-date-from')?.addEventListener('change', renderHistory);
   document.getElementById('history-date-to')?.addEventListener('change', renderHistory);
 });
-  function printHistoryPdf() {
+function printHistoryPdf() {
   const filtered = getFilteredHistoryData();
 
   if (!filtered.length) {
@@ -2740,62 +2740,158 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
+  const marginLeft = 14;
+  const marginRight = 14;
+  const contentWidth = pageWidth - marginLeft - marginRight;
 
-  let y = 16;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text('Laporan Riwayat Pengambilan', 14, y);
-  y += 8;
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
+  const now = new Date();
+  const printedAt = now.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 
   const keyword = (document.getElementById('history-search')?.value || '').trim();
-  const filterType = document.getElementById('history-filter-type')?.value || 'all';
+  const filterTypeRaw = document.getElementById('history-filter-type')?.value || 'all';
+  const filterTypeMap = {
+    all: 'Semua',
+    worker: 'Nama / NIK Pekerja',
+    material: 'Nama / Kode Material'
+  };
+  const filterType = filterTypeMap[filterTypeRaw] || filterTypeRaw;
   const dateFrom = document.getElementById('history-date-from')?.value || '-';
   const dateTo = document.getElementById('history-date-to')?.value || '-';
 
-  doc.text(`Filter: ${keyword || 'Semua data'}`, 14, y); y += 5;
-  doc.text(`Tipe: ${filterType}`, 14, y); y += 5;
-  doc.text(`Periode: ${dateFrom} s/d ${dateTo}`, 14, y); y += 5;
-  doc.text(`Total transaksi: ${filtered.length}`, 14, y); y += 8;
+  let y = 16;
 
-  filtered.forEach((t, i) => {
-    if (y > pageHeight - 24) {
-      doc.addPage();
-      y = 16;
-    }
+  function drawReportHeader(isNewPage = false) {
+    if (isNewPage) y = 16;
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text(`${i + 1}. ${t.materialName || '-'}`, 14, y);
-    y += 5;
+    doc.setFontSize(15);
+    doc.setTextColor(30, 41, 59);
+    doc.text('Laporan Riwayat Pengambilan', marginLeft, y);
+    y += 7;
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Dicetak pada: ${printedAt}`, marginLeft, y);
+    y += 5;
+    doc.text(`Filter: ${keyword || 'Semua data'}`, marginLeft, y);
+    y += 4.5;
+    doc.text(`Tipe: ${filterType}`, marginLeft, y);
+    y += 4.5;
+    doc.text(`Periode: ${dateFrom} s/d ${dateTo}`, marginLeft, y);
+    y += 4.5;
+    doc.text(`Total transaksi: ${filtered.length}`, marginLeft, y);
+    y += 7;
 
-    const lines = [
-      `Kode Material : ${t.materialCode || '-'}`,
-      `Pekerja       : ${t.workerName || '-'} (${t.workerNik || '-'})`,
-      `Departemen    : ${t.workerDept || '-'}`,
-      `Qty Keluar    : ${t.qty || 0} ${t.unit || ''}`,
-      `Tanggal       : ${t.dateStr || '-'} ${t.timeStr || ''}`,
-      `Status Sync   : ${t.synced ? 'Synced' : 'Pending Sync'}`
+    drawTableHeader();
+  }
+
+  function drawTableHeader() {
+    const cols = [
+      { key: 'no', label: 'No', width: 10 },
+      { key: 'tgl', label: 'Tanggal/Jam', width: 30 },
+      { key: 'worker', label: 'Pekerja', width: 42 },
+      { key: 'dept', label: 'Dept', width: 22 },
+      { key: 'material', label: 'Material', width: 48 },
+      { key: 'qty', label: 'Qty', width: 18 },
+      { key: 'status', label: 'Status', width: 20 }
     ];
 
-    lines.forEach(line => {
-      const wrapped = doc.splitTextToSize(line, pageWidth - 28);
-      doc.text(wrapped, 14, y);
-      y += wrapped.length * 4.5;
+    let x = marginLeft;
+
+    doc.setFillColor(241, 245, 249);
+    doc.setDrawColor(203, 213, 225);
+    doc.rect(marginLeft, y, contentWidth, 8, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(30, 41, 59);
+
+    cols.forEach(col => {
+      doc.text(col.label, x + 1.5, y + 5.2);
+      x += col.width;
     });
 
-    y += 3;
+    y += 8;
+  }
+
+  const cols = [
+    { key: 'no', width: 10 },
+    { key: 'tgl', width: 30 },
+    { key: 'worker', width: 42 },
+    { key: 'dept', width: 22 },
+    { key: 'material', width: 48 },
+    { key: 'qty', width: 18 },
+    { key: 'status', width: 20 }
+  ];
+
+  function drawRow(row, index) {
+    const values = {
+      no: String(index + 1),
+      tgl: `${row.dateStr || '-'} ${row.timeStr || ''}`.trim(),
+      worker: `${row.workerName || '-'}\n(${row.workerNik || '-'})`,
+      dept: row.workerDept || '-',
+      material: `${row.materialName || '-'}\n${row.materialCode || '-'}`,
+      qty: `${row.qty || 0} ${row.unit || ''}`.trim(),
+      status: row.synced ? 'Synced' : 'Pending'
+    };
+
+    const wrapped = {};
+    let rowHeight = 6;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.3);
+    doc.setTextColor(51, 65, 85);
+
+    cols.forEach(col => {
+      const text = values[col.key] || '';
+      wrapped[col.key] = doc.splitTextToSize(text, col.width - 3);
+      const h = Math.max(6, wrapped[col.key].length * 4);
+      if (h > rowHeight) rowHeight = h;
+    });
+
+    if (y + rowHeight > pageHeight - 24) {
+      doc.addPage();
+      drawReportHeader(true);
+    }
+
+    let x = marginLeft;
+
+    cols.forEach(col => {
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(x, y, col.width, rowHeight);
+      doc.text(wrapped[col.key], x + 1.5, y + 4);
+      x += col.width;
+    });
+
+    y += rowHeight;
+  }
+
+  drawReportHeader(false);
+  filtered.forEach((row, index) => drawRow(row, index));
+
+  const totalPages = doc.internal.getNumberOfPages();
+
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
 
     doc.setDrawColor(220, 220, 220);
-    doc.line(14, y, pageWidth - 14, y);
-    y += 6;
-  });
+    doc.line(marginLeft, pageHeight - 10, pageWidth - marginRight, pageHeight - 10);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 100, 100);
+
+    doc.text('Marissa Store', marginLeft, pageHeight - 6);
+    doc.text('Powered by Pausbiru7', pageWidth / 2, pageHeight - 6, { align: 'center' });
+    doc.text(`Halaman ${i} / ${totalPages}`, pageWidth - marginRight, pageHeight - 6, { align: 'right' });
+  }
 
   doc.save('riwayat-pengambilan.pdf');
 }

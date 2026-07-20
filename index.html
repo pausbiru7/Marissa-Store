@@ -2764,7 +2764,7 @@ async function printLaporan() {
     y += 26;
   }
 
- function drawTableHeader() {
+function drawTableHeader() {
   const headerH = 8;
 
   doc.setFillColor(37, 99, 235);
@@ -2774,8 +2774,6 @@ async function printLaporan() {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
 
-  const textY = y + 5; // naikkan sedikit dari 5.5 ke 5
-
   const cols = [
     { label: 'Tanggal', x: 16 },
     { label: 'Pekerja', x: 40 },
@@ -2784,7 +2782,7 @@ async function printLaporan() {
     { label: 'Qty', x: 170 }
   ];
 
-  cols.forEach(col => doc.text(col.label, col.x, textY));
+  cols.forEach(col => doc.text(col.label, col.x, y + 4.4));
   y += 10;
 }
 
@@ -2814,16 +2812,16 @@ async function printLaporan() {
       addNewPage();
     }
 
-    if (index % 2 === 0) {
-      doc.setFillColor(249, 250, 251);
-      doc.rect(margin, y - 4.5, pageWidth - margin * 2, 7, 'F');
-    }
+   if (index % 2 === 0) {
+  doc.setFillColor(249, 250, 251);
+  doc.rect(margin, y - 4.2, pageWidth - margin * 2, 7, 'F');
+}
 
-    doc.text(tanggal, 16, y);
-    doc.text(pekerja, 40, y);
-    doc.text(material, 86, y);
-    doc.text(kode, 138, y);
-    doc.text(qty, 170, y);
+doc.text(tanggal, 16, y - 0.2);
+doc.text(pekerja, 40, y - 0.2);
+doc.text(material, 86, y - 0.2);
+doc.text(kode, 138, y - 0.2);
+doc.text(qty, 170, y - 0.2);
 
     y += 7;
   });

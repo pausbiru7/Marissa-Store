@@ -374,16 +374,105 @@
   text-align: center;
   white-space: nowrap;
 }
-    /* ==================== RESPONSIVE ==================== */
-    @media(max-width:480px){
-      .navbar h1 { font-size:1rem; }
-      .container { padding:8px; }
-      .card { padding:12px; }
-      .form-group input,.form-group select { padding:9px 12px;font-size:0.9rem; }
-      .btn { padding:11px 16px;font-size:0.85rem; }
-      .bottom-nav button { font-size:0.62rem;padding:8px 2px; }
-      .bottom-nav button .icon { font-size:1.1rem; }
-    }
+.history-filter-box{
+  background:#f8fafc;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px;
+  margin-bottom:14px;
+}
+
+.history-summary-box{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+  margin-bottom:12px;
+}
+
+.history-summary-card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  text-align:center;
+}
+
+.history-summary-card .num{
+  display:block;
+  font-size:1.35rem;
+  font-weight:700;
+  color:var(--primary);
+}
+
+.history-summary-card .lbl{
+  font-size:0.74rem;
+  color:var(--text-muted);
+}
+
+.history-filter-info{
+  background:#eff6ff;
+  border:1px solid #bfdbfe;
+  color:#1e40af;
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:0.82rem;
+  margin-bottom:12px;
+}
+
+.history-meta{
+  font-size:0.76rem;
+  color:var(--text-muted);
+  margin-top:4px;
+}
+
+.history-tag{
+  display:inline-block;
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:0.7rem;
+  font-weight:600;
+  background:#e8f0fe;
+  color:#1a73e8;
+  margin-top:6px;
+}
+
+.history-filter-box{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+}
+
+.history-filter-box .btn-row{
+  margin-top:0;
+}
+
+@media (min-width:768px){
+  .history-filter-box{
+    grid-template-columns:repeat(2,1fr);
+    align-items:end;
+  }
+
+  .history-filter-box .btn-row{
+    grid-column:1 / -1;
+  }
+}
+
+@media (min-width:640px){
+  .history-summary-box{
+    grid-template-columns:repeat(4,1fr);
+  }
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media(max-width:480px){
+  .navbar h1 { font-size:1rem; }
+  .container { padding:8px; }
+  .card { padding:12px; }
+  .form-group input,.form-group select { padding:9px 12px;font-size:0.9rem; }
+  .btn { padding:11px 16px;font-size:0.85rem; }
+  .bottom-nav button { font-size:0.62rem;padding:8px 2px; }
+  .bottom-nav button .icon { font-size:1.1rem; }
+}
   </style>
 </head>
 <body>
@@ -548,16 +637,49 @@
   </div>
 
   <!-- SECTION: HISTORY — FIX N3: tambah input search -->
-  <div class="section" id="section-history">
-    <div class="card">
-      <h2>📋 Riwayat Pengambilan</h2>
+<div class="section" id="section-history">
+  <div class="card">
+    <h2>📋Riwayat Pengambilan</h2>
+
+    <div class="history-filter-box">
       <div class="form-group">
-        <input type="text" id="history-search" placeholder="🔍 Cari nama, material, NIK..." oninput="renderHistory()">
+        <label>Kata Kunci</label>
+        <input type="text" id="history-search" placeholder="Contoh: Atn Priyo / Bearing / MT-001">
       </div>
-      <div id="history-list"></div>
+
+      <div class="form-group">
+        <label>Filter Berdasarkan</label>
+        <select id="history-filter-type">
+          <option value="all">Semua</option>
+          <option value="worker">Nama / NIK Pekerja</option>
+          <option value="material">Nama / Kode Material</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Tanggal Awal</label>
+        <input type="date" id="history-date-from">
+      </div>
+
+      <div class="form-group">
+        <label>Tanggal Akhir</label>
+        <input type="date" id="history-date-to">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="applyHistoryFilter()">Tampilkan</button>
+        <button class="btn btn-outline" onclick="resetHistoryFilter()">Reset</button>
+      </div>
+    </div>
+
+    <div id="history-summary"></div>
+    <div id="history-list"></div>
+
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn btn-primary" onclick="printHistoryPdf()">Print Riwayat PDF</button>
     </div>
   </div>
-
+</div>
   <!-- SECTION: DASHBOARD — FIX C3 + N1 + N2 -->
   <div class="section" id="section-dashboard">
     <div class="card">
@@ -2419,56 +2541,251 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==================== HISTORY ====================
+function getFilteredHistoryData() {
+  const keyword = (document.getElementById('history-search')?.value || '').trim().toLowerCase();
+  const filterType = document.getElementById('history-filter-type')?.value || 'all';
+  const dateFrom = document.getElementById('history-date-from')?.value || '';
+  const dateTo = document.getElementById('history-date-to')?.value || '';
+
+  return transactions.filter(t => {
+    const workerName = String(t.workerName || '').toLowerCase();
+    const workerNik = String(t.workerNik || '').toLowerCase();
+    const workerDept = String(t.workerDept || '').toLowerCase();
+    const materialName = String(t.materialName || '').toLowerCase();
+    const materialCode = String(t.materialCode || '').toLowerCase();
+
+    let keywordMatch = true;
+
+    if (keyword) {
+      if (filterType === 'worker') {
+        keywordMatch =
+          workerName.includes(keyword) ||
+          workerNik.includes(keyword) ||
+          workerDept.includes(keyword);
+      } else if (filterType === 'material') {
+        keywordMatch =
+          materialName.includes(keyword) ||
+          materialCode.includes(keyword);
+      } else {
+        keywordMatch =
+          workerName.includes(keyword) ||
+          workerNik.includes(keyword) ||
+          workerDept.includes(keyword) ||
+          materialName.includes(keyword) ||
+          materialCode.includes(keyword);
+      }
+    }
+
+    const trxDate = new Date(t.date);
+    if (isNaN(trxDate.getTime())) return keywordMatch;
+
+    const year = trxDate.getFullYear();
+    const month = String(trxDate.getMonth() + 1).padStart(2, '0');
+    const day = String(trxDate.getDate()).padStart(2, '0');
+    const trxDateStr = `${year}-${month}-${day}`;
+
+    let fromMatch = true;
+    let toMatch = true;
+
+    if (dateFrom) fromMatch = trxDateStr >= dateFrom;
+    if (dateTo) toMatch = trxDateStr <= dateTo;
+
+    return keywordMatch && fromMatch && toMatch;
+  });
+}
+
+function applyHistoryFilter() {
+  renderHistory();
+}
+
+function resetHistoryFilter() {
+  const searchEl = document.getElementById('history-search');
+  const typeEl = document.getElementById('history-filter-type');
+  const fromEl = document.getElementById('history-date-from');
+  const toEl = document.getElementById('history-date-to');
+
+  if (searchEl) searchEl.value = '';
+  if (typeEl) typeEl.value = 'all';
+  if (fromEl) fromEl.value = '';
+  if (toEl) toEl.value = '';
+
+  renderHistory();
+}
+
 function renderHistory() {
   const list = document.getElementById('history-list');
+  const summary = document.getElementById('history-summary');
+
   if (!list) return;
 
   if (!transactions.length) {
+    if (summary) summary.innerHTML = '';
     list.innerHTML = '<div class="empty">Belum ada riwayat transaksi</div>';
     return;
   }
 
- const search = (document.getElementById('history-search')?.value || '').toLowerCase();
-const keyword = String(document.getElementById('history-search')?.value || '')
-  .toLowerCase()
-  .trim();
+  const filtered = getFilteredHistoryData();
 
-const filtered = transactions.filter(t =>
-  !keyword ||
-  String(t.workerName || '').toLowerCase().includes(keyword) ||
-  String(t.materialName || '').toLowerCase().includes(keyword) ||
-  String(t.materialCode || '').toLowerCase().includes(keyword) ||
-  String(t.workerNik || '').toLowerCase().includes(keyword)
-);
+  const totalTrx = filtered.length;
+  const totalQty = filtered.reduce((a, t) => a + Number(t.qty || 0), 0);
+  const totalMaterial = new Set(filtered.map(t => String(t.materialCode || ''))).size;
+  const totalPekerja = new Set(filtered.map(t => String(t.workerNik || ''))).size;
+
+  const keyword = (document.getElementById('history-search')?.value || '').trim();
+  const filterType = document.getElementById('history-filter-type')?.value || 'all';
+  const dateFrom = document.getElementById('history-date-from')?.value || '';
+  const dateTo = document.getElementById('history-date-to')?.value || '';
+
+  let filterInfo = 'Menampilkan seluruh riwayat transaksi.';
+  if (keyword || dateFrom || dateTo || filterType !== 'all') {
+    filterInfo = `Filter aktif: ${
+      keyword ? `kata kunci "${keyword}"` : 'tanpa kata kunci'
+    } | ${
+      filterType === 'worker' ? 'fokus pekerja' :
+      filterType === 'material' ? 'fokus material' : 'semua data'
+    }${
+      dateFrom ? ` | dari ${dateFrom}` : ''
+    }${
+      dateTo ? ` | sampai ${dateTo}` : ''
+    }`;
+  }
+
+  if (summary) {
+    summary.innerHTML = `
+      <div class="history-summary-box">
+        <div class="history-summary-card">
+          <span class="num">${totalTrx}</span>
+          <span class="lbl">Total Transaksi</span>
+        </div>
+        <div class="history-summary-card">
+          <span class="num">${totalQty}</span>
+          <span class="lbl">Total Qty Keluar</span>
+        </div>
+        <div class="history-summary-card">
+          <span class="num">${totalMaterial}</span>
+          <span class="lbl">Jenis Material</span>
+        </div>
+        <div class="history-summary-card">
+          <span class="num">${totalPekerja}</span>
+          <span class="lbl">Pekerja Aktif</span>
+        </div>
+      </div>
+      <div class="history-filter-info">${filterInfo}</div>
+    `;
+  }
 
   if (!filtered.length) {
-    list.innerHTML = '<div class="empty">Tidak ada hasil pencarian</div>';
+    list.innerHTML = '<div class="empty">Tidak ada data yang cocok dengan filter.</div>';
     return;
   }
 
-  list.innerHTML = filtered.map(t => `
-    <div class="list-item">
+   list.innerHTML = filtered.map(t => `
+    <div class="list-item" style="align-items:flex-start;">
       <div class="info">
         <h4>
-          📦 ${t.materialName || '-'}
+          ${t.materialName || '-'}
           <span style="font-weight:400;color:var(--text-muted);font-size:0.8rem;">
-            ${t.materialCode}
+            ${t.materialCode || '-'}
           </span>
         </h4>
-        <p>👷 ${t.workerName || '-'} (${t.workerNik || '-'}) | ${t.workerDept || '-'}</p>
-        <p>
-          📊 ${t.qty} ${t.unit || ''} | 📅 ${t.dateStr || ''} ${t.timeStr || ''}
-          ${t.synced
-            ? '<span class="stock-badge stock-ok" style="font-size:0.65rem;">✅ Synced</span>'
-            : '<span class="stock-badge stock-low" style="font-size:0.65rem;">⏳ Pending</span>'}
-        </p>
+
+        <div class="history-meta">
+          ${t.workerName || '-'} - ${t.workerNik || '-'} - ${t.workerDept || '-'}
+        </div>
+
+        <div class="history-meta">
+          Qty: <strong>${t.qty || 0} ${t.unit || ''}</strong> | ${t.dateStr || '-'} ${t.timeStr || ''}
+        </div>
+
+        <div class="history-tag">
+          ${t.synced ? 'Synced' : 'Pending Sync'}
+        </div>
       </div>
-      <div style="display:flex;gap:6px;">
-        <button class="btn btn-outline" style="padding:6px 10px;font-size:0.75rem;width:auto;" onclick="printTrxPdf('${t.id}')">🖨️</button>
-        <button class="btn btn-outline" style="padding:6px 10px;font-size:0.75rem;width:auto;" onclick="shareTrx('${t.id}')">📤</button>
+
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-outline" style="padding:6px 10px;font-size:0.75rem;width:auto;" onclick="shareTrx('${t.id}')">Bagikan</button>
       </div>
     </div>
   `).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('history-search')?.addEventListener('input', renderHistory);
+  document.getElementById('history-filter-type')?.addEventListener('change', renderHistory);
+  document.getElementById('history-date-from')?.addEventListener('change', renderHistory);
+  document.getElementById('history-date-to')?.addEventListener('change', renderHistory);
+});
+  function printHistoryPdf() {
+  const filtered = getFilteredHistoryData();
+
+  if (!filtered.length) {
+    showToast('Tidak ada data riwayat untuk dicetak.', 'error');
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  let y = 16;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('Laporan Riwayat Pengambilan', 14, y);
+  y += 8;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+
+  const keyword = (document.getElementById('history-search')?.value || '').trim();
+  const filterType = document.getElementById('history-filter-type')?.value || 'all';
+  const dateFrom = document.getElementById('history-date-from')?.value || '-';
+  const dateTo = document.getElementById('history-date-to')?.value || '-';
+
+  doc.text(`Filter: ${keyword || 'Semua data'}`, 14, y); y += 5;
+  doc.text(`Tipe: ${filterType}`, 14, y); y += 5;
+  doc.text(`Periode: ${dateFrom} s/d ${dateTo}`, 14, y); y += 5;
+  doc.text(`Total transaksi: ${filtered.length}`, 14, y); y += 8;
+
+  filtered.forEach((t, i) => {
+    if (y > pageHeight - 24) {
+      doc.addPage();
+      y = 16;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text(`${i + 1}. ${t.materialName || '-'}`, 14, y);
+    y += 5;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+
+    const lines = [
+      `Kode Material : ${t.materialCode || '-'}`,
+      `Pekerja       : ${t.workerName || '-'} (${t.workerNik || '-'})`,
+      `Departemen    : ${t.workerDept || '-'}`,
+      `Qty Keluar    : ${t.qty || 0} ${t.unit || ''}`,
+      `Tanggal       : ${t.dateStr || '-'} ${t.timeStr || ''}`,
+      `Status Sync   : ${t.synced ? 'Synced' : 'Pending Sync'}`
+    ];
+
+    lines.forEach(line => {
+      const wrapped = doc.splitTextToSize(line, pageWidth - 28);
+      doc.text(wrapped, 14, y);
+      y += wrapped.length * 4.5;
+    });
+
+    y += 3;
+
+    doc.setDrawColor(220, 220, 220);
+    doc.line(14, y, pageWidth - 14, y);
+    y += 6;
+  });
+
+  doc.save('riwayat-pengambilan.pdf');
 }
 </script>
 <script>
@@ -2578,7 +2895,7 @@ function generateLaporan(){
         count: 0
       };
     }
-    rekapM[t.materialCode].totalQty += t.qty;
+   rekapM[t.materialCode].totalQty += Number(t.qty || 0);
     rekapM[t.materialCode].count++;
 
     if(!rekapW[t.workerNik]){
@@ -2601,7 +2918,7 @@ function generateLaporan(){
           <span class="lap-stat-lbl">Total Transaksi</span>
         </div>
         <div class="lap-stat-card">
-          <span class="lap-stat-num">${laporanData.reduce((a, t) => a + t.qty, 0)}</span>
+         <span class="lap-stat-num">${laporanData.reduce((a, t) => a + Number(t.qty || 0), 0)}</span>
           <span class="lap-stat-lbl">Total Item Keluar</span>
         </div>
         <div class="lap-stat-card">
@@ -2764,7 +3081,7 @@ async function printLaporan() {
     y += 26;
   }
 function drawTextMiddle(text, x, boxY, boxH) {
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.text(text, x, boxY + 4.6);
 }
 
@@ -2775,7 +3092,7 @@ function drawTableHeader() {
   doc.rect(margin, y, pageWidth - margin * 2, headerH, 'F');
 
   doc.setTextColor(255, 255, 255);
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
 
   const cols = [

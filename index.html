@@ -247,21 +247,108 @@
     .chart-wrap-tall { position:relative;height:260px;width:100%; }
     .chart-empty { text-align:center;color:var(--text-muted);font-size:0.82rem;padding:40px 0; }
 
-    /* ==================== LAPORAN ==================== */
-    .laporan-header { background:var(--card-bg);border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid var(--border); }
-    .laporan-header h3 { font-size:1rem;margin-bottom:4px; }
-    .laporan-header p  { font-size:0.82rem;color:var(--text-muted);margin-bottom:12px; }
-    .lap-stats { display:flex;gap:10px;flex-wrap:wrap; }
-    .lap-stat-card { flex:1;min-width:80px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center; }
-    .lap-stat-num { display:block;font-size:1.4rem;font-weight:700;color:var(--primary); }
-    .lap-stat-lbl { font-size:0.7rem;color:var(--text-muted); }
-    .lap-table-wrap { overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-bottom:8px; }
-    .lap-table { width:100%;border-collapse:collapse;font-size:0.78rem; }
-    .lap-table th { background:var(--bg);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);font-weight:600;white-space:nowrap; }
-    .lap-table td { padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top; }
-    .lap-table tr:last-child td { border-bottom:none; }
-    .lap-table tr:hover td { background:var(--bg); }
+/* ==================== LAPORAN ==================== */
+.laporan-header {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+}
 
+.laporan-header h3 {
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.laporan-header p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.lap-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lap-stat-card {
+  flex: 1;
+  min-width: 80px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+}
+
+.lap-stat-num {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.lap-stat-lbl {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.lap-table-wrap {
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.lap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.lap-table th {
+  background: #2563eb;
+  color: #fff;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #1d4ed8;
+  font-weight: 700;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.lap-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  font-size: 0.78rem;
+}
+
+.lap-table tr:last-child td {
+  border-bottom: none;
+}
+
+.lap-table tbody tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.lap-table tr:hover td {
+  background: #eef4ff;
+}
+
+.lap-table th:last-child,
+.lap-table td:last-child {
+  text-align: center;
+  width: 80px;
+}
+
+.lap-table th:nth-child(4),
+.lap-table td:nth-child(4) {
+  white-space: nowrap;
+}
     /* ==================== RESPONSIVE ==================== */
     @media(max-width:480px){
       .navbar h1 { font-size:1rem; }

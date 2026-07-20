@@ -720,25 +720,37 @@
     </div>
   </div>
 
-  <!-- SECTION: LAPORAN — FIX C3 + M6: terpisah dari dashboard, ID diperbaiki -->
-  <div class="section" id="section-laporan">
-    <div class="card">
-      <h2>📅 Laporan Bulanan</h2>
-      <!-- FIX M6: ID diubah dari lap-bulan → lap-month agar konsisten dengan HTML asli -->
-      <div class="form-group"><label>Pilih Bulan</label><input type="month" id="lap-month" onchange="generateLaporan()"></div>
-      <div class="form-group">
-        <label>Filter Departemen (Opsional)</label>
-        <select id="lap-dept" onchange="generateLaporan()">
-          <option value="">Semua Departemen</option>
-          <option>Electrical</option><option>Mechanical</option><option>Store</option>
-          <option>Manajemen</option><option>HSE</option><option>HRD</option>
-        </select>
-      </div>
-      <!-- FIX M6: ID diubah dari laporan-result → laporan-content agar konsisten -->
-      <div id="laporan-content"></div>
-      <button class="btn btn-primary" style="margin-top:12px;" onclick="printLaporan()">🖨️ Print Laporan PDF</button>
+ <!-- SECTION: LAPORAN — FIX C3 + M6: terpisah dari dashboard, ID diperbaiki -->
+<div class="section" id="section-laporan">
+  <div class="card">
+    <h2>📅 Laporan Bulanan</h2>
+
+    <div class="form-group">
+      <label>Pilih Bulan</label>
+      <input type="month" id="lap-month" onchange="generateLaporan()">
+    </div>
+
+    <div class="form-group">
+      <label>Filter Departemen (Opsional)</label>
+      <select id="lap-dept" onchange="generateLaporan()">
+        <option value="">Semua Departemen</option>
+        <option>Electrical</option>
+        <option>Mechanical</option>
+        <option>Store</option>
+        <option>Manajemen</option>
+        <option>HSE</option>
+        <option>HRD</option>
+      </select>
+    </div>
+
+    <div id="laporan-content"></div>
+
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="btn btn-primary" onclick="printLaporan()">🖨️ Print Laporan PDF</button>
+      <button class="btn btn-outline" onclick="exportCSV()">📤 Export CSV</button>
     </div>
   </div>
+</div>
 
 </div><!-- end .container -->
 

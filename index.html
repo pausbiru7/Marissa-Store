@@ -2763,7 +2763,10 @@ async function printLaporan() {
 
     y += 26;
   }
-
+function drawTextMiddle(text, x, boxY, boxH) {
+  const centerY = boxY + (boxH / 2);
+  doc.text(text, x, centerY + 0.3);
+}
 function drawTableHeader() {
   const headerH = 8;
 

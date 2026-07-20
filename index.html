@@ -2740,18 +2740,18 @@ function printHistoryPdf() {
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const marginLeft = 14;
-  const marginRight = 14;
+  const marginLeft = 12;
+  const marginRight = 12;
   const contentWidth = pageWidth - marginLeft - marginRight;
 
   const now = new Date();
   const printedAt = now.toLocaleString('id-ID', {
     day: '2-digit',
-    month: 'long',
+    month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit'
-  });
+  }).replace(/\./g, ':');
 
   const keyword = (document.getElementById('history-search')?.value || '').trim();
   const filterTypeRaw = document.getElementById('history-filter-type')?.value || 'all';
@@ -2766,41 +2766,71 @@ function printHistoryPdf() {
 
   let y = 16;
 
+  function formatDateDDMMYYYY(dateValue) {
+    if (!dateValue) return '-';
+    const d = new Date(dateValue);
+    if (isNaN(d)) return '-';
+
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
+  function formatTimeHHMM(dateValue, fallbackTime = '') {
+    if (!dateValue) return fallbackTime || '-';
+    const d = new Date(dateValue);
+    if (isNaN(d)) return fallbackTime || '-';
+
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+
+    return `${hh}:${mi}`;
+  }
+
+  function formatInputDate(dateValue) {
+    if (!dateValue || dateValue === '-') return '-';
+    const parts = String(dateValue).split('-');
+    if (parts.length !== 3) return dateValue;
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+
   function drawReportHeader(isNewPage = false) {
     if (isNewPage) y = 16;
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(15);
+    doc.setFontSize(14);
     doc.setTextColor(30, 41, 59);
     doc.text('Laporan Riwayat Pengambilan', marginLeft, y);
-    y += 7;
+    y += 6.5;
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(100, 116, 139);
     doc.text(`Dicetak pada: ${printedAt}`, marginLeft, y);
-    y += 5;
+    y += 4.5;
     doc.text(`Filter: ${keyword || 'Semua data'}`, marginLeft, y);
-    y += 4.5;
+    y += 4.2;
     doc.text(`Tipe: ${filterType}`, marginLeft, y);
-    y += 4.5;
-    doc.text(`Periode: ${dateFrom} s/d ${dateTo}`, marginLeft, y);
-    y += 4.5;
+    y += 4.2;
+    doc.text(`Periode: ${formatInputDate(dateFrom)} s/d ${formatInputDate(dateTo)}`, marginLeft, y);
+    y += 4.2;
     doc.text(`Total transaksi: ${filtered.length}`, marginLeft, y);
-    y += 7;
+    y += 6;
 
     drawTableHeader();
   }
 
   function drawTableHeader() {
     const cols = [
-      { key: 'no', label: 'No', width: 10 },
-      { key: 'tgl', label: 'Tanggal/Jam', width: 30 },
-      { key: 'worker', label: 'Pekerja', width: 42 },
-      { key: 'dept', label: 'Dept', width: 22 },
-      { key: 'material', label: 'Material', width: 48 },
-      { key: 'qty', label: 'Qty', width: 18 },
-      { key: 'status', label: 'Status', width: 20 }
+      { key: 'no', label: 'No', width: 9 },
+      { key: 'tgl', label: 'Tanggal/Jam', width: 25 },
+      { key: 'worker', label: 'Pekerja', width: 37 },
+      { key: 'dept', label: 'Dept', width: 19 },
+      { key: 'material', label: 'Material', width: 58 },
+      { key: 'qty', label: 'Qty', width: 14 },
+      { key: 'status', label: 'Status', width: 14 }
     ];
 
     let x = marginLeft;
@@ -2810,11 +2840,11 @@ function printHistoryPdf() {
     doc.rect(marginLeft, y, contentWidth, 8, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setTextColor(30, 41, 59);
 
     cols.forEach(col => {
-      doc.text(col.label, x + 1.5, y + 5.2);
+      doc.text(col.label, x + 1.2, y + 5);
       x += col.width;
     });
 
@@ -2822,37 +2852,37 @@ function printHistoryPdf() {
   }
 
   const cols = [
-    { key: 'no', width: 10 },
-    { key: 'tgl', width: 30 },
-    { key: 'worker', width: 42 },
-    { key: 'dept', width: 22 },
-    { key: 'material', width: 48 },
-    { key: 'qty', width: 18 },
-    { key: 'status', width: 20 }
+    { key: 'no', width: 9 },
+    { key: 'tgl', width: 25 },
+    { key: 'worker', width: 37 },
+    { key: 'dept', width: 19 },
+    { key: 'material', width: 58 },
+    { key: 'qty', width: 14 },
+    { key: 'status', width: 14 }
   ];
 
   function drawRow(row, index) {
     const values = {
       no: String(index + 1),
-      tgl: `${row.dateStr || '-'} ${row.timeStr || ''}`.trim(),
+      tgl: `${formatDateDDMMYYYY(row.date)}\n${formatTimeHHMM(row.date, row.timeStr || '')}`,
       worker: `${row.workerName || '-'}\n(${row.workerNik || '-'})`,
       dept: row.workerDept || '-',
       material: `${row.materialName || '-'}\n${row.materialCode || '-'}`,
-      qty: `${row.qty || 0} ${row.unit || ''}`.trim(),
+      qty: `${row.qty || 0}\n${row.unit || ''}`,
       status: row.synced ? 'Synced' : 'Pending'
     };
 
     const wrapped = {};
-    let rowHeight = 6;
+    let rowHeight = 7;
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.3);
+    doc.setFontSize(7.8);
     doc.setTextColor(51, 65, 85);
 
     cols.forEach(col => {
       const text = values[col.key] || '';
-      wrapped[col.key] = doc.splitTextToSize(text, col.width - 3);
-      const h = Math.max(6, wrapped[col.key].length * 4);
+      wrapped[col.key] = doc.splitTextToSize(text, col.width - 2.5);
+      const h = Math.max(7, wrapped[col.key].length * 4.1);
       if (h > rowHeight) rowHeight = h;
     });
 
@@ -2866,7 +2896,7 @@ function printHistoryPdf() {
     cols.forEach(col => {
       doc.setDrawColor(226, 232, 240);
       doc.rect(x, y, col.width, rowHeight);
-      doc.text(wrapped[col.key], x + 1.5, y + 4);
+      doc.text(wrapped[col.key], x + 1.2, y + 4);
       x += col.width;
     });
 
@@ -2885,7 +2915,7 @@ function printHistoryPdf() {
     doc.line(marginLeft, pageHeight - 10, pageWidth - marginRight, pageHeight - 10);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
 
     doc.text('Marissa Store', marginLeft, pageHeight - 6);

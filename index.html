@@ -2764,8 +2764,7 @@ async function printLaporan() {
     y += 26;
   }
 function drawTextMiddle(text, x, boxY, boxH) {
-  const centerY = boxY + (boxH / 2);
-  doc.text(text, x, centerY - 0.6);
+  doc.text(text, x, boxY + (boxH / 2) - 1.2);
 }
 function drawTableHeader() {
   const headerH = 8;
@@ -2785,9 +2784,9 @@ function drawTableHeader() {
     { label: 'Qty', x: 170 }
   ];
 
- cols.forEach(col => {
-  drawTextMiddle(col.label, col.x, y, headerH);
-});
+  cols.forEach(col => {
+    drawTextMiddle(col.label, col.x, y, headerH);
+  });
 
   y += 10;
 }

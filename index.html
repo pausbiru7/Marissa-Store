@@ -2821,45 +2821,33 @@ function printHistoryPdf() {
 
     drawTableHeader();
   }
+const cols = [
+  { key: 'no', label: 'No', width: 9 },
+  { key: 'tgl', label: 'Tanggal/Jam', width: 27 },
+  { key: 'worker', label: 'Pekerja', width: 39 },
+  { key: 'dept', label: 'Dept', width: 20 },
+  { key: 'material', label: 'Material', width: 61 },
+  { key: 'qty', label: 'Qty', width: 15 },
+  { key: 'status', label: 'Status', width: 15 }
+];
 
-  function drawTableHeader() {
-    const cols = [
-      { key: 'no', label: 'No', width: 9 },
-      { key: 'tgl', label: 'Tanggal/Jam', width: 25 },
-      { key: 'worker', label: 'Pekerja', width: 37 },
-      { key: 'dept', label: 'Dept', width: 19 },
-      { key: 'material', label: 'Material', width: 58 },
-      { key: 'qty', label: 'Qty', width: 14 },
-      { key: 'status', label: 'Status', width: 14 }
-    ];
+function drawTableHeader() {
+  let x = marginLeft;
 
-    let x = marginLeft;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(30, 41, 59);
 
+  cols.forEach(col => {
     doc.setFillColor(241, 245, 249);
     doc.setDrawColor(203, 213, 225);
-    doc.rect(marginLeft, y, contentWidth, 8, 'FD');
+    doc.rect(x, y, col.width, 8, 'FD');
+    doc.text(col.label, x + 1.2, y + 5);
+    x += col.width;
+  });
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(30, 41, 59);
-
-    cols.forEach(col => {
-      doc.text(col.label, x + 1.2, y + 5);
-      x += col.width;
-    });
-
-    y += 8;
-  }
-
-  const cols = [
-    { key: 'no', width: 9 },
-    { key: 'tgl', width: 25 },
-    { key: 'worker', width: 37 },
-    { key: 'dept', width: 19 },
-    { key: 'material', width: 58 },
-    { key: 'qty', width: 14 },
-    { key: 'status', width: 14 }
-  ];
+  y += 8;
+}
 
   function drawRow(row, index) {
     const values = {

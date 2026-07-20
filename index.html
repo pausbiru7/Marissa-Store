@@ -2842,54 +2842,66 @@ function drawTableHeader() {
     doc.setFillColor(241, 245, 249);
     doc.setDrawColor(203, 213, 225);
     doc.rect(x, y, col.width, 8, 'FD');
-    doc.text(col.label, x + 1.2, y + 5);
+
+    if (col.key === 'status') {
+      doc.text(col.label, x + col.width - 1.2, y + 5, { align: 'right' });
+    } else {
+      doc.text(col.label, x + 1.2, y + 5);
+    }
+
     x += col.width;
   });
 
   y += 8;
 }
 
-  function drawRow(row, index) {
-    const values = {
-      no: String(index + 1),
-      tgl: `${formatDateDDMMYYYY(row.date)}\n${formatTimeHHMM(row.date, row.timeStr || '')}`,
-      worker: `${row.workerName || '-'}\n(${row.workerNik || '-'})`,
-      dept: row.workerDept || '-',
-      material: `${row.materialName || '-'}\n${row.materialCode || '-'}`,
-      qty: `${row.qty || 0}\n${row.unit || ''}`,
-      status: row.synced ? 'Synced' : 'Pending'
-    };
+function drawRow(row, index) {
+  const values = {
+    no: String(index + 1),
+    tgl: `${formatDateDDMMYYYY(row.date)}\n${formatTimeHHMM(row.date, row.timeStr || '')}`,
+    worker: `${row.workerName || '-'}\n(${row.workerNik || '-'})`,
+    dept: row.workerDept || '-',
+    material: `${row.materialName || '-'}\n${row.materialCode || '-'}`,
+    qty: `${row.qty || 0}\n${row.unit || ''}`,
+    status: row.synced ? 'Synced' : 'Pending'
+  };
 
-    const wrapped = {};
-    let rowHeight = 7;
+  const wrapped = {};
+  let rowHeight = 7;
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.8);
-    doc.setTextColor(51, 65, 85);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.8);
+  doc.setTextColor(51, 65, 85);
 
-    cols.forEach(col => {
-      const text = values[col.key] || '';
-      wrapped[col.key] = doc.splitTextToSize(text, col.width - 2.5);
-      const h = Math.max(7, wrapped[col.key].length * 4.1);
-      if (h > rowHeight) rowHeight = h;
-    });
+  cols.forEach(col => {
+    const text = values[col.key] || '';
+    wrapped[col.key] = doc.splitTextToSize(text, col.width - 2.5);
+    const h = Math.max(7, wrapped[col.key].length * 4.1);
+    if (h > rowHeight) rowHeight = h;
+  });
 
-    if (y + rowHeight > pageHeight - 24) {
-      doc.addPage();
-      drawReportHeader(true);
+  if (y + rowHeight > pageHeight - 24) {
+    doc.addPage();
+    drawReportHeader(true);
+  }
+
+  let x = marginLeft;
+
+  cols.forEach(col => {
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(x, y, col.width, rowHeight);
+
+    if (col.key === 'status') {
+      doc.text(wrapped[col.key], x + col.width - 1.2, y + 4, { align: 'right' });
+    } else {
+      doc.text(wrapped[col.key], x + 1.2, y + 4);
     }
 
-    let x = marginLeft;
+    x += col.width;
+  });
 
-    cols.forEach(col => {
-      doc.setDrawColor(226, 232, 240);
-      doc.rect(x, y, col.width, rowHeight);
-      doc.text(wrapped[col.key], x + 1.2, y + 4);
-      x += col.width;
-    });
-
-    y += rowHeight;
-  }
+  y += rowHeight;
+}
 
   drawReportHeader(false);
   filtered.forEach((row, index) => drawRow(row, index));

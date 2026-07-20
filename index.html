@@ -2764,16 +2764,18 @@ async function printLaporan() {
     y += 26;
   }
 function drawTextMiddle(text, x, boxY, boxH) {
-  doc.text(text, x, boxY + (boxH / 2) - 1.2);
+  doc.setFont('times', 'bold');
+  doc.text(text, x, boxY + 4.6);
 }
+
 function drawTableHeader() {
-  const headerH = 8;
+  const headerH = 9;
 
   doc.setFillColor(37, 99, 235);
   doc.rect(margin, y, pageWidth - margin * 2, headerH, 'F');
 
   doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times', 'bold');
   doc.setFontSize(9);
 
   const cols = [
@@ -2788,7 +2790,7 @@ function drawTableHeader() {
     drawTextMiddle(col.label, col.x, y, headerH);
   });
 
-  y += 10;
+  y += 11;
 }
 
   function addNewPage() {

@@ -2278,6 +2278,7 @@ function showTrxSummary(trx) {
     </div>
   </div>`;
 }
+  
 async function printTrxPdf(trxId) {
   const trx = transactions.find(t => String(t.id) === String(trxId));
   if (!trx) {

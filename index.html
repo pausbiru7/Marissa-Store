@@ -748,7 +748,7 @@
     <div class="btn-row" style="margin-top:12px;">
       <button class="btn btn-primary" onclick="printLaporan()">🖨️ Print Laporan PDF</button>
       <button class="btn btn-outline" onclick="exportCSV()">📤 Export CSV</button>
-    </div>
+</div>
   </div>
 </div>
 
@@ -3131,18 +3131,19 @@ function generateLaporan(){
 
   showToast(`Laporan ${getNamaBulan(month)} ${year} siap!`, 'success');
 }
-async function printLaporan() {
+
+ async function printLaporan() {
   if (!laporanData || !laporanData.length) {
     showToast('Generate laporan terlebih dahulu!', 'error');
     return;
   }
 
   const bulan = document.getElementById('lap-month')?.value || '';
+  const dept = document.getElementById('lap-dept')?.value || '';
   const [year, month] = bulan
     ? bulan.split('-').map(Number)
     : [new Date().getFullYear(), new Date().getMonth() + 1];
 
-  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -3152,14 +3153,26 @@ async function printLaporan() {
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 14;
+  const margin = 12;
+  let y = 16;
+
+  const now = new Date();
+  const printedAt = now.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 
   const totalTransaksi = laporanData.length;
   const totalQty = laporanData.reduce((sum, item) => sum + Number(item.qty || 0), 0);
-  const uniqueWorkers = new Set(laporanData.map(i => String(i.workerNik || i.workerId || i.workerName || ''))).size;
-  const uniqueMaterials = new Set(laporanData.map(i => String(i.materialCode || i.materialId || i.materialName || ''))).size;
-
-  let y = 16;
+  const uniqueWorkers = new Set(
+    laporanData.map(i => i.workerNik || i.workerId || i.workerName || '-')
+  ).size;
+  const uniqueMaterials = new Set(
+    laporanData.map(i => i.materialCode || i.materialId || i.materialName || '-')
+  ).size;
 
   function drawHeader() {
     doc.setFillColor(37, 99, 235);
@@ -3172,25 +3185,28 @@ async function printLaporan() {
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text(`Periode: ${getNamaBulan(month)} ${year}`, margin, 19);
-    doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, pageWidth - margin, 19, { align: 'right' });
+    doc.text(`Periode: ${getNamaBulan(month)} ${year}${dept ? ' — ' + dept : ''}`, margin, 19);
+    doc.text(`Dicetak: ${printedAt}`, pageWidth - margin, 19, { align: 'right' });
 
     y = 36;
   }
 
   function drawFooter(pageNumber) {
+    doc.setDrawColor(220, 220, 220);
+    doc.line(margin, pageHeight - 11, pageWidth - margin, pageHeight - 11);
+
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(120, 120, 120);
-    doc.text(`Marissa Store`, margin, pageHeight - 8);
-    doc.text(`Powered by Pausbiru7`, pageWidth / 2, pageHeight - 8, { align: 'center' });
-    doc.text(`Halaman ${pageNumber}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
+    doc.text('Marissa Store', margin, pageHeight - 6);
+    doc.text('Powered by Pausbiru7', pageWidth / 2, pageHeight - 6, { align: 'center' });
+    doc.text(`Halaman ${pageNumber}`, pageWidth - margin, pageHeight - 6, { align: 'right' });
   }
 
   function drawSummary() {
     const boxY = y;
-    const boxW = 42;
     const gap = 4;
+    const boxW = (pageWidth - margin * 2 - gap * 3) / 4;
 
     const summary = [
       ['Total Transaksi', String(totalTransaksi)],
@@ -3218,81 +3234,164 @@ async function printLaporan() {
 
     y += 26;
   }
-function drawTextMiddle(text, x, boxY, boxH) {
-  doc.setFont('helvetica', 'bold');
-  doc.text(text, x, boxY + 4.6);
-}
 
-function drawTableHeader() {
-  const headerH = 9;
+  function drawSectionTitle(title) {
+    doc.setTextColor(30, 41, 59);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text(title, margin, y);
+    y += 6;
+  }
 
-  doc.setFillColor(37, 99, 235);
-  doc.rect(margin, y, pageWidth - margin * 2, headerH, 'F');
+  function drawTableHeader(cols) {
+    const headerH = 9;
+    let x = margin;
 
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
+    doc.setFillColor(37, 99, 235);
+    cols.forEach(col => {
+      doc.rect(x, y, col.width, headerH, 'F');
+      x += col.width;
+    });
 
-  const cols = [
-    { label: 'Tanggal', x: 16 },
-    { label: 'Pekerja', x: 40 },
-    { label: 'Material', x: 86 },
-    { label: 'Kode', x: 138 },
-    { label: 'Qty', x: 170 }
-  ];
+    x = margin;
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
 
-  cols.forEach(col => {
-    drawTextMiddle(col.label, col.x, y, headerH);
+    cols.forEach(col => {
+      if (col.align === 'right') {
+        doc.text(col.label, x + col.width - 2, y + 5.8, { align: 'right' });
+      } else {
+        doc.text(col.label, x + 2, y + 5.8);
+      }
+      x += col.width;
+    });
+
+    y += headerH;
+  }
+
+  function ensurePage(nextHeight, cols) {
+    if (y + nextHeight > pageHeight - 18) {
+      drawFooter(doc.internal.getNumberOfPages());
+      doc.addPage();
+      drawHeader();
+      if (cols) drawTableHeader(cols);
+    }
+  }
+
+  function drawTableRows(rows, cols, mapRow) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(40, 40, 40);
+
+    rows.forEach((row, index) => {
+      const data = mapRow(row, index);
+
+      ensurePage(8, cols);
+
+      if (index % 2 === 0) {
+        doc.setFillColor(249, 250, 251);
+        doc.rect(margin, y, pageWidth - margin * 2, 7, 'F');
+      }
+
+      let x = margin;
+      cols.forEach(col => {
+        const txt = String(data[col.key] ?? '');
+        if (col.align === 'right') {
+          doc.text(txt, x + col.width - 2, y + 4.8, { align: 'right' });
+        } else {
+          doc.text(txt, x + 2, y + 4.8);
+        }
+        x += col.width;
+      });
+
+      y += 7;
+    });
+
+    y += 6;
+  }
+
+  const rekapM = {};
+  const rekapW = {};
+
+  laporanData.forEach(t => {
+    const materialKey = String(t.materialCode || t.materialId || t.materialName || '-');
+    if (!rekapM[materialKey]) {
+      rekapM[materialKey] = {
+        code: t.materialCode || '-',
+        name: t.materialName || '-',
+        unit: t.unit || '',
+        totalQty: 0,
+        count: 0
+      };
+    }
+    rekapM[materialKey].totalQty += Number(t.qty || 0);
+    rekapM[materialKey].count += 1;
+
+    const workerKey = String(t.workerNik || t.workerId || t.workerName || '-');
+    if (!rekapW[workerKey]) {
+      rekapW[workerKey] = {
+        nik: t.workerNik || '-',
+        name: t.workerName || '-',
+        dept: t.workerDept || '-',
+        count: 0
+      };
+    }
+    rekapW[workerKey].count += 1;
   });
 
-  y += 11;
-}
-
-  function addNewPage() {
-    drawFooter(doc.internal.getNumberOfPages());
-    doc.addPage();
-    drawHeader();
-    drawTableHeader();
-  }
+  const materialRows = Object.values(rekapM).sort((a, b) => b.totalQty - a.totalQty);
+  const workerRows = Object.values(rekapW).sort((a, b) => b.count - a.count);
 
   drawHeader();
   drawSummary();
-  drawTableHeader();
 
-  doc.setTextColor(40, 40, 40);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
+  drawSectionTitle('Rekap Per Material');
+  const materialCols = [
+    { key: 'no', label: 'No', width: 12 },
+    { key: 'code', label: 'Kode', width: 32 },
+    { key: 'name', label: 'Nama', width: 74 },
+    { key: 'qty', label: 'Total Keluar', width: 26, align: 'right' },
+    { key: 'unit', label: 'Satuan', width: 20 },
+    { key: 'count', label: 'Frekuensi', width: 24, align: 'right' }
+  ];
+  drawTableHeader(materialCols);
+  drawTableRows(materialRows, materialCols, (m, i) => ({
+    no: i + 1,
+    code: m.code,
+    name: String(m.name).slice(0, 30),
+    qty: m.totalQty,
+    unit: m.unit,
+    count: `${m.count}x`
+  }));
 
-  laporanData.forEach((item, index) => {
-    const tanggal = String(item.dateStr || '-');
-    const pekerja = String(item.workerName || '-').slice(0, 24);
-    const material = String(item.materialName || '-').slice(0, 28);
-    const kode = String(item.materialCode || '-').slice(0, 16);
-    const qty = `${item.qty || 0} ${item.unit || ''}`;
+  drawSectionTitle('Rekap Per Pekerja');
+  const workerCols = [
+    { key: 'no', label: 'No', width: 12 },
+    { key: 'nik', label: 'NIK', width: 30 },
+    { key: 'name', label: 'Nama', width: 72 },
+    { key: 'dept', label: 'Departemen', width: 44 },
+    { key: 'count', label: 'Transaksi', width: 24, align: 'right' }
+  ];
+  drawTableHeader(workerCols);
+  drawTableRows(workerRows, workerCols, (w, i) => ({
+    no: i + 1,
+    nik: w.nik,
+    name: String(w.name).slice(0, 28),
+    dept: String(w.dept || '-').slice(0, 18),
+    count: `${w.count}x`
+  }));
 
-    if (y > pageHeight - 20) {
-      addNewPage();
-    }
-
-   if (index % 2 === 0) {
-  doc.setFillColor(249, 250, 251);
-  doc.rect(margin, y - 4.2, pageWidth - margin * 2, 7, 'F');
-}
-
-doc.text(tanggal, 16, y - 0.2);
-doc.text(pekerja, 40, y - 0.2);
-doc.text(material, 86, y - 0.2);
-doc.text(kode, 138, y - 0.2);
-doc.text(qty, 170, y - 0.2);
-
-    y += 7;
-  });
-
-  drawFooter(doc.internal.getNumberOfPages());
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    drawFooter(i);
+  }
 
   const blob = doc.output('blob');
   const fileName = `laporan-${year}-${String(month).padStart(2, '0')}.pdf`;
   const file = new File([blob], fileName, { type: 'application/pdf' });
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   if (isMobile) {
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {

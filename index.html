@@ -2297,38 +2297,53 @@ async function printTrxPdf(trxId) {
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 16;
+  const margin = 12;
   let y = 16;
 
-  const drawFooter = (pageNo) => {
-    const footerY = pageHeight - 10;
+  const trxDate = trx.date ? new Date(trx.date) : new Date();
+  const printedAt = new Date().toLocaleString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 
-    doc.setDrawColor(210, 210, 210);
-    doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4);
+  const periodeText = `${getNamaBulan(trxDate.getMonth() + 1)} ${trxDate.getFullYear()}`;
+
+  function drawHeader() {
+    doc.setFillColor(37, 99, 235);
+    doc.rect(0, 0, pageWidth, 28, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('Bukti Pengambilan Material', margin, 12);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`Periode: ${periodeText}`, margin, 19);
+    doc.text(`Dicetak: ${printedAt}`, pageWidth - margin, 19, { align: 'right' });
+
+    y = 36;
+  }
+
+  function drawFooter(pageNo) {
+    const footerY = pageHeight - 6;
+
+    doc.setDrawColor(220, 220, 220);
+    doc.line(margin, pageHeight - 11, pageWidth - margin, pageHeight - 11);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
+    doc.setTextColor(120, 120, 120);
 
     doc.text('Marissa Store', margin, footerY);
     doc.text('Powered by Pausbiru7', pageWidth / 2, footerY, { align: 'center' });
     doc.text(`Halaman ${pageNo}`, pageWidth - margin, footerY, { align: 'right' });
-  };
+  }
 
-  doc.setFillColor(37, 99, 235);
-  doc.rect(0, 0, pageWidth, 30, 'F');
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text('Bukti Pengambilan Material', margin, 13);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text(`ID: ${trx.id || '-'}`, margin, 20);
-  doc.text(`${trx.dateStr || '-'}, ${trx.timeStr || '-'}`, pageWidth - margin, 20, { align: 'right' });
-
-  y = 40;
+  drawHeader();
 
   doc.setFillColor(245, 247, 250);
   doc.setDrawColor(220, 220, 220);
@@ -2370,7 +2385,7 @@ async function printTrxPdf(trxId) {
     trx.itemCode ||
     '-';
 
-  const qtyText = `${trx.qty || 0} ${trx.unit || ''}`;
+  const qtyText = `${trx.qty || 0} ${trx.unit || ''}`.trim();
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);

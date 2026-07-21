@@ -3222,11 +3222,7 @@ async function printLaporan() {
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text(
-      `Periode: ${getNamaBulan(month)} ${year}${dept ? ' — ' + dept : ''}`,
-      margin,
-      19
-    );
+    doc.text(`Periode: ${getNamaBulan(month)} ${year}${dept ? ' — ' + dept : ''}`, margin, 19);
     doc.text(`Dicetak: ${printedAt}`, pageWidth - margin, 19, { align: 'right' });
 
     y = 36;
@@ -3242,9 +3238,7 @@ async function printLaporan() {
 
     doc.text('Marissa Store', margin, pageHeight - 6);
     doc.text('Powered by Pausbiru7', pageWidth / 2, pageHeight - 6, { align: 'center' });
-    doc.text(`Halaman ${pageNumber}`, pageWidth - margin, pageHeight - 6, {
-      align: 'right'
-    });
+    doc.text(`Halaman ${pageNumber}`, pageWidth - margin, pageHeight - 6, { align: 'right' });
   }
 
   function drawSummary() {
@@ -3415,19 +3409,14 @@ async function printLaporan() {
     { key: 'count', label: 'Frekuensi', width: 24, align: 'right' }
   ];
   drawTableHeader(materialCols);
-  drawTableRows(
-    materialRows,
-    materialCols,
-    (m, i) => ({
-      no: i + 1,
-      code: m.code,
-      name: String(m.name).slice(0, 30),
-      qty: m.totalQty,
-      unit: m.unit,
-      count: `${m.count}x`
-    }),
-    'Rekap Per Material'
-  );
+  drawTableRows(materialRows, materialCols, (m, i) => ({
+    no: i + 1,
+    code: m.code,
+    name: String(m.name).slice(0, 30),
+    qty: m.totalQty,
+    unit: m.unit,
+    count: `${m.count}x`
+  }), 'Rekap Per Material');
 
   drawSectionTitle('Rekap Per Pekerja');
   const workerCols = [
@@ -3438,18 +3427,13 @@ async function printLaporan() {
     { key: 'count', label: 'Transaksi', width: 24, align: 'right' }
   ];
   drawTableHeader(workerCols);
-  drawTableRows(
-    workerRows,
-    workerCols,
-    (w, i) => ({
-      no: i + 1,
-      nik: w.nik,
-      name: String(w.name).slice(0, 28),
-      dept: String(w.dept || '-').slice(0, 18),
-      count: `${w.count}x`
-    }),
-    'Rekap Per Pekerja'
-  );
+  drawTableRows(workerRows, workerCols, (w, i) => ({
+    no: i + 1,
+    nik: w.nik,
+    name: String(w.name).slice(0, 28),
+    dept: String(w.dept || '-').slice(0, 18),
+    count: `${w.count}x`
+  }), 'Rekap Per Pekerja');
 
   const totalPages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {

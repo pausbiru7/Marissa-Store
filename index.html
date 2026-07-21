@@ -2279,7 +2279,7 @@ function showTrxSummary(trx) {
   </div>`;
 }
 async function printTrxPdf(trxId) {
-  const trx = transactions.find(t => t.id === trxId);
+  const trx = transactions.find(t => String(t.id) === String(trxId));
   if (!trx) {
     showToast('Transaksi tidak ditemukan!', 'error');
     return;
@@ -2298,6 +2298,21 @@ async function printTrxPdf(trxId) {
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 16;
   let y = 16;
+
+  const drawFooter = (pageNo) => {
+    const footerY = pageHeight - 10;
+
+    doc.setDrawColor(210, 210, 210);
+    doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+
+    doc.text('Marissa Store', margin, footerY);
+    doc.text('Powered by Pausbiru7', pageWidth / 2, footerY, { align: 'center' });
+    doc.text(`Halaman ${pageNo}`, pageWidth - margin, footerY, { align: 'right' });
+  };
 
   doc.setFillColor(37, 99, 235);
   doc.rect(0, 0, pageWidth, 30, 'F');
@@ -2329,60 +2344,60 @@ async function printTrxPdf(trxId) {
   doc.text(`NIK        : ${trx.workerNik || '-'}`, margin + 4, y + 20);
   doc.text(`Departemen : ${trx.workerDept || '-'}`, margin + 70, y + 14);
 
-y += 34;
+  y += 34;
 
-doc.setFillColor(245, 247, 250);
-doc.setDrawColor(220, 220, 220);
-doc.roundedRect(margin, y, pageWidth - margin * 2, 34, 3, 3, 'FD');
-
-doc.setTextColor(40, 40, 40);
-doc.setFont('helvetica', 'bold');
-doc.setFontSize(10);
-doc.text('Data Material', margin + 4, y + 7);
-
-const materialName =
-  trx.materialName ||
-  trx.namaMaterial ||
-  trx.material ||
-  trx.itemName ||
-  '-';
-
-const materialCode =
-  trx.materialCode ||
-  trx.kodeMaterial ||
-  trx.code ||
-  trx.itemCode ||
-  '-';
-
-const qtyText = `${trx.qty || 0} ${trx.unit || ''}`;
-
-doc.setFont('helvetica', 'normal');
-doc.setFontSize(10);
-doc.setTextColor(40, 40, 40);
-doc.text(`Nama Material : ${materialName}`, margin + 4, y + 14);
-doc.text(`Kode Material : ${materialCode}`, margin + 4, y + 20);
-doc.text(`Jumlah        : ${qtyText}`, margin + 4, y + 26);
-
-y += 42;
-
-if (trx.note) {
-  const noteLines = doc.splitTextToSize(String(trx.note), pageWidth - margin * 2 - 10);
-  const noteHeight = 10 + (noteLines.length * 5);
-
-  doc.setFillColor(255, 248, 225);
+  doc.setFillColor(245, 247, 250);
   doc.setDrawColor(220, 220, 220);
-  doc.roundedRect(margin, y, pageWidth - margin * 2, noteHeight, 3, 3, 'FD');
+  doc.roundedRect(margin, y, pageWidth - margin * 2, 34, 3, 3, 'FD');
 
   doc.setTextColor(40, 40, 40);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.text('Tujuan / Catatan', margin + 4, y + 7);
+  doc.text('Data Material', margin + 4, y + 7);
+
+  const materialName =
+    trx.materialName ||
+    trx.namaMaterial ||
+    trx.material ||
+    trx.itemName ||
+    '-';
+
+  const materialCode =
+    trx.materialCode ||
+    trx.kodeMaterial ||
+    trx.code ||
+    trx.itemCode ||
+    '-';
+
+  const qtyText = `${trx.qty || 0} ${trx.unit || ''}`;
 
   doc.setFont('helvetica', 'normal');
-  doc.text(noteLines, margin + 4, y + 13);
+  doc.setFontSize(10);
+  doc.setTextColor(40, 40, 40);
+  doc.text(`Nama Material : ${materialName}`, margin + 4, y + 14);
+  doc.text(`Kode Material : ${materialCode}`, margin + 4, y + 20);
+  doc.text(`Jumlah        : ${qtyText}`, margin + 4, y + 26);
 
-  y += noteHeight + 8;
-}
+  y += 42;
+
+  if (trx.note) {
+    const noteLines = doc.splitTextToSize(String(trx.note), pageWidth - margin * 2 - 10);
+    const noteHeight = 10 + (noteLines.length * 5);
+
+    doc.setFillColor(255, 248, 225);
+    doc.setDrawColor(220, 220, 220);
+    doc.roundedRect(margin, y, pageWidth - margin * 2, noteHeight, 3, 3, 'FD');
+
+    doc.setTextColor(40, 40, 40);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('Tujuan / Catatan', margin + 4, y + 7);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(noteLines, margin + 4, y + 13);
+
+    y += noteHeight + 8;
+  }
 
   doc.setFillColor(trx.synced ? 220 : 255, trx.synced ? 245 : 244, trx.synced ? 228 : 230);
   doc.setDrawColor(220, 220, 220);
@@ -2393,18 +2408,16 @@ if (trx.note) {
   doc.text('Status Sinkronisasi', margin + 4, y + 9);
 
   doc.setFont('helvetica', 'normal');
-  doc.text(trx.synced ? '✅ Synced' : '⏳ Pending', pageWidth - margin - 4, y + 9, { align: 'right' });
+  doc.text(trx.synced ? 'Synced' : 'Pending', pageWidth - margin - 4, y + 9, { align: 'right' });
 
-  y += 28;
+  y += 20;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(80, 80, 80);
   doc.text('Dokumen ini dibuat otomatis oleh sistem sebagai bukti pengambilan material.', margin, y);
 
-  doc.setFont('helvetica', 'italic');
-  doc.text('Marissa Store', margin, pageHeight - 12);
-  doc.text('Powered by Pausbiru7', pageWidth - margin, pageHeight - 12, { align: 'right' });
+  drawFooter(1);
 
   const blob = doc.output('blob');
   const fileName = `bukti-pengambilan-${trx.id || 'trx'}.pdf`;

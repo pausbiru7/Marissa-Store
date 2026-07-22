@@ -2478,18 +2478,32 @@ async function printTrxPdf(trxId) {
   showToast('PDF dibuka untuk print', 'success');
 }
 async function shareTrx(trxId) {
-  const trx = transactions.find(t => t.id === trxId);
+  const trx = transactions.find(t => String(t.id) === String(trxId));
   if (!trx) {
     showToast('Transaksi tidak ditemukan!', 'error');
     return;
   }
 
+  const materialName =
+    trx.materialName ||
+    trx.namaMaterial ||
+    trx.material ||
+    trx.itemName ||
+    '-';
+
+  const materialCode =
+    trx.materialCode ||
+    trx.kodeMaterial ||
+    trx.code ||
+    trx.itemCode ||
+    '-';
+
   const text = `📦 Pengambilan Material
 ${trx.workerName || '-'} (${trx.workerNik || '-'}) - ${trx.workerDept || '-'}
 
 Mengambil:
-${trx.materialName || '-'}
-Kode: ${trx.materialCode || '-'}
+${materialName}
+Kode: ${materialCode}
 Qty: ${trx.qty || 0} ${trx.unit || ''}
 
 Tanggal: ${trx.dateStr || '-'}, ${trx.timeStr || '-'}
@@ -2501,7 +2515,7 @@ Powered by Pausbiru7`;
     try {
       await navigator.share({
         title: 'Pengambilan Material',
-        text: text
+        text
       });
       return;
     } catch (e) {

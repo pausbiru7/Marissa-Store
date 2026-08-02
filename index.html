@@ -526,7 +526,7 @@
   <!-- SECTION: WORKERS -->
   <div class="section active" id="section-workers">
     <div class="card">
-      <h2>👷 Input Data Pekerja</h2>
+   <h2>👷 Input Data Pekerja</h2>
       <div class="form-group"><label>NIK</label><input type="text" id="w-nik" placeholder="Nomor Induk Karyawan"></div>
       <div class="form-group"><label>Nama Lengkap</label><input type="text" id="w-name" placeholder="Nama pekerja"></div>
       <div class="form-group"><label>Departemen</label>
@@ -534,8 +534,10 @@
       </div>
       <div class="form-group"><label>Jabatan</label><input type="text" id="w-position" placeholder="Operator / Teknisi / dll"></div>
       <button class="btn btn-primary" onclick="saveWorker()">💾 Simpan & Generate Barcode</button>
-      <div class="barcode-box" id="w-barcode-box" style="display:none;">
-        <svg id="w-barcode"></svg>
+      <div class="barcode-box" id="w-barcode-box" style="display:none; text-align:center;">
+        <div style="background:#fff; padding:12px; border:1px solid var(--border); border-radius:12px; display:inline-block;">
+          <img id="w-barcode-img" src="" alt="QR Code Pekerja" style="width:200px; height:200px; object-fit:contain;" />
+        </div>
         <div class="label" id="w-barcode-label"></div>
         <div class="btn-row">
           <button class="btn btn-outline" onclick="downloadBarcode('w')">📥 Download</button>
@@ -1420,21 +1422,27 @@ function showWorkerBarcode(id){
   }
 
   try{
-    document.getElementById('w-barcode-box').style.display = 'block';
-    JsBarcode('#w-barcode', barcodeValue, {
-      format:'CODE128',
-      width:2,
-      height:80,
-      displayValue:true,
-      fontSize:14
-    });
-    document.getElementById('w-barcode-label').textContent = `${w.name || '-'} • ${barcodeValue}`;
-    document.getElementById('w-barcode-box').scrollIntoView({
-      behavior:'smooth',
-      block:'nearest'
-    });
+    const box = document.getElementById('w-barcode-box');
+    const img = document.getElementById('w-barcode-img'); // Pastikan elemen tag <img> sudah ada di HTML
+    const label = document.getElementById('w-barcode-label');
+
+    if(box) box.style.display = 'block';
+    
+    // Mengubah format tampilan menjadi QR Code via API gratis yang sama dengan BAC Test
+    if(img){
+      img.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(barcodeValue)}`;
+    }
+    
+    if(label) label.textContent = `${w.name || '-'} • ${barcodeValue}`;
+    
+    if(box){
+      box.scrollIntoView({
+        behavior:'smooth',
+        block:'nearest'
+      });
+    }
   } catch(e){
-    showToast('Gagal menampilkan barcode pekerja','error');
+    showToast('Gagal menampilkan QR Code pekerja','error');
   }
 }
 
@@ -1969,39 +1977,56 @@ function showMaterialBarcode(id){
   }
 }
 // ==================== BARCODE ====================
-function downloadBarcode(type){
-  const svgEl = document.getElementById(`${type}-barcode`);
-  if(!svgEl) return;
+function downloadBarcode(type) {
+  const imgEl = document.getElementById(`${type}-barcode-img`);
+  if (!imgEl || !imgEl.src) {
+    showToast('Gambar QR Code tidak ditemukan', 'error');
+    return;
+  }
 
-  const svgData = new XMLSerializer().serializeToString(svgEl);
-  const canvas = document.createElement('canvas');
-  const img = new Image();
-  const url = URL.createObjectURL(new Blob([svgData], { type:'image/svg+xml;charset=utf-8' }));
-
-  img.onload = () => {
-    canvas.width = img.width;
-    canvas.height = img.height;
-    canvas.getContext('2d').drawImage(img, 0, 0);
-    URL.revokeObjectURL(url);
-
-    const a = document.createElement('a');
-    a.download = `barcode-${type}-${Date.now()}.png`;
-    a.href = canvas.toDataURL('image/png');
-    a.click();
-  };
-
-  img.src = url;
+  // Mengambil gambar QR Code via URL untuk diunduh sebagai file PNG
+  fetch(imgEl.src)
+    .then(res => res.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.download = `qrcode-${type}-${Date.now()}.png`;
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('QR Code berhasil diunduh', 'success');
+    })
+    .catch(() => {
+      showToast('Gagal mengunduh QR Code', 'error');
+    });
 }
 
-function printBarcode(type){
+function printBarcode(type) {
   const box = document.getElementById(`${type}-barcode-box`);
-  if(!box) return;
-
+  if (!box) return;
+  
   const win = window.open('', '_blank');
-  win.document.write(`<html><body style="text-align:center;padding:20px;">${box.innerHTML}</body></html>`);
+  win.document.write(`
+    <html>
+      <head>
+        <title>Cetak QR Code</title>
+        <style>
+          body { text-align: center; padding: 20px; font-family: sans-serif; }
+          img { width: 250px; height: 250px; object-fit: contain; }
+          .label { margin-top: 10px; font-size: 16px; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        ${box.innerHTML}
+      </body>
+    </html>
+  `);
   win.document.close();
-  win.print();
-  win.close();
+  win.focus();
+  setTimeout(() => {
+    win.print();
+    win.close();
+  }, 250);
 }
 // ==================== SCAN STATE ====================
 let scanState = { workerScanned:null, materialScanned:null, step:1 };

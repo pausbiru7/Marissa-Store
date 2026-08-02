@@ -2572,7 +2572,7 @@ function initWorkerScanner() {
   workerScanner = new Html5Qrcode('scanner-worker');
   workerScanner.start(
     { facingMode: 'environment' },
-    { fps: 10, qrbox: { width: 250, height: 150 } },
+    { fps: 10, qrbox: { width: 280, height: 130 } }, // Diubah agar proporsional
     (decodedText) => {
       const input = document.getElementById('manual-worker');
       if (input) {
@@ -2597,7 +2597,7 @@ function initMaterialScanner() {
   materialScanner = new Html5Qrcode('scanner-material');
   materialScanner.start(
     { facingMode: 'environment' },
-    { fps: 10, qrbox: { width: 250, height: 150 } },
+    { fps: 10, qrbox: { width: 280, height: 130 } }, // Diubah agar proporsional
     (decodedText) => {
       const input = document.getElementById('manual-material');
       if (input) {

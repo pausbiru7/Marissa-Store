@@ -1091,6 +1091,7 @@ function mapTransactionFromServer(t) {
     materialName: t.materialName || '',
     unit:         t.unit         || '',
     qty:          Number(t.qty)  || 0,
+    note:         t.note         || '',   // <--- TAMBAHKAN BARIS INI
     date:         t.date         || d.toISOString(),
     dateStr:      d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}),
     timeStr:      d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),
@@ -1127,7 +1128,7 @@ async function initialSync(showToastOnFail = false) {
     // 3. Ambil transaksi lokal yang masih pending
     const localPendingTransactions = (transactions || []).filter(t => !t.synced);
 
-    // 4. Ambil pending dari queue saveTransaction agar tetap tampil
+  // 4. Ambil pending dari queue saveTransaction agar tetap tampil
     const queue = getQueue();
     const queuedTransactions = queue
       .filter(item => item.action === 'saveTransaction' && item.payload)
@@ -1145,6 +1146,9 @@ async function initialSync(showToastOnFail = false) {
           materialName: p.materialName || '',
           unit: p.unit || '',
           qty: Number(p.qty) || 0,
+          // ===== TAMBAHKAN BARIS DI BAWAH INI =====
+          note: p.note || '', 
+          // ========================================
           date: p.date || d.toISOString(),
           dateStr: d.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }),
           timeStr: d.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' }),

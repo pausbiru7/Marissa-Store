@@ -2760,7 +2760,7 @@ function renderHistory() {
     return;
   }
 
-  list.innerHTML = filtered.map(t => `
+ list.innerHTML = filtered.map(t => `
     <div class="list-item" style="align-items:flex-start;">
       <div class="info">
         <h4>
@@ -2777,6 +2777,12 @@ function renderHistory() {
         <div class="history-meta">
           Qty: <strong>${t.qty || 0} ${t.unit || ''}</strong> | ${t.dateStr || '-'} ${t.timeStr || ''}
         </div>
+
+        <!-- TAMBAHAN CATATAN DI SINI -->
+        <div class="history-meta" style="margin-top:4px; font-style:italic; color:#64748b;">
+          Catatan: <strong>${t.note ? t.note : '-'}</strong>
+        </div>
+        <!-- ======================== -->
 
         <div class="history-tag">
           ${t.synced ? 'Synced' : 'Pending Sync'}

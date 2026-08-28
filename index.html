@@ -2966,14 +2966,14 @@ function printHistoryPdf() {
     y += 8;
   }
 
-  function drawRow(row, index) {
+ function drawRow(row, index) {
     const values = {
       no: String(index + 1),
       tgl: `${formatDateDDMMYYYY(row.date)}\n${formatTimeHHMM(row.date, row.timeStr || '')}`,
       worker: `${row.workerName || '-'}\n(${row.workerNik || '-'})`,
       dept: row.workerDept || '-',
-      material: `${row.materialName || '-'}\n${row.materialCode || '-'}`,
-      qty: `${row.qty || 0}\n${row.unit || ''}`,
+    material: `${row.materialName || '-'}\n${row.materialCode || '-'}${row.note ? `\nCatatan: ${row.note}` : ''}`,
+     qty: `${row.qty || 0}\n${row.unit || ''}`,
       status: row.synced ? 'Synced' : 'Pending'
     };
 
